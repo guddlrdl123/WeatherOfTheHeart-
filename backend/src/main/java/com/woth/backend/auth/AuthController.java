@@ -6,6 +6,9 @@ package com.woth.backend.auth;
  */
 import com.woth.backend.global.dto.ApiResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -17,9 +20,11 @@ import java.time.format.DateTimeFormatter;
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailVerificationService emailVerificationService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, EmailVerificationService emailVerificationService) {
         this.authService = authService;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @PostMapping("/login")
@@ -32,6 +37,18 @@ public class AuthController {
     public ApiResponse<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
         var user = authService.signup(request.email(), request.password(), request.nickname());
         return ApiResponse.success(toResponse(user));
+    }
+
+    @PostMapping("/email/send")
+    public ApiResponse<Void> sendEmailCode(@Valid @RequestBody EmailCodeSendRequest request) {
+        emailVerificationService.sendCode(request.email());
+        return ApiResponse.success(null);
+    }
+
+    @PostMapping("/email/verify")
+    public ApiResponse<Void> verifyEmailCode(@Valid @RequestBody EmailCodeVerifyRequest request) {
+        emailVerificationService.verifyCode(request.email(), request.code());
+        return ApiResponse.success(null);
     }
 
     private AuthResponse toResponse(com.woth.backend.user.User user) {
@@ -47,7 +64,20 @@ public class AuthController {
     public record LoginRequest(String email, String password) {
     }
 
-    public record SignupRequest(String email, String password, @Size(max = 10) String nickname) {
+    public record SignupRequest(
+            @NotBlank @Email String email,
+            @NotBlank String password,
+            @NotBlank @Size(max = 10) String nickname
+    ) {
+    }
+
+    public record EmailCodeSendRequest(@NotBlank @Email String email) {
+    }
+
+    public record EmailCodeVerifyRequest(
+            @NotBlank @Email String email,
+            @NotBlank @Pattern(regexp = "\\d{6}") String code
+    ) {
     }
 
     public record AuthResponse(Long id, String email, String nickname, Boolean isAdmin, String joinedAt) {
