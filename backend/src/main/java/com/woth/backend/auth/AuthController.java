@@ -5,6 +5,8 @@ package com.woth.backend.auth;
  * /api/auth/login : 로그인 엔드포인트로, 이메일과 비밀번호를 받아 인증 후 사용자 정보를 반환
  */
 import com.woth.backend.global.dto.ApiResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +29,7 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ApiResponse<AuthResponse> signup(@RequestBody SignupRequest request) {
+    public ApiResponse<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
         var user = authService.signup(request.email(), request.password(), request.nickname());
         return ApiResponse.success(toResponse(user));
     }
@@ -45,7 +47,7 @@ public class AuthController {
     public record LoginRequest(String email, String password) {
     }
 
-    public record SignupRequest(String email, String password, String nickname) {
+    public record SignupRequest(String email, String password, @Size(max = 10) String nickname) {
     }
 
     public record AuthResponse(Long id, String email, String nickname, Boolean isAdmin, String joinedAt) {
