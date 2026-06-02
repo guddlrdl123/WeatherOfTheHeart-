@@ -9,6 +9,10 @@ public enum ErrorCode {
     // 도메인별 에러 코드를 여기에 추가하며 관리
     USER_NOT_FOUND("USER_001", "존재하지 않는 유저입니다."),
     USER_ALREADY_EXISTS("USER_002", "이미 등록된 이메일입니다."),
+    EMAIL_CODE_INVALID("EMAIL_001", "이메일 인증번호가 올바르지 않습니다."),
+    EMAIL_CODE_EXPIRED("EMAIL_002", "이메일 인증번호가 만료되었습니다."),
+    EMAIL_NOT_VERIFIED("EMAIL_003", "이메일 인증이 완료되지 않았습니다."),
+    EMAIL_SEND_FAILED("EMAIL_004", "이메일 인증번호 발송에 실패했습니다."),
     MEMORY_DUPLICATE("MEMORY_001", "이미 해당 날짜에 기록이 존재합니다."),
     // 위치 수정 요청에서 해당 사용자의 기억을 찾지 못했을 때 사용합니다.
     MEMORY_NOT_FOUND("MEMORY_002", "존재하지 않는 기억입니다."),
@@ -25,4 +29,3 @@ public enum ErrorCode {
     private final String code;
     private final String message;
 }
-
