@@ -28,7 +28,7 @@ public class EmotionPromptBuilder {
                   - rainy: 비
                   - sunset: 노을
                   - night: 밤
-                  - late night: 새벽
+                  - dawn: 새벽
                 - confidence는 선택 확신도를 0.0 이상 1.0 이하의 숫자로 반환한다.
                 - reason 작성 규칙:
                   1. "사용자의 글에서 ~ 감정 단서가 나타나" 혹은 "~ 선택했습니다" 같은 기계적이고 틀에 박힌 반복 표현은 절대 금지한다. 매번 생동감 있고 다채로운 문장 구조를 사용해라.
