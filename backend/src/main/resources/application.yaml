@@ -7,6 +7,19 @@ spring:
       - optional:file:.env[.properties]
       - optional:file:backend/.env[.properties]
       - optional:file:WeatherOfTheHeart/backend/.env[.properties]
+  # 이메일 인증을 위한 메일 서버 설정.
+  # .env의 MAIL_HOST/MAIL_PORT/MAIL_USERNAME/MAIL_PASSWORD가 있으면 우선 사용하고, 없으면 기본값을 사용
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
   # 이번 DB 연결 변경: 로컬 MySQL의 woth 스키마를 실제 저장소로 사용합니다.
   datasource:
