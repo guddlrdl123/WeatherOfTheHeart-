@@ -57,20 +57,20 @@ public class PlazaEntry {
     private Integer positionY; // 광장 안에서 사용자가 배치한 오브젝트 Y 좌표값
 
     @Column(name = "create_at", nullable = false, updatable = false)
-    private LocalDateTime createAt;
+    private LocalDateTime createdAt;
 
     @Column(name = "update_at", nullable = false)
-    private LocalDateTime updateAt;
+    private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        this.createAt = LocalDateTime.now();
-        this.updateAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     } // INSERT 쿼리가 나가기 직전 실행 (생성일, 수정일을 현재 시간으로 초기화)
 
     @PreUpdate
     protected void onUpdate() {
-        this.updateAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     } // UPDATE 쿼리가 나가기 직전 실행 (수정일만 현재 시간으로 갱신)
 
 
