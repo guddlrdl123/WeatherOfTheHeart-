@@ -17,9 +17,11 @@ public class AuthService {
     private static final String ADMIN_PASSWORD = "admin1234";
 
     private final UserRepository userRepository;
+    private final EmailVerificationService emailVerificationService;
 
-    public AuthService(UserRepository userRepository) {
+    public AuthService(UserRepository userRepository, EmailVerificationService emailVerificationService) {
         this.userRepository = userRepository;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @Transactional
@@ -43,6 +45,7 @@ public class AuthService {
         if (userRepository.existsByEmail(email)) {
             throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
         }
+        emailVerificationService.ensureVerified(email);
 
         User user = User.builder()
                 .email(email)
@@ -52,7 +55,9 @@ public class AuthService {
                 .isAdmin(false)
                 .build();
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        emailVerificationService.clear(email);
+        return savedUser;
     }
 
     private User createAdminUser(String email, String password) {
