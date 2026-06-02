@@ -67,7 +67,7 @@ public class Plaza {
         this.updateAt = LocalDateTime.now();
     } // Insert 쿼리가 나가기 직전에 실행(생성 및 수정이 현재 시간으로 초기화)
 
-    @PrePersist
+    @PreUpdate
     protected void onUpdate() {
         this.updateAt = LocalDateTime.now();
     } // UpDate 쿼리가 나가기 직전에 실행(수정일만 현재 시간으로 갱신)
