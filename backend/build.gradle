@@ -42,6 +42,8 @@ dependencies {
 	// .env 파일의 환경 변수를 Spring Boot에서 읽어오기 위한 라이브러리
 	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
+	// 이메일 인증을 위한 의존성 추가
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
 }
 
 tasks.named('test') {
