@@ -1,0 +1,7 @@
+package com.woth.backend.ai.dto;
+// 감정 분석 API의 요청 데이터를 담는 DTO 클래스
+public record AnalyzeEmotionRequest(
+		Long userId,
+		String content
+) {
+}
