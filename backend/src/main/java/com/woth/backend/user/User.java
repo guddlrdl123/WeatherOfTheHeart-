@@ -26,7 +26,7 @@ public class User {
     @Column(nullable = false) // 로그인 비밀번호 (암호화되어 저장됨)
     private String password;
 
-    @Column(nullable = false, length = 50) // 화면에 노출될 유저의 닉네임
+    @Column(nullable = false, length = 10) // 화면에 노출될 유저의 닉네임
     private String nickname;
 
     @Column(name = "is_admin", nullable = false)
