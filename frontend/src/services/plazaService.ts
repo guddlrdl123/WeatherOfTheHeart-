@@ -17,6 +17,7 @@ type PlazaResponse = {
   maxObjects?: number | null;
   allowSearch?: boolean | null;
   allowInvite?: boolean | null;
+  inviteCode?: string | null;
   allowDuplicateObjects?: boolean | null;
   backgroundType?: "color" | "weather" | string | null;
   backgroundColor?: string | null;
@@ -90,6 +91,7 @@ function toPlaza(response: PlazaResponse): Plaza {
     maxParticipants,
     allowSearch: response.allowSearch ?? true,
     allowInvite: response.allowInvite ?? true,
+    inviteCode: response.inviteCode ?? undefined,
     allowDuplicateObjects: response.allowDuplicateObjects ?? false,
     background: toBackground(response),
     ownerId: response.ownerId == null ? "" : String(response.ownerId),
