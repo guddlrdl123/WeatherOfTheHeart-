@@ -58,4 +58,8 @@ public class User {
         this.nickname = "Admin";
         this.isAdmin = true;
     }
+
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
 }

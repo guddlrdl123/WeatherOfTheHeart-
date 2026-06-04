@@ -2,6 +2,7 @@ import { CalendarDays, PenLine } from "lucide-react";
 import { MOOD_BY_KEY } from "../../constants/mood";
 import type { Memory } from "../../types/memory";
 import { formatDotDate } from "../../utils/date";
+import { hasMemoryBeenUpdated } from "../../utils/memoryStatus";
 
 type Props = {
     selectedDate: string;
@@ -25,6 +26,7 @@ export function RoomMemoryPanel({
     const selectedMood = selectedMemory ? MOOD_BY_KEY[selectedMemory.moodKey] : null;
     const selectedContent = selectedMemory?.content.trim() ?? "";
     const shouldClampContent = selectedContent.length > 90 || selectedContent.split(/\r?\n/).length > 3;
+    const isUpdated = selectedMemory ? hasMemoryBeenUpdated(selectedMemory) : false;
 
     return (
         <section className="flex h-full flex-col rounded-xl p-5 select-none">
@@ -51,7 +53,7 @@ export function RoomMemoryPanel({
                         <h2 className="text-md font-normal text-[#5a4632]">
                             {selectedMemory.title || "어느 날의 이야기"}
                         </h2>
-                        {selectedMemory.updatedAt && (
+                        {isUpdated && (
                             <span className="rounded-full border border-[#5a4632]/15 bg-white/45 px-2 py-0.5 text-[0.68rem] text-[#5a4632]/60">
                                 수정됨
                             </span>
