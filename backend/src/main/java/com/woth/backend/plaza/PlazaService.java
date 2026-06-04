@@ -6,6 +6,8 @@ package com.woth.backend.plaza;
 
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
+import com.woth.backend.like.ObjectLike;
+import com.woth.backend.like.ObjectLikeRepository;
 import com.woth.backend.user.User;
 import com.woth.backend.user.UserRepository;
 import org.springframework.context.ApplicationEventPublisher;
@@ -30,6 +32,7 @@ public class PlazaService {
 
     private final PlazaRepository plazaRepository;
     private final PlazaEntryRepository plazaEntryRepository;
+    private final ObjectLikeRepository objectLikeRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final SecureRandom secureRandom = new SecureRandom();
@@ -37,11 +40,13 @@ public class PlazaService {
     public PlazaService(
             PlazaRepository plazaRepository,
             PlazaEntryRepository plazaEntryRepository,
+            ObjectLikeRepository objectLikeRepository,
             UserRepository userRepository,
             ApplicationEventPublisher eventPublisher
     ) {
         this.plazaRepository = plazaRepository;
         this.plazaEntryRepository = plazaEntryRepository;
+        this.objectLikeRepository = objectLikeRepository;
         this.userRepository = userRepository;
         this.eventPublisher = eventPublisher;
     }
@@ -91,6 +96,17 @@ public class PlazaService {
         return plazaRepository.save(plaza);
     }
 
+    @Transactional
+    public CreatedPlazaWithFirstEntry createPlazaWithFirstEntry(
+            CreatePlazaRequest plazaRequest,
+            CreatePlazaEntryRequest entryRequest
+    ) {
+        Plaza plaza = createPlaza(plazaRequest);
+        PlazaEntry entry = createEntry(plaza.getId(), entryRequest);
+
+        return new CreatedPlazaWithFirstEntry(plaza, entry);
+    }
+
     @Transactional(readOnly = true)
     public List<PlazaEntry> listEntries(Long plazaId) {
         return plazaEntryRepository.findByPlazaId(plazaId);
@@ -113,6 +129,18 @@ public class PlazaService {
     @Transactional(readOnly = true)
     public long countEntries(Long plazaId) {
         return plazaEntryRepository.countByPlazaId(plazaId);
+    }
+
+    @Transactional(readOnly = true)
+    public long countEntryLikes(Long entryId) {
+        return objectLikeRepository.countByPlazaEntryId(entryId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> listEntryLikedUserIds(Long entryId) {
+        return objectLikeRepository.findByPlazaEntryId(entryId).stream()
+                .map(like -> like.getUser().getId())
+                .toList();
     }
 
     @Transactional
@@ -147,6 +175,7 @@ public class PlazaService {
                 .slotKey(request.slotKey())
                 .positionX(request.positionX())
                 .positionY(request.positionY())
+                .layerIndex(request.layer())
                 .build();
 
         PlazaEntry savedEntry = plazaEntryRepository.save(entry);
@@ -177,6 +206,84 @@ public class PlazaService {
         return builder.toString();
     }
 
+    @Transactional
+    public PlazaEntry toggleEntryLike(Long entryId, Long userId) {
+        if (userId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        PlazaEntry entry = plazaEntryRepository.findById(entryId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PLAZA_ENTRY_NOT_FOUND));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        objectLikeRepository.findByUserIdAndPlazaEntryId(user.getId(), entry.getId())
+                .ifPresentOrElse(
+                        objectLikeRepository::delete,
+                        () -> objectLikeRepository.save(ObjectLike.builder()
+                                .user(user)
+                                .plazaEntry(entry)
+                                .build())
+                );
+
+        return entry;
+    }
+
+    @Transactional
+    public PlazaEntry updateEntry(Long entryId, UpdatePlazaEntryRequest request) {
+        if (request.ownerId() == null || request.content() == null || request.content().isBlank()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        PlazaEntry entry = plazaEntryRepository.findById(entryId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PLAZA_ENTRY_NOT_FOUND));
+
+        if (!entry.getOwner().getId().equals(request.ownerId())
+                || entry.getPlaza().getOwner() == null
+                || !entry.getPlaza().getOwner().getId().equals(request.ownerId())) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        entry.updateContent(request.title(), request.content());
+        return entry;
+    }
+
+    @Transactional
+    public PlazaEntry updateEntryPosition(Long entryId, UpdatePlazaEntryPositionRequest request) {
+        if (request.ownerId() == null || request.positionX() == null || request.positionY() == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        PlazaEntry entry = plazaEntryRepository.findById(entryId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PLAZA_ENTRY_NOT_FOUND));
+
+        if (!entry.getOwner().getId().equals(request.ownerId())) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        entry.updatePosition(request.positionX(), request.positionY(), request.layer());
+        return entry;
+    }
+
+    @Transactional
+    public void deleteEntry(Long entryId, Long ownerId) {
+        if (ownerId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        PlazaEntry entry = plazaEntryRepository.findById(entryId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PLAZA_ENTRY_NOT_FOUND));
+
+        if (!entry.getOwner().getId().equals(ownerId)
+                || entry.getPlaza().getOwner() == null
+                || entry.getPlaza().getOwner().getId().equals(ownerId)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        objectLikeRepository.deleteByPlazaEntryId(entryId);
+        plazaEntryRepository.delete(entry);
+    }
+
     public record CreatePlazaRequest(
             Long ownerId,
             String title,
@@ -200,7 +307,29 @@ public class PlazaService {
             String objectKey,
             String slotKey,
             Integer positionX,
-            Integer positionY
+            Integer positionY,
+            Integer layer
+    ) {
+    }
+
+    public record CreatedPlazaWithFirstEntry(
+            Plaza plaza,
+            PlazaEntry entry
+    ) {
+    }
+
+    public record UpdatePlazaEntryRequest(
+            Long ownerId,
+            String title,
+            String content
+    ) {
+    }
+
+    public record UpdatePlazaEntryPositionRequest(
+            Long ownerId,
+            Integer positionX,
+            Integer positionY,
+            Integer layer
     ) {
     }
 }

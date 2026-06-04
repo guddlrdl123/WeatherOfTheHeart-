@@ -1,12 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppHeader } from "../../components/layout/AppHeader";
-import { createBackendPlaza, createBackendPlazaEntry, fetchPlazas } from "../../services/plazaService";
+import { createBackendPlazaEntry, createBackendPlazaWithFirstEntry, deleteBackendPlazaEntry, fetchPlazas, toggleBackendPlazaEntryLike, updateBackendPlazaEntry, updateBackendPlazaEntryPosition } from "../../services/plazaService";
 import type { Plaza } from "../../types/plaza";
+import type { RoomObjectPosition } from "../../types/roomObject";
 import { getCurrentUserId } from "../../utils/authSession";
 import { PlazaListPage } from "../plaza/PlazaListPage";
 import { PlazaRoomPage } from "../plaza/PlazaRoomPage";
+import type { PlazaWriteValue } from "../plaza/PlazaWriteModal";
 import { canCreatePlazaToday, normalizePlaza } from "../plaza/plazaHelpers";
+
+function createDraftPlazaId() {
+  return `draft-plaza-${crypto.randomUUID()}`;
+}
 
 function PlazaPage() {
   const { plazaId } = useParams();
@@ -16,12 +22,24 @@ function PlazaPage() {
   const [draftPlaza, setDraftPlaza] = useState<Plaza | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const isFinalizingDraftRef = useRef(false);
 
   const normalizedPlazas = useMemo(() => plazas.map(normalizePlaza), [plazas]);
   const selectedSavedPlaza = plazaId ? normalizedPlazas.find((plaza) => plaza.id === plazaId) ?? null : null;
   const selectedDraftPlaza = plazaId && draftPlaza?.id === plazaId ? draftPlaza : null;
   const selectedPlaza = selectedSavedPlaza ?? selectedDraftPlaza;
   const isDraftPlaza = Boolean(selectedDraftPlaza && !selectedSavedPlaza);
+
+  useEffect(() => {
+    if (!plazaId?.startsWith("draft-plaza-")) {
+      isFinalizingDraftRef.current = false;
+      return;
+    }
+
+    if (!draftPlaza && !isFinalizingDraftRef.current) {
+      navigate("/plaza", { replace: true });
+    }
+  }, [draftPlaza, navigate, plazaId]);
 
   useEffect(() => {
     let ignore = false;
@@ -61,37 +79,61 @@ function PlazaPage() {
     });
   }
 
-  async function handleCreatePlaza(plaza: Plaza) {
+  function handleCreatePlaza(plaza: Plaza) {
     if (!canCreatePlazaToday(normalizedPlazas, currentUserId)) {
       return;
     }
 
-    try {
-      setMessage("");
-      const createdPlaza = await createBackendPlaza(currentUserId, plaza);
+    // 생성 설정만 입력한 단계에서는 서버나 목록에 저장하지 않고 임시 광장으로만 입장시킵니다.
+    const nextDraftPlaza = normalizePlaza({
+      ...plaza,
+      id: createDraftPlazaId(),
+      ownerId: currentUserId,
+      entries: [],
+      entryCount: 0,
+      status: "open",
+      createdAt: new Date().toISOString(),
+      endedAt: undefined,
+    });
 
-      persistPlazas((current) => [createdPlaza, ...current]);
-      setDraftPlaza(null);
-      navigate(`/plaza/${createdPlaza.id}`);
-    } catch (caughtError) {
-      setMessage(caughtError instanceof Error ? caughtError.message : "광장을 생성하지 못했습니다.");
-    }
+    setMessage("");
+    setDraftPlaza(nextDraftPlaza);
+    navigate(`/plaza/${nextDraftPlaza.id}`);
   }
 
   function handleUpdateDraftPlaza(updater: (plaza: Plaza) => Plaza) {
     setDraftPlaza((current) => current ? normalizePlaza(updater(current)) : current);
   }
 
-  function handleFinalizeDraftPlaza(plaza: Plaza) {
-    const completedPlaza = normalizePlaza(plaza);
+  async function handleFinalizeDraftPlaza(
+    value: PlazaWriteValue,
+    position: RoomObjectPosition,
+    layer: number,
+  ) {
+    if (!draftPlaza) {
+      return;
+    }
 
-    persistPlazas((current) => (
-      current.some((item) => item.id === completedPlaza.id)
-        ? current.map((item) => item.id === completedPlaza.id ? completedPlaza : item)
-        : [completedPlaza, ...current]
-    ));
-    setDraftPlaza(null);
-    navigate(`/plaza/${completedPlaza.id}`, { replace: true });
+    try {
+      isFinalizingDraftRef.current = true;
+      setMessage("");
+      const completedPlaza = normalizePlaza(await createBackendPlazaWithFirstEntry(
+        currentUserId,
+        draftPlaza,
+        value,
+        position,
+        layer,
+      ));
+
+      persistPlazas((current) => [completedPlaza, ...current]);
+      navigate(`/plaza/${completedPlaza.id}`, { replace: true });
+      setDraftPlaza(null);
+    } catch (caughtError) {
+      isFinalizingDraftRef.current = false;
+      const errorMessage = caughtError instanceof Error ? caughtError.message : "첫 글과 함께 광장을 생성하지 못했습니다.";
+      setMessage(errorMessage);
+      throw new Error(errorMessage);
+    }
   }
 
   function handleCancelDraftPlaza() {
@@ -126,7 +168,31 @@ function PlazaPage() {
           onFinalizeDraftPlaza={handleFinalizeDraftPlaza}
           onCancelDraftPlaza={handleCancelDraftPlaza}
           onDeletePlaza={() => handleDeletePlaza(selectedPlaza.id)}
-          onCreateEntry={(value, position, layer) => createBackendPlazaEntry(selectedPlaza.id, currentUserId, value, position, layer)}
+          onCreateEntry={
+            isDraftPlaza
+              ? undefined
+              : (value, position, layer) => createBackendPlazaEntry(selectedPlaza.id, currentUserId, value, position, layer)
+          }
+          onToggleEntryLike={
+            isDraftPlaza
+              ? undefined
+              : (entryId) => toggleBackendPlazaEntryLike(entryId, currentUserId)
+          }
+          onUpdateEntry={
+            isDraftPlaza
+              ? undefined
+              : (entryId, value) => updateBackendPlazaEntry(entryId, currentUserId, value)
+          }
+          onUpdateEntryPosition={
+            isDraftPlaza
+              ? undefined
+              : (entryId, position, layer) => updateBackendPlazaEntryPosition(entryId, currentUserId, position, layer)
+          }
+          onDeleteEntry={
+            isDraftPlaza
+              ? undefined
+              : (entryId) => deleteBackendPlazaEntry(entryId, currentUserId)
+          }
         />
       ) : plazaId ? (
         <main className="grid min-h-[calc(100vh-64px)] place-items-center px-6 text-sm text-[#5a4632]/60">

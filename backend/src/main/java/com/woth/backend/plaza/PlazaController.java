@@ -57,6 +57,41 @@ public class PlazaController {
         )));
     }
 
+    @PostMapping("/with-first-entry")
+    public ApiResponse<PlazaWithFirstEntryResponse> createWithFirstEntry(@RequestBody CreatePlazaWithFirstEntryRequest request) {
+        var result = plazaService.createPlazaWithFirstEntry(
+                new PlazaService.CreatePlazaRequest(
+                        request.ownerId(),
+                        request.title(),
+                        request.topic(),
+                        request.maxObjects(),
+                        request.allowSearch(),
+                        request.allowInvite(),
+                        request.allowDuplicateObjects(),
+                        request.backgroundType(),
+                        request.backgroundColor(),
+                        request.backgroundKey()
+                ),
+                new PlazaService.CreatePlazaEntryRequest(
+                        request.ownerId(),
+                        request.entryTitle(),
+                        request.entryContent(),
+                        request.moodKey(),
+                        request.weatherKey(),
+                        request.objectKey(),
+                        request.slotKey(),
+                        request.positionX(),
+                        request.positionY(),
+                        request.layer()
+                )
+        );
+
+        return ApiResponse.success(new PlazaWithFirstEntryResponse(
+                toResponse(result.plaza()),
+                toEntryResponse(result.entry())
+        ));
+    }
+
     @GetMapping("/entries")
     @Transactional(readOnly = true)
     public ApiResponse<List<PlazaEntryResponse>> listAllEntries() {
@@ -86,9 +121,58 @@ public class PlazaController {
                 request.objectKey(),
                 request.slotKey(),
                 request.positionX(),
-                request.positionY()
+                request.positionY(),
+                request.layer()
         ));
         return ApiResponse.success(toEntryResponse(entry));
+    }
+
+    @PostMapping("/entries/{entryId}/likes")
+    public ApiResponse<PlazaEntryResponse> toggleEntryLike(
+            @PathVariable Long entryId,
+            @RequestBody ToggleEntryLikeRequest request
+    ) {
+        return ApiResponse.success(toEntryResponse(plazaService.toggleEntryLike(entryId, request.userId())));
+    }
+
+    @PatchMapping("/entries/{entryId}")
+    public ApiResponse<PlazaEntryResponse> updateEntry(
+            @PathVariable Long entryId,
+            @RequestBody UpdatePlazaEntryRequest request
+    ) {
+        return ApiResponse.success(toEntryResponse(plazaService.updateEntry(
+                entryId,
+                new PlazaService.UpdatePlazaEntryRequest(
+                        request.ownerId(),
+                        request.title(),
+                        request.content()
+                )
+        )));
+    }
+
+    @PatchMapping("/entries/{entryId}/position")
+    public ApiResponse<PlazaEntryResponse> updateEntryPosition(
+            @PathVariable Long entryId,
+            @RequestBody UpdatePlazaEntryPositionRequest request
+    ) {
+        return ApiResponse.success(toEntryResponse(plazaService.updateEntryPosition(
+                entryId,
+                new PlazaService.UpdatePlazaEntryPositionRequest(
+                        request.ownerId(),
+                        request.positionX(),
+                        request.positionY(),
+                        request.layer()
+                )
+        )));
+    }
+
+    @DeleteMapping("/entries/{entryId}")
+    public ApiResponse<Void> deleteEntry(
+            @PathVariable Long entryId,
+            @RequestParam Long ownerId
+    ) {
+        plazaService.deleteEntry(entryId, ownerId);
+        return ApiResponse.success(null);
     }
 
     private PlazaResponse toResponse(Plaza plaza) {
@@ -125,6 +209,9 @@ public class PlazaController {
                 entry.getSlotKey(),
                 entry.getPositionX(),
                 entry.getPositionY(),
+                entry.getLayerIndex(),
+                plazaService.countEntryLikes(entry.getId()),
+                plazaService.listEntryLikedUserIds(entry.getId()),
                 entry.getCreatedAt().toString(),
                 entry.getUpdatedAt().toString()
         );
@@ -153,7 +240,51 @@ public class PlazaController {
             String objectKey,
             String slotKey,
             Integer positionX,
-            Integer positionY
+            Integer positionY,
+            Integer layer
+    ) {
+    }
+
+    public record CreatePlazaWithFirstEntryRequest(
+            Long ownerId,
+            String title,
+            String topic,
+            Integer maxObjects,
+            Boolean allowSearch,
+            Boolean allowInvite,
+            Boolean allowDuplicateObjects,
+            String backgroundType,
+            String backgroundColor,
+            String backgroundKey,
+            String entryTitle,
+            String entryContent,
+            String moodKey,
+            String weatherKey,
+            String objectKey,
+            String slotKey,
+            Integer positionX,
+            Integer positionY,
+            Integer layer
+    ) {
+    }
+
+    public record ToggleEntryLikeRequest(
+            Long userId
+    ) {
+    }
+
+    public record UpdatePlazaEntryRequest(
+            Long ownerId,
+            String title,
+            String content
+    ) {
+    }
+
+    public record UpdatePlazaEntryPositionRequest(
+            Long ownerId,
+            Integer positionX,
+            Integer positionY,
+            Integer layer
     ) {
     }
 
@@ -189,8 +320,17 @@ public class PlazaController {
             String slotKey,
             Integer positionX,
             Integer positionY,
+            Integer layer,
+            Long likeCount,
+            List<Long> likedUserIds,
             String createdAt,
             String updatedAt
+    ) {
+    }
+
+    public record PlazaWithFirstEntryResponse(
+            PlazaResponse plaza,
+            PlazaEntryResponse entry
     ) {
     }
 }

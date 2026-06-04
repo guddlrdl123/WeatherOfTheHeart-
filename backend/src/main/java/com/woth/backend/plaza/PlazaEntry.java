@@ -56,6 +56,9 @@ public class PlazaEntry {
     @Column(name = "position_y")
     private Integer positionY; // 광장 안에서 사용자가 배치한 오브젝트 Y 좌표값
 
+    @Column(name = "layer_index")
+    private Integer layerIndex;
+
     @Column(name = "create_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -72,6 +75,14 @@ public class PlazaEntry {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     } // UPDATE 쿼리가 나가기 직전 실행 (수정일만 현재 시간으로 갱신)
+    public void updateContent(String title, String content) {
+        this.title = title;
+        this.content = content;
+    }
 
-
+    public void updatePosition(Integer positionX, Integer positionY, Integer layerIndex) {
+        this.positionX = positionX;
+        this.positionY = positionY;
+        this.layerIndex = layerIndex;
+    }
 }

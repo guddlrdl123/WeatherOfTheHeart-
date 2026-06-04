@@ -3,12 +3,7 @@ package com.woth.backend.like;
 import com.woth.backend.plaza.PlazaEntry;
 import com.woth.backend.user.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.springframework.cglib.core.Local;
-import org.springframework.stereotype.Component;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -21,6 +16,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor (access = AccessLevel.PROTECTED)
 @AllArgsConstructor (access = AccessLevel.PRIVATE)
+@Builder
 @Table(name = "object_likes", uniqueConstraints = {
         @UniqueConstraint(name = "uk_user_plaza_entry", columnNames = {"user_id", "plaza_entry_id"})
 })
@@ -31,7 +27,7 @@ public class ObjectLike {
     private Long id; //AUTO_INCREMENT 설정 적용, 좋아요 고유 식별자
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_entry_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)

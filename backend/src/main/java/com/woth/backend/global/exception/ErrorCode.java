@@ -20,6 +20,7 @@ public enum ErrorCode {
     PLAZA_ALREADY_JOINED("PLAZA_002", "이미 이 광장에 참여한 상태입니다."),
     PLAZA_COMPLETE("PLAZA_003", "광장이 이미 완료되었습니다."),
     PLAZA_DUPLICATE_OBJECT("PLAZA_004", "이미 해당 오브젝트가 광장에 놓여 있습니다."),
+    PLAZA_ENTRY_NOT_FOUND("PLAZA_005", "존재하지 않는 광장 글입니다."),
     MAILBOX_NOT_FOUND("MAILBOX_001", "존재하지 않는 우편입니다."),
     ROOM_NOT_FOUND("ROOM_001", "존재하지 않는 방입니다."),
     AI_API_KEY_MISSING("AI_001", "OpenAI API 키가 설정되지 않았습니다."),

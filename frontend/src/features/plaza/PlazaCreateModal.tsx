@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import type { Plaza, PlazaBackground, PlazaWeatherKey } from "../../types/plaza";
-import { createPlaza } from "../../utils/plazaStorage";
 import { PLAZA_COLOR_OPTIONS, PLAZA_WEATHER_OPTIONS } from "./plazaHelpers";
 
 type Props = {
@@ -10,6 +9,20 @@ type Props = {
 };
 
 const PLAZA_DESCRIPTION_MAX_LENGTH = 50;
+
+function createPlazaSettings(value: Pick<Plaza, "topic" | "description" | "maxParticipants" | "allowSearch" | "allowDuplicateObjects" | "background">): Plaza {
+  // 이 객체는 광장 설정을 방 화면으로 넘기기 위한 임시 값이며, localStorage나 서버에는 저장하지 않습니다.
+  return {
+    ...value,
+    id: `draft-input-${crypto.randomUUID()}`,
+    allowInvite: true,
+    ownerId: "",
+    status: "open",
+    entries: [],
+    entryCount: 0,
+    createdAt: new Date().toISOString(),
+  };
+}
 
 export function PlazaCreateModal({ onCreate, onClose }: Props) {
   const [topic, setTopic] = useState("");
@@ -31,7 +44,7 @@ export function PlazaCreateModal({ onCreate, onClose }: Props) {
       return;
     }
 
-    onCreate(createPlaza({
+    onCreate(createPlazaSettings({
       topic: nextTopic,
       description: description.trim(),
       maxParticipants: nextMaxParticipants,

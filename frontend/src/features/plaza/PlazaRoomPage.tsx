@@ -46,10 +46,14 @@ type Props = {
   currentGuestId: string;
   isDraftPlaza?: boolean;
   onUpdatePlaza: (updater: (plaza: Plaza) => Plaza) => void;
-  onFinalizeDraftPlaza?: (plaza: Plaza) => void;
+  onFinalizeDraftPlaza?: (value: PlazaWriteValue, position: RoomObjectPosition, layer: number) => Promise<void>;
   onCancelDraftPlaza?: () => void;
   onDeletePlaza: () => void;
   onCreateEntry?: (value: PlazaWriteValue, position: RoomObjectPosition, layer: number) => Promise<PlazaEntry>;
+  onToggleEntryLike?: (entryId: string) => Promise<PlazaEntry>;
+  onUpdateEntry?: (entryId: string, value: PlazaPreviewUpdate) => Promise<PlazaEntry>;
+  onUpdateEntryPosition?: (entryId: string, position: RoomObjectPosition, layer: number) => Promise<PlazaEntry>;
+  onDeleteEntry?: (entryId: string) => Promise<void>;
 };
 
 type PlazaConfirmAction = "close" | "delete";
@@ -139,6 +143,10 @@ export function PlazaRoomPage({
   onCancelDraftPlaza,
   onDeletePlaza,
   onCreateEntry,
+  onToggleEntryLike,
+  onUpdateEntry,
+  onUpdateEntryPosition,
+  onDeleteEntry,
 }: Props) {
   const navigate = useNavigate();
   const owner = plaza.ownerId === currentGuestId;
@@ -157,10 +165,15 @@ export function PlazaRoomPage({
   const [pendingPlacement, setPendingPlacement] = useState<PendingPlacement | null>(null);
   const [previewEntry, setPreviewEntry] = useState<PlazaEntry | null>(null);
   const [entryPage, setEntryPage] = useState(1);
+  const [isPlacementSaving, setIsPlacementSaving] = useState(false);
+  const [likingEntryIds, setLikingEntryIds] = useState<Set<string>>(() => new Set());
   const [isManagementMenuOpen, setIsManagementMenuOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<PlazaConfirmAction | null>(null);
 
   const ownEntry = plaza.entries.find((entry) => entry.ownerId === currentGuestId) ?? null;
+  const canUpdateEntry = (entry: PlazaEntry) => entry.ownerId === currentGuestId && entry.ownerId === plaza.ownerId;
+  const canMoveEntry = (entry: PlazaEntry) => entry.ownerId === currentGuestId;
+  const canDeleteEntry = (entry: PlazaEntry) => entry.ownerId === currentGuestId && entry.ownerId !== plaza.ownerId;
   const enterable = canEnterPlaza(plaza);
   const unavailableObjectKeys = plaza.entries.map((entry) => entry.objectKey);
   const description = getPlazaDescription(plaza);
@@ -230,11 +243,11 @@ export function PlazaRoomPage({
   }
 
   async function handleConfirmPlacement() {
-    if (!pendingPlacement) {
+    if (!pendingPlacement || isPlacementSaving) {
       return;
     }
 
-    const applyConfirmedPlacement = (current: Plaza, savedEntry?: PlazaEntry) => {
+    const applyConfirmedPlacement = (current: Plaza, savedEntry?: PlazaEntry, movedEntry?: PlazaEntry) => {
       if (pendingPlacement.kind === "new") {
         const nextEntry = savedEntry ?? createPlazaEntry({
           title: pendingPlacement.value.title,
@@ -258,9 +271,9 @@ export function PlazaRoomPage({
           current.entries.map((entry) => entry.id === pendingPlacement.entryId
             ? {
               ...entry,
-              positionX: pendingPlacement.position.x,
-              positionY: pendingPlacement.position.y,
-              layer: pendingPlacement.layer,
+              positionX: movedEntry?.positionX ?? pendingPlacement.position.x,
+              positionY: movedEntry?.positionY ?? pendingPlacement.position.y,
+              layer: movedEntry?.layer ?? pendingPlacement.layer,
             }
             : entry),
         ),
@@ -268,62 +281,158 @@ export function PlazaRoomPage({
     };
 
     if (requiresFirstEntry && pendingPlacement.kind === "new" && onFinalizeDraftPlaza) {
-      onFinalizeDraftPlaza(applyConfirmedPlacement(plaza));
-    } else {
-      if (pendingPlacement.kind === "new" && onCreateEntry) {
-        try {
-          const savedEntry = await onCreateEntry(pendingPlacement.value, pendingPlacement.position, pendingPlacement.layer);
-
-          onUpdatePlaza((current) => applyConfirmedPlacement(current, savedEntry));
-        } catch (caughtError) {
-          window.alert(caughtError instanceof Error ? caughtError.message : "광장 글을 저장하지 못했습니다.");
-          return;
-        }
-      } else {
-        onUpdatePlaza((current) => applyConfirmedPlacement(current));
+      try {
+        setIsPlacementSaving(true);
+        await onFinalizeDraftPlaza(pendingPlacement.value, pendingPlacement.position, pendingPlacement.layer);
+      } catch (caughtError) {
+        window.alert(caughtError instanceof Error ? caughtError.message : "첫 글과 함께 광장을 생성하지 못했습니다.");
+        return;
+      } finally {
+        setIsPlacementSaving(false);
       }
+    } else if (pendingPlacement.kind === "new" && onCreateEntry) {
+      try {
+        setIsPlacementSaving(true);
+        const savedEntry = await onCreateEntry(pendingPlacement.value, pendingPlacement.position, pendingPlacement.layer);
+
+        onUpdatePlaza((current) => applyConfirmedPlacement(current, savedEntry));
+      } catch (caughtError) {
+        window.alert(caughtError instanceof Error ? caughtError.message : "광장 글을 저장하지 못했습니다.");
+        return;
+      } finally {
+        setIsPlacementSaving(false);
+      }
+    } else if (pendingPlacement.kind === "move" && onUpdateEntryPosition) {
+      try {
+        setIsPlacementSaving(true);
+        const updatedEntry = await onUpdateEntryPosition(
+          pendingPlacement.entryId,
+          pendingPlacement.position,
+          pendingPlacement.layer,
+        );
+
+        onUpdatePlaza((current) => applyConfirmedPlacement(current, undefined, updatedEntry));
+      } catch (caughtError) {
+        window.alert(caughtError instanceof Error ? caughtError.message : "오브젝트 위치를 저장하지 못했습니다.");
+        return;
+      } finally {
+        setIsPlacementSaving(false);
+      }
+    } else {
+      onUpdatePlaza((current) => applyConfirmedPlacement(current));
     }
 
     setPendingPlacement(null);
     setActiveEntryId(null);
   }
 
-  function handleLike(entryId: string) {
-    onUpdatePlaza((current) => ({
-      ...current,
-      entries: current.entries.map((entry) => entry.id === entryId ? togglePlazaEntryLike(entry, currentGuestId) : entry),
-    }));
+  async function handleLike(entryId: string) {
+    if (likingEntryIds.has(entryId)) {
+      return;
+    }
 
-    setPreviewEntry((current) => current?.id === entryId ? togglePlazaEntryLike(current, currentGuestId) : current);
+    if (!onToggleEntryLike) {
+      onUpdatePlaza((current) => ({
+        ...current,
+        entries: current.entries.map((entry) => entry.id === entryId ? togglePlazaEntryLike(entry, currentGuestId) : entry),
+      }));
+
+      setPreviewEntry((current) => current?.id === entryId ? togglePlazaEntryLike(current, currentGuestId) : current);
+      return;
+    }
+
+    try {
+      setLikingEntryIds((current) => new Set(current).add(entryId));
+      const likedEntry = await onToggleEntryLike(entryId);
+
+      onUpdatePlaza((current) => ({
+        ...current,
+        entries: current.entries.map((entry) => entry.id === entryId
+          ? {
+            ...entry,
+            likes: likedEntry.likes,
+            likedGuestIds: likedEntry.likedGuestIds,
+          }
+          : entry),
+      }));
+
+      setPreviewEntry((current) => current?.id === entryId
+        ? {
+          ...current,
+          likes: likedEntry.likes,
+          likedGuestIds: likedEntry.likedGuestIds,
+        }
+        : current);
+    } catch (caughtError) {
+      window.alert(caughtError instanceof Error ? caughtError.message : "좋아요를 반영하지 못했습니다.");
+    } finally {
+      setLikingEntryIds((current) => {
+        const next = new Set(current);
+        next.delete(entryId);
+        return next;
+      });
+    }
   }
 
-  function handleUpdateEntry(entryId: string, value: PlazaPreviewUpdate) {
-    onUpdatePlaza((current) => ({
-      ...current,
-      entries: current.entries.map((entry) => entry.id === entryId && entry.ownerId === currentGuestId
+  async function handleUpdateEntry(entryId: string, value: PlazaPreviewUpdate) {
+    if (!onUpdateEntry) {
+      onUpdatePlaza((current) => ({
+        ...current,
+        entries: current.entries.map((entry) => entry.id === entryId && canUpdateEntry(entry)
+          ? {
+            ...entry,
+            title: value.title,
+            content: value.content,
+          }
+          : entry),
+      }));
+
+      setPreviewEntry((current) => current?.id === entryId
         ? {
-          ...entry,
+          ...current,
           title: value.title,
           content: value.content,
         }
-        : entry),
-    }));
+        : current);
+      return;
+    }
 
-    setPreviewEntry((current) => current?.id === entryId
-      ? {
+    try {
+      const updatedEntry = await onUpdateEntry(entryId, value);
+
+      onUpdatePlaza((current) => ({
         ...current,
-        title: value.title,
-        content: value.content,
-      }
-      : current);
+        entries: current.entries.map((entry) => entry.id === entryId
+          ? {
+            ...entry,
+            title: updatedEntry.title,
+            content: updatedEntry.content,
+            likes: updatedEntry.likes,
+            likedGuestIds: updatedEntry.likedGuestIds,
+          }
+          : entry),
+      }));
+
+      setPreviewEntry((current) => current?.id === entryId
+        ? {
+          ...current,
+          title: updatedEntry.title,
+          content: updatedEntry.content,
+          likes: updatedEntry.likes,
+          likedGuestIds: updatedEntry.likedGuestIds,
+        }
+        : current);
+    } catch (caughtError) {
+      window.alert(caughtError instanceof Error ? caughtError.message : "광장 글을 수정하지 못했습니다.");
+    }
   }
 
-  function handleDeleteEntry(entryId: string) {
-    onUpdatePlaza((current) => {
+  async function handleDeleteEntry(entryId: string) {
+    const removeEntry = () => onUpdatePlaza((current) => {
       const targetEntry = current.entries.find((entry) => entry.id === entryId);
 
       // 광장장의 첫 오브젝트는 빈 광장 방지를 위해 삭제하지 않고 글 수정만 허용합니다.
-      if (!targetEntry || targetEntry.ownerId !== currentGuestId || targetEntry.ownerId === current.ownerId) {
+      if (!targetEntry || !canDeleteEntry(targetEntry)) {
         return current;
       }
 
@@ -333,6 +442,16 @@ export function PlazaRoomPage({
       });
     });
 
+    if (onDeleteEntry) {
+      try {
+        await onDeleteEntry(entryId);
+      } catch (caughtError) {
+        window.alert(caughtError instanceof Error ? caughtError.message : "광장 글을 삭제하지 못했습니다.");
+        return;
+      }
+    }
+
+    removeEntry();
     setPreviewEntry(null);
     setActiveEntryId(null);
     setHighlightedEntryId(null);
@@ -397,6 +516,10 @@ export function PlazaRoomPage({
   }
 
   function handleWriteClose() {
+    if (isPlacementSaving) {
+      return;
+    }
+
     if (requiresFirstEntry) {
       onCancelDraftPlaza?.();
       return;
@@ -406,6 +529,10 @@ export function PlazaRoomPage({
   }
 
   function handlePlacementCancel() {
+    if (isPlacementSaving) {
+      return;
+    }
+
     if (requiresFirstEntry && pendingPlacement?.kind === "new") {
       setPendingPlacement(null);
       onCancelDraftPlaza?.();
@@ -416,6 +543,10 @@ export function PlazaRoomPage({
   }
 
   function handleBackToList() {
+    if (isPlacementSaving) {
+      return;
+    }
+
     if (isDraftPlaza) {
       onCancelDraftPlaza?.();
       return;
@@ -513,7 +644,7 @@ export function PlazaRoomPage({
               <div className="mt-4 flex flex-col gap-2">
                 <button
                   type="button"
-                  disabled={requiresFirstEntry || !enterable || Boolean(ownEntry) || Boolean(pendingPlacement)}
+                  disabled={requiresFirstEntry || !enterable || Boolean(ownEntry) || Boolean(pendingPlacement) || isPlacementSaving}
                   onClick={() => setIsWriteOpen(true)}
                   className="mw-button-solid inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm disabled:opacity-45"
                 >
@@ -631,7 +762,7 @@ export function PlazaRoomPage({
               onEntryLike={handleLike}
               onEntryMove={(entryId) => {
                 const entry = plaza.entries.find((item) => item.id === entryId);
-                if (entry && entry.ownerId === currentGuestId) {
+                if (entry && canMoveEntry(entry)) {
                   setPendingPlacement({
                     kind: "move",
                     entryId,
@@ -652,6 +783,7 @@ export function PlazaRoomPage({
               onPlacementReset={pendingPlacement?.kind === "move" ? handlePlacementReset : undefined}
               onPlacementLayerDown={handlePlacementLayerDown}
               onPlacementLayerUp={handlePlacementLayerUp}
+              isPlacementSaving={isPlacementSaving}
             />
           </section>
         </div>
@@ -681,8 +813,8 @@ export function PlazaRoomPage({
           entry={previewEntry}
           currentGuestId={currentGuestId}
           onClose={() => setPreviewEntry(null)}
-          onUpdate={previewEntry.ownerId === currentGuestId ? handleUpdateEntry : undefined}
-          onDelete={previewEntry.ownerId === currentGuestId && previewEntry.ownerId !== plaza.ownerId ? handleDeleteEntry : undefined}
+          onUpdate={canUpdateEntry(previewEntry) ? handleUpdateEntry : undefined}
+          onDelete={canDeleteEntry(previewEntry) ? handleDeleteEntry : undefined}
         />
       )}
 

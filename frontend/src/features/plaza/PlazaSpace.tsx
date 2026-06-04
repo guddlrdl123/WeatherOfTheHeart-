@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
-import { ArrowDown, ArrowUp, Check, Heart, RotateCcw, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Heart, Loader2, RotateCcw, X } from "lucide-react";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
 import { WEATHER_BY_KEY } from "../../constants/weather";
 import type { PlazaBackground, PlazaEntry, PlazaWeatherKey } from "../../types/plaza";
@@ -51,6 +51,7 @@ type Props = {
   onPlacementReset?: () => void;
   onPlacementLayerDown?: () => void;
   onPlacementLayerUp?: () => void;
+  isPlacementSaving?: boolean;
 };
 
 type SharedPlazaWeatherKey = Exclude<PlazaWeatherKey, "snow">;
@@ -159,6 +160,7 @@ export function PlazaSpace({
   onPlacementReset,
   onPlacementLayerDown,
   onPlacementLayerUp,
+  isPlacementSaving = false,
 }: Props) {
   const spaceRef = useRef<HTMLDivElement>(null);
   const entryNodeRefs = useRef(new Map<string, HTMLDivElement>());
@@ -282,6 +284,11 @@ export function PlazaSpace({
 
   function handlePlacementPointerDown(event: PointerEvent<HTMLDivElement>) {
     event.stopPropagation();
+
+    if (isPlacementSaving) {
+      return;
+    }
+
     event.currentTarget.setPointerCapture(event.pointerId);
 
     if (!placementDraft) {
@@ -356,7 +363,7 @@ export function PlazaSpace({
         const object = ROOM_OBJECT_BY_KEY[entry.objectKey];
         const objectWidth = getObjectWidthPercent(object.roomWidth);
         const active = entry.id === activeEntryId;
-        const ownEntry = entry.ownerId === currentGuestId;
+        const movableEntry = entry.ownerId === currentGuestId;
         const highlighted = entry.id === highlightedEntryId;
         const hoverEnabled = !active && suppressedHoverEntryId !== entry.id;
         const controlsBelow = entry.positionY < 34;
@@ -423,7 +430,7 @@ export function PlazaSpace({
                   <Heart size={13} fill={likedByCurrentGuest ? "currentColor" : "none"} />
                   <span>{likeCount}</span>
                 </button>
-                {ownEntry && (
+                {movableEntry && (
                   <button
                     type="button"
                     onClick={(event) => {
@@ -518,7 +525,8 @@ export function PlazaSpace({
                   <button
                     type="button"
                     onClick={onPlacementLayerUp}
-                    className="grid h-9 w-9 place-items-center rounded-full border border-[#5a4632]/20 bg-[#faf8f2] text-[#5a4632] shadow-md transition hover:bg-white"
+                    disabled={isPlacementSaving}
+                    className="grid h-9 w-9 place-items-center rounded-full border border-[#5a4632]/20 bg-[#faf8f2] text-[#5a4632] shadow-md transition hover:bg-white disabled:opacity-45"
                     aria-label="맨 앞으로 가져오기"
                     title="맨 앞으로 가져오기"
                   >
@@ -529,7 +537,8 @@ export function PlazaSpace({
                   <button
                     type="button"
                     onClick={onPlacementLayerDown}
-                    className="grid h-9 w-9 place-items-center rounded-full border border-[#5a4632]/20 bg-[#faf8f2] text-[#5a4632] shadow-md transition hover:bg-white"
+                    disabled={isPlacementSaving}
+                    className="grid h-9 w-9 place-items-center rounded-full border border-[#5a4632]/20 bg-[#faf8f2] text-[#5a4632] shadow-md transition hover:bg-white disabled:opacity-45"
                     aria-label="맨 뒤로 보내기"
                     title="맨 뒤로 보내기"
                   >
@@ -540,7 +549,8 @@ export function PlazaSpace({
                   <button
                     type="button"
                     onClick={onPlacementReset}
-                    className="grid h-9 w-9 place-items-center rounded-full border border-[#9b6b54]/30 bg-[#f5eadc] text-[#9b6b54] shadow-md transition hover:bg-[#fbf3e8]"
+                    disabled={isPlacementSaving}
+                    className="grid h-9 w-9 place-items-center rounded-full border border-[#9b6b54]/30 bg-[#f5eadc] text-[#9b6b54] shadow-md transition hover:bg-[#fbf3e8] disabled:opacity-45"
                     aria-label="위치 초기화"
                     title="위치 초기화"
                   >
@@ -550,22 +560,31 @@ export function PlazaSpace({
                 <button
                   type="button"
                   onClick={onPlacementConfirm}
-                  className="grid h-9 w-9 place-items-center rounded-full border border-[#4f8f68]/30 bg-[#dff3e6] text-[#4f8f68] shadow-md transition hover:bg-[#edf8f1]"
+                  disabled={isPlacementSaving}
+                  className="grid h-9 w-9 place-items-center rounded-full border border-[#4f8f68]/30 bg-[#dff3e6] text-[#4f8f68] shadow-md transition hover:bg-[#edf8f1] disabled:opacity-55"
                   aria-label="위치 확정"
                   title="위치 확정"
                 >
-                  <Check size={18} />
+                  {isPlacementSaving ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                 </button>
                 <button
                   type="button"
                   onClick={onPlacementCancel}
-                  className="grid h-9 w-9 place-items-center rounded-full border border-[#b36a5e]/30 bg-[#f4dfd9] text-[#b36a5e] shadow-md transition hover:bg-[#faebe7]"
+                  disabled={isPlacementSaving}
+                  className="grid h-9 w-9 place-items-center rounded-full border border-[#b36a5e]/30 bg-[#f4dfd9] text-[#b36a5e] shadow-md transition hover:bg-[#faebe7] disabled:opacity-45"
                   aria-label="취소"
                   title="취소"
                 >
                   <X size={18} />
                 </button>
               </div>
+              {isPlacementSaving && (
+                <div
+                  className={`pointer-events-auto absolute left-1/2 w-[220px] -translate-x-1/2 rounded-md border border-[#5a4632]/15 bg-[#fffbf6]/95 px-3 py-2 text-center text-xs leading-5 text-[#5a4632]/70 shadow-md ${controlsBelow ? "top-[calc(100%+56px)]" : "bottom-[calc(100%+56px)]"}`}
+                >
+                  첫 글과 오브젝트를 저장하고 있어요.
+                </div>
+              )}
             </div>
           </>
         );
