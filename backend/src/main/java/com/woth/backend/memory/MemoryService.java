@@ -115,6 +115,7 @@ public class MemoryService {
         return switch (aiWeatherKey) {
             case "cloudy" -> "cloud";
             case "rainy" -> "rain";
+            case "cherry blossom" -> "cherry";
             default -> aiWeatherKey;
         };
     }

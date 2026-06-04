@@ -20,7 +20,8 @@ public class AiResponseParser {
 			"rainy", "비",
 			"sunset", "노을",
 			"night", "밤",
-			"dawn", "새벽"
+			"dawn", "새벽",
+			"cherry", "벚꽃"
 	);
 	private static final Set<String> WEATHER_KEYS = WEATHER_LABEL_BY_KEY.keySet();
 

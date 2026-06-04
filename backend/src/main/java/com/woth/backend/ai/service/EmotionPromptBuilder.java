@@ -21,7 +21,7 @@ public class EmotionPromptBuilder {
                 }
 
                 핵심 규칙:
-                - weatherKey는 반드시 sunny, cloudy, rainy, sunset, night, late night,cherry blossom 중 하나만 사용한다.
+                - weatherKey는 반드시 sunny, cloudy, rainy, sunset, night, dawn, cherry 중 하나만 사용한다.
                 - weatherLabel은 weatherKey와 반드시 아래처럼 매칭한다.
                   - sunny: 맑음
                   - cloudy: 흐림
@@ -29,7 +29,7 @@ public class EmotionPromptBuilder {
                   - sunset: 노을
                   - night: 밤
                   - dawn: 오로라
-                  - cherry blossom: 벚꽃
+                  - cherry: 벚꽃
                 - confidence는 선택 확신도를 0.0 이상 1.0 이하의 숫자로 반환한다.
                 - reason 작성 규칙:
                   1. "사용자의 글에서 ~ 감정 단서가 나타나" 혹은 "~ 선택했습니다" 같은 기계적이고 틀에 박힌 반복 표현은 절대 금지한다. 매번 생동감 있고 다채로운 문장 구조를 사용해라.
@@ -46,7 +46,7 @@ public class EmotionPromptBuilder {
                 - 노을(sunset): 분노, 화가나는 감정, 격렬한 감정의 기복, 강한 갈등이 느껴질 때 선택한다.
                 - 밤(night): 고독, 상념, 어두운 감정, 두려움, 피곤함, 내면의 갈등이 강할 때 선택한다.
                 - 오로라(dawn): 깊은 생각, 놀람, 그리움, 새로운 시작의 희망이 함께할 때 선택한다.
-                - 벚꽃(cherry blossom): 설렘, 일시적인 아름다움, 덧없음, 애틋함, 봄의 감성이 느껴질 때 선택한다.
+                - 벚꽃(cherry): 설렘, 일시적인 아름다움, 덧없음, 애틋함, 봄의 감성이 느껴질 때 선택한다.
                 반드시 다른 텍스트 없이 완벽한 JSON 오브젝트 하나만 반환해라.
 
                 사용자 입력 글:
