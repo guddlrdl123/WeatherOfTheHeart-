@@ -185,6 +185,19 @@ public class PlazaService {
         return savedEntry;
     }
 
+    @Transactional
+    public Plaza completePlaza(Long plazaId, Long ownerId) {
+        Plaza plaza = plazaRepository.findById(plazaId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PLAZA_NOT_FOUND));
+
+        if (ownerId == null || plaza.getOwner() == null || !plaza.getOwner().getId().equals(ownerId)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        eventPublisher.publishEvent(new PlazaEntryCreatedEvent(plazaId, true));
+        return plaza;
+    }
+
     private String generateUniqueInviteCode() {
         for (int attempt = 0; attempt < MAX_INVITE_CODE_ATTEMPTS; attempt++) {
             String inviteCode = generateInviteCode();
@@ -333,7 +346,6 @@ public class PlazaService {
     ) {
     }
 }
-
 
 
 

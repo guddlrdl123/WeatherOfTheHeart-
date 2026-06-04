@@ -175,6 +175,11 @@ public class PlazaController {
         return ApiResponse.success(null);
     }
 
+    @PatchMapping("/{plazaId}/complete")
+    public ApiResponse<PlazaResponse> complete(@PathVariable Long plazaId, @RequestBody CompletePlazaRequest request) {
+        return ApiResponse.success(toResponse(plazaService.completePlaza(plazaId, request.ownerId())));
+    }
+
     private PlazaResponse toResponse(Plaza plaza) {
         return new PlazaResponse(
                 plaza.getId(),
@@ -286,6 +291,9 @@ public class PlazaController {
             Integer positionY,
             Integer layer
     ) {
+    }
+
+    public record CompletePlazaRequest(Long ownerId) {
     }
 
     public record PlazaResponse(

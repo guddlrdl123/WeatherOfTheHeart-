@@ -49,6 +49,7 @@ type Props = {
   onFinalizeDraftPlaza?: (value: PlazaWriteValue, position: RoomObjectPosition, layer: number) => Promise<void>;
   onCancelDraftPlaza?: () => void;
   onDeletePlaza: () => void;
+  onCompletePlaza?: () => Promise<void>;
   onCreateEntry?: (value: PlazaWriteValue, position: RoomObjectPosition, layer: number) => Promise<PlazaEntry>;
   onToggleEntryLike?: (entryId: string) => Promise<PlazaEntry>;
   onUpdateEntry?: (entryId: string, value: PlazaPreviewUpdate) => Promise<PlazaEntry>;
@@ -142,6 +143,7 @@ export function PlazaRoomPage({
   onFinalizeDraftPlaza,
   onCancelDraftPlaza,
   onDeletePlaza,
+  onCompletePlaza,
   onCreateEntry,
   onToggleEntryLike,
   onUpdateEntry,
@@ -463,14 +465,19 @@ export function PlazaRoomPage({
     setConfirmAction(action);
   }
 
-  function handleClosePlaza() {
-    onUpdatePlaza((current) => ({
-      ...current,
-      status: "closed",
-      endedAt: new Date().toISOString(),
-    }));
+  async function handleClosePlaza() {
+    try {
+      await onCompletePlaza?.();
+      onUpdatePlaza((current) => ({
+        ...current,
+        status: "closed",
+        endedAt: new Date().toISOString(),
+      }));
 
-    setConfirmAction(null);
+      setConfirmAction(null);
+    } catch {
+      window.alert("광장을 종료하지 못했습니다. 잠시 후 다시 시도해주세요.");
+    }
   }
 
   function handleDeletePlaza() {
@@ -480,7 +487,7 @@ export function PlazaRoomPage({
 
   function handleConfirmPlazaAction() {
     if (confirmAction === "close") {
-      handleClosePlaza();
+      void handleClosePlaza();
       return;
     }
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppHeader } from "../../components/layout/AppHeader";
-import { createBackendPlazaEntry, createBackendPlazaWithFirstEntry, deleteBackendPlazaEntry, fetchPlazas, toggleBackendPlazaEntryLike, updateBackendPlazaEntry, updateBackendPlazaEntryPosition } from "../../services/plazaService";
+import { completeBackendPlaza, createBackendPlazaEntry, createBackendPlazaWithFirstEntry, deleteBackendPlazaEntry, fetchPlazas, toggleBackendPlazaEntryLike, updateBackendPlazaEntry, updateBackendPlazaEntryPosition } from "../../services/plazaService";
 import type { Plaza } from "../../types/plaza";
 import type { RoomObjectPosition } from "../../types/roomObject";
 import { getCurrentUserId } from "../../utils/authSession";
@@ -9,7 +9,6 @@ import { PlazaListPage } from "../plaza/PlazaListPage";
 import { PlazaRoomPage } from "../plaza/PlazaRoomPage";
 import type { PlazaWriteValue } from "../plaza/PlazaWriteModal";
 import { canCreatePlazaToday, normalizePlaza } from "../plaza/plazaHelpers";
-
 function createDraftPlazaId() {
   return `draft-plaza-${crypto.randomUUID()}`;
 }
@@ -147,6 +146,10 @@ function PlazaPage() {
     navigate("/plaza", { replace: true });
   }
 
+  async function handleCompletePlaza(plazaId: string) {
+    await completeBackendPlaza(plazaId, currentUserId);
+  }
+
   return (
     <div className="mw-app flex min-h-screen flex-col select-none">
       <AppHeader />
@@ -168,6 +171,7 @@ function PlazaPage() {
           onFinalizeDraftPlaza={handleFinalizeDraftPlaza}
           onCancelDraftPlaza={handleCancelDraftPlaza}
           onDeletePlaza={() => handleDeletePlaza(selectedPlaza.id)}
+          onCompletePlaza={() => handleCompletePlaza(selectedPlaza.id)}
           onCreateEntry={
             isDraftPlaza
               ? undefined

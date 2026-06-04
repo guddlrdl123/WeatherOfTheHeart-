@@ -49,7 +49,7 @@ public class PlazaCompletionService {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void completeIfReady(PlazaEntryCreatedEvent event) {
         log.info("[plaza-completion-test] event received. plazaId={}", event.plazaId());
-        CompletionSnapshot snapshot = loadCompletionSnapshot(event.plazaId());
+        CompletionSnapshot snapshot = loadCompletionSnapshot(event.plazaId(), event.forceComplete());
 
         if (snapshot == null) {
             log.info("[plaza-completion-test] completion snapshot is null. plazaId={}", event.plazaId());
@@ -86,7 +86,7 @@ public class PlazaCompletionService {
         );
     }
 
-    private CompletionSnapshot loadCompletionSnapshot(Long plazaId) {
+    private CompletionSnapshot loadCompletionSnapshot(Long plazaId, boolean forceComplete) {
         return transactionTemplate.execute(status -> {
             Plaza plaza = plazaRepository.findById(plazaId).orElse(null);
             if (plaza == null || plaza.isCompleted()) {
@@ -99,7 +99,7 @@ public class PlazaCompletionService {
                     entries.size(),
                     plaza.getMaxObjects()
             );
-            if (entries.size() < plaza.getMaxObjects()) {
+            if (!forceComplete && entries.size() < plaza.getMaxObjects()) {
                 return null;
             }
 
@@ -107,8 +107,13 @@ public class PlazaCompletionService {
             String prompt = promptBuilder.build(plaza, entries);
             List<User> receivers = entries.stream()
                     .map(PlazaEntry::getOwner)
+                    .filter(user -> plaza.getOwner() == null || !user.getId().equals(plaza.getOwner().getId()))
                     .distinct()
                     .toList();
+            if (plaza.getOwner() != null) {
+                receivers = new java.util.ArrayList<>(receivers);
+                receivers.add(0, plaza.getOwner());
+            }
 
             return new CompletionSnapshot(
                     plaza.getId(),
