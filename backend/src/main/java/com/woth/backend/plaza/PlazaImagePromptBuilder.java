@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 @Component
 public class PlazaImagePromptBuilder {
 
-    public String Build(Plaza plaza, List<PlazaEntry > entries) {
+    public String build(Plaza plaza, List<PlazaEntry > entries) {
         String objects = entries.stream().map(entry -> String.format(
                 "-obeject=%s, weather=%s, mood=%s, position=(%s,%s), text=%s",
                 entry.getObjectKey(),
