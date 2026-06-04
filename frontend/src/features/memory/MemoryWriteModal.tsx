@@ -44,9 +44,14 @@ export function MemoryWriteModal({
     const [draftValue, setDraftValue] = useState<WriteDraftValue | null>(null);
     const selectedMood = MOOD_BY_KEY[moodKey];
     const showMoodSelector = mode !== "plaza";
+    const canGoNext = content.trim().length > 0;
 
     // 작성한 내용을 보관하고 오브젝트 선택 단계로 이동
     const handleNext = () => {
+        if (!canGoNext) {
+            return;
+        }
+
         setDraftValue({
             memoryDate,
             title: title.trim() || undefined,
@@ -173,8 +178,9 @@ export function MemoryWriteModal({
                     </button> */}
                     <button
                         type="button"
+                        disabled={!canGoNext}
                         onClick={handleNext}
-                        className="mw-button-solid rounded-md px-4 py-2 text-sm"
+                        className="mw-button-solid rounded-md px-4 py-2 text-sm disabled:opacity-50"
                     >
                         다음
                     </button>

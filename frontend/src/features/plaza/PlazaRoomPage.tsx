@@ -14,7 +14,6 @@ import {
   OBJECT_LAYER_MIN,
   PLAZA_PAGE_SIZE,
   canEnterPlaza,
-  clampObjectLayer,
   getBackgroundLabel,
   getPlazaDescription,
   getPlazaStatusLabel,
@@ -190,12 +189,13 @@ export function PlazaRoomPage({
     safeEntryPage * PLAZA_PAGE_SIZE,
   );
   const getNextObjectLayer = () => {
+    // 광장은 최대 30개 오브젝트가 들어올 수 있으므로 레이어를 고정 상한으로 자르지 않습니다.
     const maxLayer = plaza.entries.reduce(
       (max, entry) => Math.max(max, getEntryLayer(entry)),
       OBJECT_LAYER_MIN - 1,
     );
 
-    return clampObjectLayer(maxLayer + 1);
+    return maxLayer + 1;
   };
 
   function getOtherEntryLayers(placement: PendingPlacement) {
@@ -207,13 +207,13 @@ export function PlazaRoomPage({
   function getBackLayer(placement: PendingPlacement) {
     const otherLayers = getOtherEntryLayers(placement);
 
-    return clampObjectLayer(otherLayers.length > 0 ? Math.min(...otherLayers) - 1 : placement.layer);
+    return otherLayers.length > 0 ? Math.min(...otherLayers) - 1 : placement.layer;
   }
 
   function getFrontLayer(placement: PendingPlacement) {
     const otherLayers = getOtherEntryLayers(placement);
 
-    return clampObjectLayer(otherLayers.length > 0 ? Math.max(...otherLayers) + 1 : placement.layer);
+    return otherLayers.length > 0 ? Math.max(...otherLayers) + 1 : placement.layer;
   }
 
   useEffect(() => {
@@ -805,6 +805,7 @@ export function PlazaRoomPage({
           onClose={handleWriteClose}
           onSave={(value) => {
             setIsWriteOpen(false);
+            setActiveEntryId(null);
             setPendingPlacement({
               kind: "new",
               value,

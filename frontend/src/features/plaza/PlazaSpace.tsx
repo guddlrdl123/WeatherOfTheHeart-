@@ -498,8 +498,13 @@ export function PlazaSpace({
               />
             </div>
 
+            {/* 배치 중인 오브젝트가 기존 오브젝트 뒤에 보여도 이 투명 영역으로 항상 드래그할 수 있게 합니다. */}
             <div
-              className="pointer-events-none absolute z-[80] select-none"
+              className="pointer-events-auto absolute z-[80] cursor-grab select-none active:cursor-grabbing"
+              onPointerDown={handlePlacementPointerDown}
+              onPointerMove={handlePlacementPointerMove}
+              onPointerUp={handlePlacementPointerEnd}
+              onPointerCancel={handlePlacementPointerEnd}
               style={{
                 left: `${placementDraft.position.x}%`,
                 top: `${placementDraft.position.y}%`,
@@ -578,13 +583,6 @@ export function PlazaSpace({
                   <X size={18} />
                 </button>
               </div>
-              {isPlacementSaving && (
-                <div
-                  className={`pointer-events-auto absolute left-1/2 w-[220px] -translate-x-1/2 rounded-md border border-[#5a4632]/15 bg-[#fffbf6]/95 px-3 py-2 text-center text-xs leading-5 text-[#5a4632]/70 shadow-md ${controlsBelow ? "top-[calc(100%+56px)]" : "bottom-[calc(100%+56px)]"}`}
-                >
-                  첫 글과 오브젝트를 저장하고 있어요.
-                </div>
-              )}
             </div>
           </>
         );

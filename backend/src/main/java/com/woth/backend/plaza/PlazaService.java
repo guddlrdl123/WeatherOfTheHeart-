@@ -254,7 +254,7 @@ public class PlazaService {
         if (!entry.getOwner().getId().equals(request.ownerId())
                 || entry.getPlaza().getOwner() == null
                 || !entry.getPlaza().getOwner().getId().equals(request.ownerId())) {
-            throw new CustomException(ErrorCode.INVALID_INPUT);
+            throw new CustomException(ErrorCode.PLAZA_ENTRY_FORBIDDEN);
         }
 
         entry.updateContent(request.title(), request.content());
@@ -271,7 +271,7 @@ public class PlazaService {
                 .orElseThrow(() -> new CustomException(ErrorCode.PLAZA_ENTRY_NOT_FOUND));
 
         if (!entry.getOwner().getId().equals(request.ownerId())) {
-            throw new CustomException(ErrorCode.INVALID_INPUT);
+            throw new CustomException(ErrorCode.PLAZA_ENTRY_FORBIDDEN);
         }
 
         entry.updatePosition(request.positionX(), request.positionY(), request.layer());
@@ -290,7 +290,7 @@ public class PlazaService {
         if (!entry.getOwner().getId().equals(ownerId)
                 || entry.getPlaza().getOwner() == null
                 || entry.getPlaza().getOwner().getId().equals(ownerId)) {
-            throw new CustomException(ErrorCode.INVALID_INPUT);
+            throw new CustomException(ErrorCode.PLAZA_ENTRY_FORBIDDEN);
         }
 
         objectLikeRepository.deleteByPlazaEntryId(entryId);
