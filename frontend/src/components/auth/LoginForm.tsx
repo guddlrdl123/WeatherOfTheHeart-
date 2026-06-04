@@ -90,7 +90,7 @@ export function LoginForm() {
 
       {error && <p className="text-sm text-[#e6a1a1]">{error}</p>}
 
-      <button type="submit" disabled={isSubmitting} className="mw-button-solid mt-2 rounded-md px-5 py-3 text-sm disabled:opacity-50 cursor-pointer">
+      <button type="submit" disabled={isSubmitting} className="mw-button-solid mt-2 h-11 rounded-[8px] px-3 text-sm disabled:opacity-50">
         {isSubmitting ? "로그인 중" : "로그인"}
       </button>
 

@@ -34,15 +34,15 @@ function MailboxDetailModal({
   onGoToPlaza: (plazaId: string) => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm select-none">
-      <section className="mw-surface grid max-h-[92vh] w-full max-w-[980px] grid-cols-[1.2fr_0.8fr] overflow-hidden rounded-xl bg-[#fffbf6f2] shadow-xl">
-        <div className="min-h-[520px] bg-[#5a4632]/[0.07]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
+      <section className="mw-surface grid h-[calc(100vh-64px)] max-h-[720px] w-full max-w-[980px] grid-cols-[1.2fr_0.8fr] overflow-hidden rounded-xl bg-[#fffbf6f2] shadow-xl">
+        <div className="min-h-0 bg-[#5a4632]/[0.07]">
           {/* 우편의 핵심 데이터인 generatedImageData를 크게 보여주는 영역입니다. */}
           {item.generatedImageData ? (
             <img
               src={item.generatedImageData}
               alt={`${item.plazaTitle} 완성 이미지`}
-              className="h-full max-h-[92vh] w-full object-contain"
+              className="h-full w-full object-contain"
             />
           ) : (
             <div className="grid h-full place-items-center text-[#5a4632]/35">

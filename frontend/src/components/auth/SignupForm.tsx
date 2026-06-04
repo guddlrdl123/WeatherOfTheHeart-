@@ -155,7 +155,7 @@ export function SignupForm() {
                         type="button"
                         onClick={handleSendVerificationCode}
                         disabled={isEmailVerified || isSendingVerification}
-                        className="h-11 shrink-0 rounded-md border border-[#9b6b54]/60 bg-[#9b6b54]/10 px-4 text-sm text-[#9b6b54]/80 hover:bg-[#9b6b54]/20 disabled:opacity-50"
+                        className="mw-button h-11 shrink-0 rounded-[8px] px-3 text-sm disabled:opacity-50"
                     >
                         {isEmailVerified ? "인증완료" : isSendingVerification ? "전송 중" : "인증"}
                     </button>
@@ -188,7 +188,7 @@ export function SignupForm() {
                             type="button"
                             onClick={handleVerifyCode}
                             disabled={isEmailVerified || isVerifyingEmail}
-                            className="h-11 shrink-0 rounded-md border border-[#9b6b54]/60 bg-[#9b6b54]/10 px-4 text-sm text-[#9b6b54]/80 hover:bg-[#9b6b54]/20 disabled:opacity-50"
+                            className="mw-button h-11 shrink-0 rounded-[8px] px-3 text-sm disabled:opacity-50"
                         >
                             {isVerifyingEmail ? "확인 중" : "확인"}
                         </button>
@@ -250,7 +250,7 @@ export function SignupForm() {
 
             {error && <p className="text-sm text-[#e6a1a1]">{error}</p>}
 
-            <button type="submit" disabled={isSubmitting} className="mw-button-solid mt-2 rounded-md px-5 py-3 text-sm disabled:opacity-50">
+            <button type="submit" disabled={isSubmitting} className="mw-button-solid mt-2 h-11 rounded-[8px] px-3 text-sm disabled:opacity-50">
                 {isSubmitting ? "가입 중" : "회원가입"}
             </button>
 

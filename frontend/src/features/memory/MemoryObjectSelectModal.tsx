@@ -32,8 +32,8 @@ export function MemoryObjectSelectModal({
     const canSave = Boolean(firstSelectableObject) && !selectedUnavailable;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm select-none">
-            <div className="bg-[#fffbf6c2] w-full max-w-[760px] max-h-[92vh] overflow-y-auto rounded-xl p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
+            <div className="bg-[#fffbf6c2] w-full max-w-[760px] max-h-[calc(100vh-64px)] overflow-y-auto rounded-xl p-6">
                 <div className="mb-5 flex items-start justify-between">
                     <h2 className="text-xl text-[#5a4632]">
                         {title}
@@ -85,7 +85,7 @@ export function MemoryObjectSelectModal({
                     <button
                         type="button"
                         onClick={onBack}
-                        className="border border-[#9b6b54]/60 bg-[#9b6b54]/10 hover:bg-[#9b6b54]/20 rounded-md px-5 py-2 text-sm text-[#9b6b54]/80"
+                        className="border border-[#9b6b54]/60 bg-[#9b6b54]/10 hover:bg-[#9b6b54]/20 rounded-md px-4 py-2 text-sm text-[#9b6b54]/80"
                     >
                         이전
                     </button>
@@ -94,7 +94,7 @@ export function MemoryObjectSelectModal({
                         // 여기서는 오브젝트 키만 넘기고 실제 위치 배치는 RoomPage에서 처리
                         disabled={!canSave}
                         onClick={() => onSave(selectedObjectKey)}
-                        className="mw-button-solid rounded-md px-5 py-2 text-sm disabled:opacity-50"
+                        className="mw-button-solid rounded-md px-4 py-2 text-sm disabled:opacity-50"
                     >
                         {saveLabel}
                     </button>

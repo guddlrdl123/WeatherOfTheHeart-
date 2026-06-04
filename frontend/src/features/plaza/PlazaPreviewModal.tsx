@@ -1,13 +1,21 @@
 import { useState } from "react";
-import { Heart, Trash2, X } from "lucide-react";
+import { Heart, Pencil, Trash2, X } from "lucide-react";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
 import type { PlazaEntry } from "../../types/plaza";
 import { getPlazaEntryLikeCount, hasLikedPlazaEntry } from "./plazaHelpers";
+
+const PLAZA_CONTENT_MAX_LENGTH = 200;
+
+export type PlazaPreviewUpdate = {
+  title: string;
+  content: string;
+};
 
 type Props = {
   entry: PlazaEntry;
   currentGuestId?: string;
   onClose: () => void;
+  onUpdate?: (entryId: string, value: PlazaPreviewUpdate) => void;
   onDelete?: (entryId: string) => void;
 };
 
@@ -18,8 +26,8 @@ type DeleteConfirmModalProps = {
 
 function DeleteConfirmModal({ onCancel, onConfirm }: DeleteConfirmModalProps) {
   return (
-    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/25 px-4 backdrop-blur-[2px]">
-      <div className="w-full max-w-[360px] rounded-xl border border-[#b36a5e]/25 bg-[#fffbf6f2] p-5 text-[#5a4632] shadow-xl">
+    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/25 px-4 py-8 backdrop-blur-[2px]">
+      <div className="w-full max-w-[360px] max-h-[calc(100vh-64px)] overflow-y-auto rounded-xl border border-[#b36a5e]/25 bg-[#fffbf6f2] p-5 text-[#5a4632] shadow-xl">
         <div className="mb-4 flex items-start gap-3">
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9] text-[#b36a5e]">
             <Trash2 size={17} />
@@ -53,27 +61,67 @@ function DeleteConfirmModal({ onCancel, onConfirm }: DeleteConfirmModalProps) {
   );
 }
 
-export function PlazaPreviewModal({ entry, currentGuestId, onClose, onDelete }: Props) {
+export function PlazaPreviewModal({ entry, currentGuestId, onClose, onUpdate, onDelete }: Props) {
   const object = ROOM_OBJECT_BY_KEY[entry.objectKey];
+  const [isEditing, setIsEditing] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [title, setTitle] = useState(entry.title);
+  const [content, setContent] = useState(entry.content);
   const likedByCurrentGuest = currentGuestId ? hasLikedPlazaEntry(entry, currentGuestId) : false;
   const likeCount = getPlazaEntryLikeCount(entry);
+  const canSaveEdit = content.trim().length > 0;
+
+  function handleCancelEdit() {
+    setIsEditing(false);
+    setIsConfirmingDelete(false);
+    setTitle(entry.title);
+    setContent(entry.content);
+  }
+
+  function handleSaveEdit() {
+    const nextTitle = title.trim() || "어느 나그네의 발자취";
+    const nextContent = content.trim();
+
+    if (!nextContent) {
+      return;
+    }
+
+    onUpdate?.(entry.id, {
+      title: nextTitle,
+      content: nextContent,
+    });
+    setIsEditing(false);
+    setIsConfirmingDelete(false);
+  }
 
   function handleDelete() {
     onDelete?.(entry.id);
   }
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm select-none">
-      <div className="w-full max-w-[560px] rounded-xl bg-[#fffbf6f2] p-6 shadow-xl">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
+      <div className="w-full max-w-[560px] max-h-[calc(100vh-64px)] overflow-y-auto rounded-xl bg-[#fffbf6f2] p-6 shadow-xl">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             {/* <p className="text-xs text-[#5a4632]/55">{entry.guestName}</p> */}
-            <h2 className="mt-1 text-xl font-normal text-[#5a4632]">{entry.title || "어느 나그네의 발자취"}</h2>
+            <h2 className="mt-1 text-xl font-normal text-[#5a4632]">
+              {isEditing ? "광장 글 수정" : entry.title || "어느 나그네의 발자취"}
+            </h2>
           </div>
 
           <div className="flex gap-2">
-            {onDelete && (
+            {!isEditing && onUpdate && (
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#5a4632]/10 text-[#5a4632] hover:bg-black/5"
+                aria-label="수정하기"
+                title="수정하기"
+              >
+                <Pencil size={17} />
+              </button>
+            )}
+            {!isEditing && onDelete && (
               <button
                 type="button"
                 onClick={() => setIsConfirmingDelete(true)}
@@ -107,9 +155,70 @@ export function PlazaPreviewModal({ entry, currentGuestId, onClose, onDelete }: 
           <span>{likeCount}</span>
         </div>
 
-        <p className="max-h-[280px] overflow-y-auto whitespace-pre-wrap rounded-md border border-[#5a4632]/15 bg-white/35 p-4 text-sm leading-7 text-[#5a4632]/70">
-          {entry.content}
-        </p>
+        {isEditing ? (
+          <>
+            <div className="grid gap-4">
+              <label className="flex flex-col gap-2 text-sm text-[#5a4632]">
+                제목
+                <input
+                  className="mw-input h-11 px-3 text-sm"
+                  value={title}
+                  placeholder="어느 나그네의 발자취"
+                  onChange={(event) => setTitle(event.target.value)}
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-[#5a4632]">
+                내용
+                <textarea
+                  className="mw-input min-h-[170px] resize-none p-3 text-sm leading-7"
+                  value={content}
+                  maxLength={PLAZA_CONTENT_MAX_LENGTH}
+                  onChange={(event) => setContent(event.target.value)}
+                />
+                <span className="text-right text-[0.68rem] text-[#5a4632]">
+                  {content.length}/{PLAZA_CONTENT_MAX_LENGTH}
+                </span>
+              </label>
+            </div>
+
+            <div className="mt-6 flex items-start justify-between">
+              {onDelete ? (
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmingDelete(true)}
+                  className="inline-flex items-center gap-2 rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9] px-4 py-2 text-sm text-[#b36a5e] hover:bg-[#faebe7]"
+                >
+                  삭제
+                </button>
+              ) : (
+                <span />
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="rounded-md border border-[#9b6b54]/40 bg-white/30 px-4 py-2 text-sm text-[#9b6b54]/80 hover:bg-white/60"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  disabled={!canSaveEdit}
+                  onClick={handleSaveEdit}
+                  className="mw-button-solid rounded-md px-4 py-2 text-sm disabled:opacity-50"
+                >
+                  저장
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <p className="max-h-[280px] overflow-y-auto whitespace-pre-wrap rounded-md border border-[#5a4632]/15 bg-white/35 p-4 text-sm leading-7 text-[#5a4632]/70">
+            {entry.content}
+          </p>
+        )}
       </div>
 
       {isConfirmingDelete && (

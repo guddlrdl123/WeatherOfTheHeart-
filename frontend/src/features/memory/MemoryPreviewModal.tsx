@@ -27,8 +27,8 @@ type DeleteConfirmModalProps = {
 
 function DeleteConfirmModal({ onCancel, onConfirm }: DeleteConfirmModalProps) {
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/25 px-4 backdrop-blur-[2px]">
-            <div className="w-full max-w-[360px] rounded-xl border border-[#b36a5e]/25 bg-[#fffbf6f2] p-5 text-[#5a4632] shadow-xl">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/25 px-4 py-8 backdrop-blur-[2px]">
+            <div className="w-full max-w-[360px] max-h-[calc(100vh-64px)] overflow-y-auto rounded-xl border border-[#b36a5e]/25 bg-[#fffbf6f2] p-5 text-[#5a4632] shadow-xl">
                 <div className="mb-4 flex items-start gap-3">
                     <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9] text-[#b36a5e]">
                         <Trash2 size={17} />
@@ -98,8 +98,8 @@ export function MemoryPreviewModal({ memory, onClose, onUpdate, onDelete }: Prop
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm select-none">
-            <div className="w-full max-w-[580px] rounded-xl bg-[#fffbf6f2] p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
+            <div className="w-full max-w-[580px] max-h-[calc(100vh-64px)] overflow-y-auto rounded-xl bg-[#fffbf6f2] p-6 shadow-xl">
                 <div className="mb-5 flex items-start justify-between gap-4">
                     <div>
                         <div className="flex flex-wrap items-center gap-2">
@@ -213,7 +213,7 @@ export function MemoryPreviewModal({ memory, onClose, onUpdate, onDelete }: Prop
                             <button
                                 type="button"
                                 onClick={() => setIsConfirmingDelete(true)}
-                                className="inline-flex items-center gap-2 rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9] px-5 py-2 text-sm text-[#b36a5e] hover:bg-[#faebe7]"
+                                className="inline-flex items-center gap-2 rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9] px-4 py-2 text-sm text-[#b36a5e] hover:bg-[#faebe7]"
                             >
                                 {/* <Trash2 size={15} /> */}
                                 삭제
@@ -223,14 +223,14 @@ export function MemoryPreviewModal({ memory, onClose, onUpdate, onDelete }: Prop
                                 <button
                                     type="button"
                                     onClick={handleCancelEdit}
-                                    className="rounded-md border border-[#9b6b54]/40 bg-white/30 px-5 py-2 text-sm text-[#9b6b54]/80 hover:bg-white/60"
+                                    className="rounded-md border border-[#9b6b54]/40 bg-white/30 px-4 py-2 text-sm text-[#9b6b54]/80 hover:bg-white/60"
                                 >
                                     취소
                                 </button>
                                 <button
                                     type="button"
                                     onClick={handleSaveEdit}
-                                    className="mw-button-solid rounded-md px-5 py-2 text-sm"
+                                    className="mw-button-solid rounded-md px-4 py-2 text-sm"
                                 >
                                     저장
                                 </button>
@@ -257,7 +257,7 @@ export function MemoryPreviewModal({ memory, onClose, onUpdate, onDelete }: Prop
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-md border border-[#9b6b54]/60 bg-[#9b6b54]/10 px-5 py-2 text-sm text-[#9b6b54]/80 hover:bg-[#9b6b54]/20"
+                        className="rounded-md border border-[#9b6b54]/60 bg-[#9b6b54]/10 px-4 py-2 text-sm text-[#9b6b54]/80 hover:bg-[#9b6b54]/20"
                     >
                         닫기
                     </button>

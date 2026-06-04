@@ -164,14 +164,14 @@ function MyPage() {
                     />
                     <button
                       type="button"
-                      className="mw-button-solid inline-flex h-10 items-center rounded-md px-4 text-sm"
+                      className="mw-button-solid inline-flex items-center rounded-md px-4 py-2 text-sm"
                       onClick={handleSaveNickname}
                     >
                       저장
                     </button>
                     <button
                       type="button"
-                      className="mw-button inline-flex h-10 items-center rounded-md px-4 text-sm"
+                      className="mw-button inline-flex items-center rounded-md px-4 py-2 text-sm"
                       onClick={handleCancelEdit}
                     >
                       취소
@@ -181,7 +181,7 @@ function MyPage() {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      className="mw-button-solid inline-flex h-10 items-center gap-2 rounded-md px-4 text-sm"
+                      className="mw-button-solid inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm"
                       onClick={handleStartEdit}
                     >
                       <Pencil size={14} />
@@ -189,7 +189,7 @@ function MyPage() {
                     </button>
                     <button
                       type="button"
-                      className="mw-button inline-flex h-10 items-center gap-2 rounded-md px-4 text-sm"
+                      className="mw-button inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm"
                       onClick={handleLogout}
                     >
                       <LogOut size={14} />
@@ -382,10 +382,9 @@ function MyPage() {
                           <button
                             type="button"
                             onClick={() => navigate(`/plaza/${selectedRecord.plaza.id}`)}
-                            className="mw-button-solid inline-flex h-9 items-center gap-2 rounded-md px-3 text-xs"
+                            className="inline-flex items-center gap-1.5 text-xs text-[#9b6b54] underline-offset-4 hover:underline"
                           >
-                            해당 광장으로 이동
-                            <ArrowRight size={14} />
+                            해당 광장으로 이동 →
                           </button>
                         </div>
                       </div>

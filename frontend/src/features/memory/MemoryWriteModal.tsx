@@ -73,8 +73,8 @@ export function MemoryWriteModal({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm select-none">
-            <div className="bg-[#fffbf6c2] w-full max-w-[760px] max-h-[92vh] overflow-y-auto rounded-xl p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
+            <div className="bg-[#fffbf6c2] w-full max-w-[760px] max-h-[calc(100vh-64px)] overflow-y-auto rounded-xl p-6">
 
                 {/* HEADER */}
                 <div className="mb-5 flex items-start justify-between">
@@ -167,14 +167,14 @@ export function MemoryWriteModal({
                     {/* <button
                         type="button"
                         onClick={onClose}
-                        className="border border-[#9b6b54]/60 bg-[#9b6b54]/10 hover:bg-[#9b6b54]/20 rounded-md px-5 py-2 text-sm text-[#9b6b54]/80"
+                        className="border border-[#9b6b54]/60 bg-[#9b6b54]/10 hover:bg-[#9b6b54]/20 rounded-md px-4 py-2 text-sm text-[#9b6b54]/80"
                     >
                         닫기
                     </button> */}
                     <button
                         type="button"
                         onClick={handleNext}
-                        className="mw-button-solid rounded-md px-5 py-2 text-sm"
+                        className="mw-button-solid rounded-md px-4 py-2 text-sm"
                     >
                         다음
                     </button>
