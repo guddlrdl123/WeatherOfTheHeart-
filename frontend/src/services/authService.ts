@@ -1,4 +1,4 @@
-import { readJsonResponse, toApiUrl } from "./apiClient";
+import { readApiData, toApiUrl } from "./apiClient";
 
 export type AuthResponse = {
   id?: number | string;
@@ -34,7 +34,7 @@ async function postAuth<TResponse>(path: string, body: object, errorMessage: str
     throw new Error(errorMessage);
   }
 
-  return readJsonResponse<TResponse>(response);
+  return readApiData<TResponse>(response);
 }
 
 export function login(value: LoginRequest) {

@@ -1,5 +1,5 @@
 import type { MailboxItem } from "../types/mailbox";
-import { toApiUrl } from "./apiClient";
+import { readApiData, toApiUrl } from "./apiClient";
 
 // 백엔드 MailboxItemResponse record와 같은 필드명을 유지합니다.
 export type MailboxItemResponse = {
@@ -35,7 +35,7 @@ export async function fetchMailbox(userId: string) {
     throw new Error("우편함을 불러오지 못했습니다.");
   }
 
-  const data = await response.json() as MailboxItemResponse[];
+  const data = await readApiData<MailboxItemResponse[]>(response);
 
   return data.map(toMailboxItem);
 }
@@ -49,4 +49,6 @@ export async function markMailboxItemAsRead(userId: string, letterId: string) {
   if (!response.ok) {
     throw new Error("우편 읽음 처리에 실패했습니다.");
   }
+
+  await readApiData<MailboxItemResponse>(response);
 }
