@@ -1,0 +1,209 @@
+:root {
+    --mw-bg: #f3eee8;
+    --mw-bg-glow-1: rgba(126, 149, 177, 0.2);
+    --mw-bg-glow-2: rgba(202, 149, 110, 0.15);
+    --mw-header: rgba(250, 247, 240, 1);
+    --mw-panel: rgba(255, 251, 246, 0.76);
+    --mw-panel-hover: rgba(74, 88, 108, 0.065);
+    --mw-soft-fill: rgba(98, 85, 78, 0.055);
+    --mw-soft-fill-strong: rgba(98, 85, 78, 0.1);
+    --mw-border: rgba(90, 70, 50, 0.2);
+    --mw-border-strong: rgba(73, 63, 61, 0.2);
+    --mw-text: #5a4632;
+    --mw-heading: #3d3438;
+    --mw-muted: rgba(51, 47, 50, 0.62);
+    --mw-muted-soft: rgba(51, 47, 50, 0.42);
+    --mw-brand: #806554;
+    --mw-accent: #9b6b54;
+    --mw-accent-soft: rgba(155, 107, 84, 0.1);
+    --mw-accent-hover: rgba(155, 107, 84, 0.16);
+    --mw-solid-text: #fffaf4;
+    --mw-input: rgba(255, 255, 255, 0.58);
+    --mw-tooltip: #fffaf4;
+    --mw-overlay: rgba(39, 32, 33, 0.42);
+}
+
+/* font: inherit; */
+.mw-input {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid var(--mw-border-strong);
+    background: var(--mw-input);
+    color: var(--mw-text);
+    outline: none;
+}
+
+.mw-input::placeholder {
+    color: var(--mw-muted-soft);
+}
+
+.mw-input:focus {
+    border-color: color-mix(in srgb, var(--mw-accent) 64%, transparent);
+}
+
+.nickname-input {
+    width: min(240px, 58%);
+    border: 1px solid var(--mw-border-strong);
+    border-radius: 8px;
+    background: var(--mw-input);
+    color: var(--mw-text);
+    text-align: right;
+    outline: none;
+}
+
+/* 포커스 상태는 입력 중인 행만 조용히 강조합니다. */
+.nickname-input:focus {
+    border-color: color-mix(in srgb, var(--mw-accent) 64%, transparent);
+}
+
+.mw-app {
+    background:
+        radial-gradient(circle at 18% 10%, var(--mw-bg-glow-1), transparent 32%),
+        radial-gradient(circle at 84% 0%, var(--mw-bg-glow-2), transparent 28%),
+        var(--mw-bg);
+    color: var(--mw-text);
+    transition: background 180ms ease, color 180ms ease;
+}
+
+.mw-surface {
+    /* 카드, 모달, 사이드바처럼 조용히 떠 있는 표면 스타일입니다. */
+    background: var(--mw-panel);
+    border: 1px solid var(--mw-border);
+}
+
+.mw-form-page {
+    min-height: 0;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+}
+
+.mw-profile-card {
+    width: min(440px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    border-radius: 12px;
+    padding: 32px;
+}
+
+.mw-profile-eyebrow {
+    margin: 0 0 2px;
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    color: #e0d2ba;
+}
+
+.mw-profile-card h1 {
+    margin: 0;
+    color: var(--mw-text);
+    font-size: 1.25rem;
+    font-weight: 400;
+}
+
+.mw-profile-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--mw-border);
+    font-size: 0.875rem;
+}
+
+.mw-profile-row span {
+    color: var(--mw-muted);
+}
+
+.mw-profile-row strong {
+    color: var(--mw-text);
+    font-weight: 400;
+}
+
+.mw-profile-message {
+    margin: 0;
+    color: var(--mw-muted);
+    font-size: 0.875rem;
+}
+
+.mw-profile-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.mw-button {
+    border: 1px solid color-mix(in srgb, var(--mw-accent) 46%, transparent);
+    background: var(--mw-accent-soft);
+    color: var(--mw-accent);
+    transition: background-color 160ms ease, border-color 160ms ease, opacity 160ms ease;
+}
+
+.mw-button:hover {
+    background: var(--mw-accent-hover);
+    border-color: color-mix(in srgb, var(--mw-accent) 64%, transparent);
+}
+
+.mw-button-solid {
+    /* 주요 행동 버튼: 글 저장, 시작하기처럼 확실한 행동에 사용합니다. */
+    border: 1px solid color-mix(in srgb, var(--mw-accent) 76%, transparent);
+    background: var(--mw-accent);
+    color: var(--mw-solid-text);
+    transition: background-color 160ms ease, opacity 160ms ease;
+}
+
+.mw-button-solid:hover {
+    background: color-mix(in srgb, var(--mw-accent) 90%, transparent);
+}
+
+html,
+body,
+#root {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--mw-bg);
+    color: var(--mw-text);
+}
+
+#root {
+    min-height: 100vh;
+    background: var(--mw-bg);
+}
+
+.mw-header {
+    background: var(--mw-header);
+    border-color: var(--mw-border);
+}
+
+@keyframes mw-room-object-bounce {
+    0% {
+        transform: translateY(0) scale(1);
+    }
+
+    28% {
+        transform: translateY(-14px) scale(1.04, 0.96);
+    }
+
+    48% {
+        transform: translateY(0) scale(0.98, 1.03);
+    }
+
+    68% {
+        transform: translateY(-6px) scale(1.02, 0.98);
+    }
+
+    100% {
+        transform: translateY(0) scale(1);
+    }
+}
+
+.mw-room-object-bounce {
+    animation: mw-room-object-bounce 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
