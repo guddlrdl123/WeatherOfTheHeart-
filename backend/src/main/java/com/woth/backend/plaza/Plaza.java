@@ -45,6 +45,9 @@ public class Plaza {
     @Builder.Default
     private Boolean allowInvite = true; // 광장 초대 허용 여부
 
+    @Column(name = "invite_code", unique = true, length = 7)
+    private String inviteCode; // 초대 코드로 비공개 광장에 접근할 때 사용하는 7자리 코드
+
     @Column(name = "allow_duplicate_objects", nullable = false)
     @Builder.Default
     private Boolean allowDuplicateObjects = false; // 동일 오브젝트 중복 허용 여부
@@ -94,4 +97,3 @@ public class Plaza {
         this.completedAt = completedAt;
     }
 }
-
