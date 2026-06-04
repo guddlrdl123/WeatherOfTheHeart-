@@ -55,8 +55,8 @@ export function SignupForm() {
             setIsVerificationSent(true);
             setIsEmailVerified(false);
             setEmailMessage("인증번호를 전송했습니다.");
-        } catch {
-            setError("인증번호 전송에 실패했습니다. 다시 시도해주세요.");
+        } catch (caughtError) {
+            setError(caughtError instanceof Error ? caughtError.message : "인증번호 전송에 실패했습니다. 다시 시도해주세요.");
         } finally {
             setIsSendingVerification(false);
         }

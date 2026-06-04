@@ -1,4 +1,4 @@
-import { readApiData, toApiUrl } from "./apiClient";
+import { readApiData, readJsonResponse, toApiUrl } from "./apiClient";
 
 export type AuthResponse = {
   id?: number | string;
@@ -20,6 +20,37 @@ type VerifyEmailRequest = {
   verificationCode: string;
 };
 
+type ApiErrorResponse = {
+  code?: string;
+  message?: string;
+};
+
+const AUTH_ERROR_MESSAGE_BY_CODE: Record<string, string> = {
+  USER_002: "이미 등록된 이메일입니다.",
+  EMAIL_001: "인증번호가 올바르지 않습니다.",
+  EMAIL_002: "인증번호가 만료되었습니다.",
+  EMAIL_003: "이메일 인증을 완료해주세요.",
+  EMAIL_004: "인증번호 전송에 실패했습니다. 다시 시도해주세요.",
+};
+
+function getErrorCode(body: ApiErrorResponse | null) {
+  if (body?.code) {
+    return body.code;
+  }
+
+  return body?.message?.match(/\[Code:\s*([^\]]+)\]/)?.[1];
+}
+
+function getAuthErrorMessage(body: ApiErrorResponse | null, fallbackMessage: string) {
+  const code = getErrorCode(body);
+
+  if (code && AUTH_ERROR_MESSAGE_BY_CODE[code]) {
+    return AUTH_ERROR_MESSAGE_BY_CODE[code];
+  }
+
+  return fallbackMessage;
+}
+
 // 인증 관련 POST 요청은 에러 처리와 JSON 파싱 방식이 같아 공통 함수로 묶었습니다.
 async function postAuth<TResponse>(path: string, body: object, errorMessage: string) {
   const response = await fetch(toApiUrl(path), {
@@ -31,7 +62,8 @@ async function postAuth<TResponse>(path: string, body: object, errorMessage: str
   });
 
   if (!response.ok) {
-    throw new Error(errorMessage);
+    const body = await readJsonResponse<ApiErrorResponse>(response).catch(() => null);
+    throw new Error(getAuthErrorMessage(body, errorMessage));
   }
 
   return readApiData<TResponse>(response);
