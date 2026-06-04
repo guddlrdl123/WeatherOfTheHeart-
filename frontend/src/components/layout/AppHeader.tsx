@@ -1,4 +1,4 @@
-import { House, Home, Inbox, LogOut, MapPinned, UserRound } from "lucide-react";
+import { House, Home, Inbox, LogOut, UserRound, CastleIcon } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { clearAuthenticated } from "../../utils/authSession";
 
@@ -9,7 +9,7 @@ export function AppHeader() {
     const isPlazaPage = location.pathname.startsWith("/plaza");
     const plazaNavTarget = isPlazaPage ? "/room" : "/plaza";
     const plazaNavLabel = isPlazaPage ? "내 방 돌아가기" : "광장 들어가기";
-    const PlazaNavIcon = isPlazaPage ? House : MapPinned;
+    const PlazaNavIcon = isPlazaPage ? House : CastleIcon;
 
     function handleLogout() {
         clearAuthenticated();

@@ -1,10 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { AuthApiError, sendEmailVerification, signup, verifyEmail } from "../../services/authService";
 import { Link, useNavigate } from "react-router-dom";
-import { sendEmailVerification, signup, verifyEmail } from "../../services/authService";
 import { PROFILE_NICKNAME_MAX_LENGTH, setAuthenticated, setCurrentUserId, setProfileEmail, setProfileNickname } from "../../utils/authSession";
 // import { useAppStore } from "../../stores/AppStore";
+
+const VERIFICATION_CODE_TTL_SECONDS = 10 * 60;
+
+function formatVerificationTime(totalSeconds: number) {
+    const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
+    const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+
+    return `${minutes}:${seconds}`;
+}
 
 // 백엔드 회원가입 API를 호출하고 성공하면 내 방으로 이동시키는 폼입니다.
 export function SignupForm() {
@@ -23,14 +32,38 @@ export function SignupForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSendingVerification, setIsSendingVerification] = useState(false);
     const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
+    const [remainingVerificationSeconds, setRemainingVerificationSeconds] = useState(0);
+    const [isVerificationExpired, setIsVerificationExpired] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+
+    useEffect(() => {
+        if (!isVerificationSent || isEmailVerified || isVerificationExpired) {
+            return;
+        }
+
+        const timerId = window.setInterval(() => {
+            setRemainingVerificationSeconds((seconds) => {
+                if (seconds <= 1) {
+                    setIsVerificationExpired(true);
+                    setVerificationMessage("인증번호가 만료되었습니다.");
+                    return 0;
+                }
+
+                return seconds - 1;
+            });
+        }, 1000);
+
+        return () => window.clearInterval(timerId);
+    }, [isVerificationSent, isEmailVerified, isVerificationExpired]);
 
     function resetEmailVerification(nextEmail: string) {
         setEmail(nextEmail);
         setVerificationCode("");
         setIsVerificationSent(false);
         setIsEmailVerified(false);
+        setRemainingVerificationSeconds(0);
+        setIsVerificationExpired(false);
         setVerificationMessage("");
         setEmailMessage("");
     }
@@ -54,7 +87,10 @@ export function SignupForm() {
             setVerificationCode("");
             setIsVerificationSent(true);
             setIsEmailVerified(false);
-            setEmailMessage("인증번호를 전송했습니다.");
+            setRemainingVerificationSeconds(VERIFICATION_CODE_TTL_SECONDS);
+            setIsVerificationExpired(false);
+            setVerificationMessage("");
+            setEmailMessage("인증코드가 발송되었습니다.");
         } catch (caughtError) {
             setError(caughtError instanceof Error ? caughtError.message : "인증번호 전송에 실패했습니다. 다시 시도해주세요.");
         } finally {
@@ -72,7 +108,7 @@ export function SignupForm() {
         }
 
         if (!/^\d{6}$/.test(verificationCode)) {
-            setVerificationMessage("인증번호 6자리를 입력해주세요.");
+            setVerificationMessage("인증번호를 입력해주세요.");
             return;
         }
 
@@ -80,9 +116,15 @@ export function SignupForm() {
             setIsVerifyingEmail(true);
             await verifyEmail({ email: email.trim(), verificationCode });
             setIsEmailVerified(true);
+            setIsVerificationExpired(false);
+            setRemainingVerificationSeconds(0);
             setVerificationMessage("이메일 인증이 완료되었습니다.");
-        } catch {
-            setVerificationMessage("인증번호가 올바르지 않거나 만료되었습니다.");
+        } catch (caughtError) {
+            if (caughtError instanceof AuthApiError && (caughtError.code === "EMAIL_001" || caughtError.code === "EMAIL_002")) {
+                setVerificationMessage("인증번호가 일치하지 않습니다.");
+            } else {
+                setVerificationMessage(caughtError instanceof Error ? caughtError.message : "이메일 인증에 실패했습니다.");
+            }
         } finally {
             setIsVerifyingEmail(false);
         }
@@ -103,8 +145,8 @@ export function SignupForm() {
             return;
         }
 
-        if (password.length < 8) {
-            setError("비밀번호는 8자 이상이어야 합니다.");
+        if (password.length < 8 || !/[^A-Za-z0-9]/.test(password)) {
+            setError("비밀번호는 8자 이상이고 특수문자를 포함해야 합니다.");
             return;
         }
 
@@ -115,7 +157,8 @@ export function SignupForm() {
 
         try {
             setIsSubmitting(true);
-            const auth = await signup({ email: email.trim(), password, nickname });
+            const signupNickname = nickname.trim() || "나그네";
+            const auth = await signup({ email: email.trim(), password, nickname: signupNickname });
             const userId = auth.userId ?? auth.id;
 
             if (userId) {
@@ -125,10 +168,10 @@ export function SignupForm() {
             setAuthenticated();
             // 회원가입 직후 마이페이지에서 입력한 닉네임이 바로 보이도록 임시 프로필 저장소에 동기화합니다.
             setProfileEmail(email.trim());
-            setProfileNickname(auth.nickname ?? nickname);
+            setProfileNickname(auth.nickname ?? signupNickname);
             navigate("/room", { replace: true });
-        } catch {
-            setError("회원가입에 실패했습니다. 다시 시도해주세요.");
+        } catch (caughtError) {
+            setError(caughtError instanceof Error ? caughtError.message : "회원가입에 실패했습니다. 다시 시도해주세요.");
         } finally {
             setIsSubmitting(false);
         }
@@ -142,7 +185,6 @@ export function SignupForm() {
                     조용한 방 하나 만들기
                 </h1> */}
             </div>
-
 
             <div className="flex flex-col gap-2 text-sm text-white/54">
                 <span>이메일</span>
@@ -158,13 +200,18 @@ export function SignupForm() {
                         disabled={isEmailVerified || isSendingVerification}
                         className="mw-button h-11 shrink-0 rounded-[8px] px-3 text-sm disabled:opacity-50"
                     >
-                        {isEmailVerified ? "인증완료" : isSendingVerification ? "전송 중" : "인증"}
+                        {isEmailVerified ? "인증완료" : isVerificationSent ? "재전송" : "인증"}
                     </button>
                 </div>
                 {emailMessage && (
-                    <span className="text-xs text-[#9b6b54]/80">
-                        {emailMessage}
-                    </span>
+                    <div className="flex items-center gap-2 text-xs text-[#9b6b54]/80">
+                        <span>{emailMessage}</span>
+                        {isVerificationSent && !isEmailVerified && !isVerificationExpired && remainingVerificationSeconds > 0 && (
+                            <span className="tabular-nums text-[#9b6b54]/80">
+                                {formatVerificationTime(remainingVerificationSeconds)}
+                            </span>
+                        )}
+                    </div>
                 )}
             </div>
 

@@ -46,6 +46,7 @@ export type Plaza = {
   ownerId: string;
   status: PlazaStatus;
   entries: PlazaEntry[];
+  entryCount?: number;
   createdAt: string;
   endedAt?: string;
 };

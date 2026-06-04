@@ -49,6 +49,7 @@ type Props = {
   onFinalizeDraftPlaza?: (plaza: Plaza) => void;
   onCancelDraftPlaza?: () => void;
   onDeletePlaza: () => void;
+  onCreateEntry?: (value: PlazaWriteValue, position: RoomObjectPosition, layer: number) => Promise<PlazaEntry>;
 };
 
 type PlazaConfirmAction = "close" | "delete";
@@ -137,6 +138,7 @@ export function PlazaRoomPage({
   onFinalizeDraftPlaza,
   onCancelDraftPlaza,
   onDeletePlaza,
+  onCreateEntry,
 }: Props) {
   const navigate = useNavigate();
   const owner = plaza.ownerId === currentGuestId;
@@ -227,14 +229,14 @@ export function PlazaRoomPage({
     }
   }
 
-  function handleConfirmPlacement() {
+  async function handleConfirmPlacement() {
     if (!pendingPlacement) {
       return;
     }
 
-    const applyConfirmedPlacement = (current: Plaza) => {
+    const applyConfirmedPlacement = (current: Plaza, savedEntry?: PlazaEntry) => {
       if (pendingPlacement.kind === "new") {
-        const nextEntry = createPlazaEntry({
+        const nextEntry = savedEntry ?? createPlazaEntry({
           title: pendingPlacement.value.title,
           content: pendingPlacement.value.content,
           objectKey: pendingPlacement.value.objectKey,
@@ -246,6 +248,7 @@ export function PlazaRoomPage({
         return normalizePlaza({
           ...current,
           entries: normalizeEntryLayers([...current.entries, nextEntry]),
+          entryCount: (current.entryCount ?? current.entries.length) + 1,
         });
       }
 
@@ -267,7 +270,18 @@ export function PlazaRoomPage({
     if (requiresFirstEntry && pendingPlacement.kind === "new" && onFinalizeDraftPlaza) {
       onFinalizeDraftPlaza(applyConfirmedPlacement(plaza));
     } else {
-      onUpdatePlaza(applyConfirmedPlacement);
+      if (pendingPlacement.kind === "new" && onCreateEntry) {
+        try {
+          const savedEntry = await onCreateEntry(pendingPlacement.value, pendingPlacement.position, pendingPlacement.layer);
+
+          onUpdatePlaza((current) => applyConfirmedPlacement(current, savedEntry));
+        } catch (caughtError) {
+          window.alert(caughtError instanceof Error ? caughtError.message : "광장 글을 저장하지 못했습니다.");
+          return;
+        }
+      } else {
+        onUpdatePlaza((current) => applyConfirmedPlacement(current));
+      }
     }
 
     setPendingPlacement(null);
