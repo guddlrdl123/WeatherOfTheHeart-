@@ -12,6 +12,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.util.List;
 
 /**
@@ -23,10 +24,15 @@ import java.util.List;
 @Service
 public class PlazaService {
 
+    private static final String INVITE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final int INVITE_CODE_LENGTH = 7;
+    private static final int MAX_INVITE_CODE_ATTEMPTS = 20;
+
     private final PlazaRepository plazaRepository;
     private final PlazaEntryRepository plazaEntryRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final SecureRandom secureRandom = new SecureRandom();
 
     public PlazaService(
             PlazaRepository plazaRepository,
@@ -46,6 +52,15 @@ public class PlazaService {
     }
 
     @Transactional(readOnly = true)
+    public List<Plaza> listPlazasByOwner(Long ownerId) {
+        if (!userRepository.existsById(ownerId)) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        return plazaRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId);
+    }
+
+    @Transactional(readOnly = true)
     public Plaza findPlaza(Long plazaId) {
         return plazaRepository.findById(plazaId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PLAZA_NOT_FOUND));
@@ -53,12 +68,21 @@ public class PlazaService {
 
     @Transactional
     public Plaza createPlaza(CreatePlazaRequest request) {
+        if (request.ownerId() == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        User owner = userRepository.findById(request.ownerId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
         Plaza plaza = Plaza.builder()
+                .owner(owner)
                 .title(request.title())
                 .topic(request.topic())
                 .maxObjects(request.maxObjects())
                 .allowSearch(request.allowSearch())
                 .allowInvite(request.allowInvite())
+                .inviteCode(generateUniqueInviteCode())
                 .allowDuplicateObjects(request.allowDuplicateObjects())
                 .backgroundType(request.backgroundType() == null ? "weather" : request.backgroundType())
                 .backgroundColor(request.backgroundColor())
@@ -75,6 +99,20 @@ public class PlazaService {
     @Transactional(readOnly = true)
     public List<PlazaEntry> listAllEntries() {
         return plazaEntryRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PlazaEntry> listEntriesByOwner(Long ownerId) {
+        if (!userRepository.existsById(ownerId)) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        return plazaEntryRepository.findByOwnerId(ownerId);
+    }
+
+    @Transactional(readOnly = true)
+    public long countEntries(Long plazaId) {
+        return plazaEntryRepository.countByPlazaId(plazaId);
     }
 
     @Transactional
@@ -118,7 +156,29 @@ public class PlazaService {
         return savedEntry;
     }
 
+    private String generateUniqueInviteCode() {
+        for (int attempt = 0; attempt < MAX_INVITE_CODE_ATTEMPTS; attempt++) {
+            String inviteCode = generateInviteCode();
+            if (!plazaRepository.existsByInviteCode(inviteCode)) {
+                return inviteCode;
+            }
+        }
+
+        throw new CustomException(ErrorCode.INVALID_INPUT);
+    }
+
+    private String generateInviteCode() {
+        StringBuilder builder = new StringBuilder(INVITE_CODE_LENGTH);
+        for (int i = 0; i < INVITE_CODE_LENGTH; i++) {
+            int index = secureRandom.nextInt(INVITE_ALPHABET.length());
+            builder.append(INVITE_ALPHABET.charAt(index));
+        }
+
+        return builder.toString();
+    }
+
     public record CreatePlazaRequest(
+            Long ownerId,
             String title,
             String topic,
             Integer maxObjects,
@@ -144,7 +204,6 @@ public class PlazaService {
     ) {
     }
 }
-
 
 
 

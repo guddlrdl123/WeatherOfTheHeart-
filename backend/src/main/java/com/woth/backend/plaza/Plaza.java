@@ -1,5 +1,6 @@
 package com.woth.backend.plaza;
 
+import com.woth.backend.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,6 +28,10 @@ public class Plaza {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
+
     @Column(nullable = false, length = 100)
     private String title; // 광장 이름 또는 주제
 
@@ -44,6 +49,9 @@ public class Plaza {
     @Column(name = "allow_invite", nullable = false)
     @Builder.Default
     private Boolean allowInvite = true; // 광장 초대 허용 여부
+
+    @Column(name = "invite_code", unique = true, length = 7)
+    private String inviteCode; // 초대 코드로 비공개 광장에 접근할 때 사용하는 7자리 코드
 
     @Column(name = "allow_duplicate_objects", nullable = false)
     @Builder.Default
@@ -94,4 +102,3 @@ public class Plaza {
         this.completedAt = completedAt;
     }
 }
-
