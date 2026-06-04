@@ -103,7 +103,8 @@ export function togglePlazaEntryLike(entry: PlazaEntry, guestId: string): PlazaE
 
 export function getBackgroundLabel(background: PlazaBackground) {
   if (background.type === "color") {
-    return background.color;
+    return PLAZA_COLOR_OPTIONS.find((option) => option.color.toLowerCase() === background.color.toLowerCase())?.label
+      ?? background.color;
   }
 
   return PLAZA_WEATHER_OPTIONS.find((option) => option.key === background.weatherKey)?.label ?? "날씨";
