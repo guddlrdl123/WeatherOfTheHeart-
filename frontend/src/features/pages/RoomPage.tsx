@@ -7,10 +7,12 @@ import { MemoryPreviewModal, type MemoryPreviewUpdate } from "../memory/MemoryPr
 // import { getTodayString } from "../utils/date";
 import { AppHeader } from "../../components/layout/AppHeader";
 import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
+import { createMemory } from "../../services/memoryService";
 import type { Memory } from "../../types/memory";
 import type { RoomObjectKey, RoomObjectPosition } from "../../types/roomObject";
 import type { WeatherKey } from "../../types/weather";
 import { getTodayString } from "../../utils/date";
+import { getCurrentUserId } from "../../utils/authSession";
 
 type PendingPlacement = {
     value: WriteModalValue;
@@ -243,7 +245,7 @@ function RoomPage() {
     }, []);
 
     // 체크 버튼을 누르면 메모리와 오브젝트의 최종 위치를 함께 저장합니다.
-    const handleConfirmPlacement = () => {
+    const handleConfirmPlacement = async () => {
         if (editingPlacement) {
             const { memoryId, position, layer } = editingPlacement;
 
@@ -277,31 +279,41 @@ function RoomPage() {
 
         const { value, position, layer } = pendingPlacement;
 
-        const memoryId = crypto.randomUUID();
+        try {
+            const savedMemory = await createMemory(getCurrentUserId(), {
+                memoryDate: value.memoryDate,
+                title: value.title ?? "",
+                content: value.content,
+                moodKey: value.moodKey,
+                weatherKey: value.weatherKey,
+                objectKey: value.objectKey,
+                slotKey: value.objectKey,
+                positionX: position.x,
+                positionY: position.y,
+            });
 
-        setMemories((prev) =>
-            normalizeMemoryLayers([
-                ...prev,
-                {
-                    id: memoryId,
-                    createdAt: new Date().toISOString(),
-                    memoryDate: value.memoryDate,
-                    title: value.title ?? "",
-                    content: value.content,
-                    moodKey: value.moodKey,
-                    weatherKey: value.weatherKey,
-                    objectKey: value.objectKey,
-                    objectLayer: layer,
-                    objectPosition: position,
-                },
-            ], getMonthKey(value.memoryDate)),
-        );
+            const memoryWithPlacement = {
+                ...savedMemory,
+                objectKey: savedMemory.objectKey ?? value.objectKey,
+                objectLayer: layer,
+                objectPosition: savedMemory.objectPosition ?? position,
+            };
 
-        setPendingPlacement(null);
-        setSelectedDate(value.memoryDate);
-        setRoomMonthKey(getMonthKey(value.memoryDate));
-        setRoomWeather(value.weatherKey);
-        setActiveObjectId(null);
+            setMemories((prev) =>
+                normalizeMemoryLayers([
+                    ...prev,
+                    memoryWithPlacement,
+                ], getMonthKey(savedMemory.memoryDate)),
+            );
+
+            setPendingPlacement(null);
+            setSelectedDate(savedMemory.memoryDate);
+            setRoomMonthKey(getMonthKey(savedMemory.memoryDate));
+            setRoomWeather(savedMemory.weatherKey);
+            setActiveObjectId(null);
+        } catch (error) {
+            alert(error instanceof Error ? error.message : "기억 저장에 실패했습니다.");
+        }
     };
 
     const handleCancelPlacement = () => {

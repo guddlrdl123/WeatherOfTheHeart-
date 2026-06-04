@@ -2,6 +2,7 @@ package com.woth.backend.ai.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
 import jakarta.annotation.PostConstruct;
@@ -241,6 +242,7 @@ public class OpenAiClient {
 	private static class OpenAiChatRequest {
 		private final String model;
 		private final Double temperature;
+		@JsonProperty("response_format")
 		private final ResponseFormat responseFormat;
 		private final List<ChatCompletionMessage> messages;
 	}

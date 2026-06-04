@@ -6,6 +6,7 @@ package com.woth.backend.memory;
  */
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
+import com.woth.backend.ai.service.AiService;
 import com.woth.backend.room.PrivateRoom;
 import com.woth.backend.room.PrivateRoomRepository;
 import com.woth.backend.user.User;
@@ -22,15 +23,18 @@ public class MemoryService {
     private final UserRepository userRepository;
     private final PrivateRoomRepository privateRoomRepository;
     private final PrivateMemoryRepository privateMemoryRepository;
+    private final AiService aiService;
 
     public MemoryService(
             UserRepository userRepository,
             PrivateRoomRepository privateRoomRepository,
-            PrivateMemoryRepository privateMemoryRepository
+            PrivateMemoryRepository privateMemoryRepository,
+            AiService aiService
     ) {
         this.userRepository = userRepository;
         this.privateRoomRepository = privateRoomRepository;
         this.privateMemoryRepository = privateMemoryRepository;
+        this.aiService = aiService;
     }
     // 개인 메모 조회, 생성, 위치 업데이트 기능을 제공하는 서비스 메서드들
     @Transactional(readOnly = true)
@@ -68,7 +72,7 @@ public class MemoryService {
                 .title(normalizeTitle(request.title()))
                 .content(request.content())
                 .moodKey(request.moodKey())
-                .weatherKey(request.weatherKey())
+                .weatherKey(resolveWeatherKey(userId, request.content()))
                 .objectKey(request.objectKey())
                 .slotKey(request.slotKey())
                 .memoryDate(memoryDate)
@@ -103,6 +107,16 @@ public class MemoryService {
         }
 
         return title;
+    }
+
+    private String resolveWeatherKey(Long userId, String content) {
+        String aiWeatherKey = aiService.analyze(userId, content).weatherKey();
+
+        return switch (aiWeatherKey) {
+            case "cloudy" -> "cloud";
+            case "rainy" -> "rain";
+            default -> aiWeatherKey;
+        };
     }
 
     public record CreateMemoryRequest(
