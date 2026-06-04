@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -41,29 +42,47 @@ public class PlazaCompletionService {
         this.plazaRepository = plazaRepository;
         this.plazaEntryRepository = plazaEntryRepository;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void completeIfReady(PlazaEntryCreatedEvent event) {
+        log.info("[plaza-completion-test] event received. plazaId={}", event.plazaId());
         CompletionSnapshot snapshot = loadCompletionSnapshot(event.plazaId());
 
         if (snapshot == null) {
+            log.info("[plaza-completion-test] completion snapshot is null. plazaId={}", event.plazaId());
             return;
         }
+
+        log.info("[plaza-completion-test] completion condition met. plazaId={}, receivers={}",
+                snapshot.plazaId(),
+                snapshot.receivers().stream().map(User::getId).toList()
+        );
 
         int marked = markCompleted(snapshot.plazaId(), snapshot.completedAt());
         if (marked == 0) {
+            log.info("[plaza-completion-test] plaza already completed. plazaId={}", snapshot.plazaId());
             return;
         }
 
+        log.info("[plaza-completion-test] plaza marked completed. plazaId={}", snapshot.plazaId());
         String generatedImageData = generateImage(snapshot);
+        log.info("[plaza-completion-test] image generation finished. plazaId={}, hasImage={}",
+                snapshot.plazaId(),
+                generatedImageData != null && !generatedImageData.isBlank()
+        );
         mailboxService.sendPlazaCompletionLetters(
                 snapshot.plazaId(),
                 snapshot.plazaTitle(),
                 snapshot.completedAt(),
                 snapshot.receivers(),
                 generatedImageData
+        );
+        log.info("[plaza-completion-test] completion letters sent. plazaId={}, receiverCount={}",
+                snapshot.plazaId(),
+                snapshot.receivers().size()
         );
     }
 
@@ -75,6 +94,11 @@ public class PlazaCompletionService {
             }
 
             List<PlazaEntry> entries = plazaEntryRepository.findByPlazaId(plazaId);
+            log.info("[plaza-completion-test] entries loaded. plazaId={}, entryCount={}, maxObjects={}",
+                    plazaId,
+                    entries.size(),
+                    plaza.getMaxObjects()
+            );
             if (entries.size() < plaza.getMaxObjects()) {
                 return null;
             }
@@ -102,6 +126,7 @@ public class PlazaCompletionService {
 
     private String generateImage(CompletionSnapshot snapshot) {
         try {
+            log.info("[plaza-completion-test] image generation started. plazaId={}", snapshot.plazaId());
             return openAiClient.generateImageDataUrl(snapshot.prompt());
         } catch (Exception e) {
             log.warn("Plaza image generation failed. plazaId={}, reason={}", snapshot.plazaId(), e.getMessage());
