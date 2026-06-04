@@ -15,6 +15,7 @@ public class AuthService {
 
     private static final String ADMIN_EMAIL = "admin@maeum.weather";
     private static final String ADMIN_PASSWORD = "admin1234";
+    private static final String DEFAULT_NICKNAME = "나그네";
 
     private final UserRepository userRepository;
     private final EmailVerificationService emailVerificationService;
@@ -50,7 +51,7 @@ public class AuthService {
         User user = User.builder()
                 .email(email)
                 .password(password)
-                .nickname(nickname)
+                .nickname(resolveNickname(nickname))
                 // 일반 회원가입 사용자는 관리자 권한 없이 생성
                 .isAdmin(false)
                 .build();
@@ -69,5 +70,13 @@ public class AuthService {
                 .build();
 
         return userRepository.save(admin);
+    }
+
+    private String resolveNickname(String nickname) {
+        if (nickname == null || nickname.isBlank()) {
+            return DEFAULT_NICKNAME;
+        }
+
+        return nickname.trim();
     }
 }
