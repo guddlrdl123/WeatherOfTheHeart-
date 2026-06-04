@@ -20,6 +20,7 @@ type VerifyEmailRequest = {
   verificationCode: string;
 };
 
+// 인증 관련 POST 요청은 에러 처리와 JSON 파싱 방식이 같아 공통 함수로 묶었습니다.
 async function postAuth<TResponse>(path: string, body: object, errorMessage: string) {
   const response = await fetch(toApiUrl(path), {
     method: "POST",

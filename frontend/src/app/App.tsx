@@ -18,10 +18,12 @@ type AuthRouteState = {
   fromLanding?: boolean;
 };
 
+// 이미 로그인한 사용자가 랜딩에 머물지 않도록 개인 방으로 바로 보냅니다.
 function LandingRoute() {
   return isAuthenticated() ? <Navigate to="/room" replace /> : <LandingPage />;
 }
 
+// 로그인 상태가 필요한 화면을 감싸는 라우트 가드입니다.
 function ProtectedRoute({ children }: RouteGuardProps) {
   if (!isAuthenticated()) {
     return <Navigate to="/" replace />;
@@ -30,6 +32,7 @@ function ProtectedRoute({ children }: RouteGuardProps) {
   return <>{children}</>;
 }
 
+// 로그인/회원가입은 랜딩의 진입 버튼을 통해서만 접근하게 해 흐름을 단순하게 유지합니다.
 function AuthEntryRoute({ children }: RouteGuardProps) {
   const location = useLocation();
   const routeState = location.state as AuthRouteState | null;
@@ -45,6 +48,7 @@ function AuthEntryRoute({ children }: RouteGuardProps) {
   return <>{children}</>;
 }
 
+// 알 수 없는 URL은 현재 인증 상태에 맞는 시작 화면으로 정리합니다.
 function FallbackRoute() {
   return <Navigate to={isAuthenticated() ? "/room" : "/"} replace />;
 }

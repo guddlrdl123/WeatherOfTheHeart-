@@ -9,6 +9,7 @@ type ResponsiveStageWidthOptions = {
   headerHeight?: number;
 };
 
+// 고정 디자인 캔버스를 뷰포트 안에 맞추되, 너무 작아져 레이아웃이 깨지지 않도록 최소 너비를 보장합니다.
 function getResponsiveStageWidth({
   designWidth,
   designHeight,
@@ -30,15 +31,38 @@ function getResponsiveStageWidth({
 }
 
 export function useResponsiveStageWidth(options: ResponsiveStageWidthOptions) {
-  const [stageWidth, setStageWidth] = useState(() => getResponsiveStageWidth(options));
+  const {
+    designWidth,
+    designHeight,
+    minWidth,
+    pagePaddingX,
+    pagePaddingY,
+    headerHeight,
+  } = options;
+  const [stageWidth, setStageWidth] = useState(() => getResponsiveStageWidth({
+    designWidth,
+    designHeight,
+    minWidth,
+    pagePaddingX,
+    pagePaddingY,
+    headerHeight,
+  }));
 
   useEffect(() => {
     let frameId = 0;
 
     function updateStageWidth() {
+      // resize 이벤트가 연속으로 발생할 때 한 프레임에 한 번만 계산해 불필요한 렌더를 줄입니다.
       window.cancelAnimationFrame(frameId);
       frameId = window.requestAnimationFrame(() => {
-        setStageWidth(getResponsiveStageWidth(options));
+        setStageWidth(getResponsiveStageWidth({
+          designWidth,
+          designHeight,
+          minWidth,
+          pagePaddingX,
+          pagePaddingY,
+          headerHeight,
+        }));
       });
     }
 
@@ -50,12 +74,12 @@ export function useResponsiveStageWidth(options: ResponsiveStageWidthOptions) {
       window.removeEventListener("resize", updateStageWidth);
     };
   }, [
-    options.designWidth,
-    options.designHeight,
-    options.minWidth,
-    options.pagePaddingX,
-    options.pagePaddingY,
-    options.headerHeight,
+    designWidth,
+    designHeight,
+    minWidth,
+    pagePaddingX,
+    pagePaddingY,
+    headerHeight,
   ]);
 
   return stageWidth;

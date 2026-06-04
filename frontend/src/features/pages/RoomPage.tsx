@@ -43,6 +43,7 @@ const formatRoomMonthLabel = (monthKey: string) => {
 
 const getMemoryObjectLayer = (memory: Memory) => memory.objectLayer ?? OBJECT_LAYER_MIN;
 
+// 같은 달 안의 오브젝트 레이어를 0부터 다시 정렬해 앞/뒤 이동 후에도 값이 과도하게 커지지 않게 합니다.
 function normalizeMemoryLayers(memories: Memory[], monthKey: string) {
     const layerById = new Map<string, number>();
 
@@ -127,6 +128,7 @@ function RoomPage() {
     const roomMonthLabel = formatRoomMonthLabel(roomMonthKey);
 
     const getNextObjectLayer = (dateString: string) => {
+        // 새 오브젝트는 현재 달의 가장 앞 레이어 다음에 배치합니다.
         const monthKey = getMonthKey(dateString);
         const maxLayer = memories
             .filter((memory) => getMonthKey(memory.memoryDate) === monthKey && memory.objectKey && memory.objectPosition)
@@ -136,6 +138,7 @@ function RoomPage() {
     };
 
     const getPlacementLayers = (monthKey: string, excludedMemoryId?: string) => {
+        // 편집 중인 오브젝트는 비교 대상에서 빼야 자신의 레이어가 이동 기준을 왜곡하지 않습니다.
         return memories
             .filter((memory) => (
                 getMonthKey(memory.memoryDate) === monthKey
@@ -203,6 +206,7 @@ function RoomPage() {
             return;
         }
 
+        // 날짜 선택 시 해당 날짜의 오브젝트를 잠깐 튕겨 사용자가 방 안 위치를 찾기 쉽게 합니다.
         bounceStartTimerRef.current = window.setTimeout(() => {
             setBouncingObjectId(targetMemory.id);
             bounceStartTimerRef.current = null;
@@ -338,6 +342,7 @@ function RoomPage() {
         setActiveObjectId(null);
         setPendingPlacement(null);
         setPreviewMemory(null);
+        // 취소/초기화가 가능하도록 편집 시작 시점의 위치와 레이어를 함께 보관합니다.
         const objectLayer = memory.objectLayer ?? OBJECT_LAYER_MIN;
         setEditingPlacement({
             memoryId: memory.id,

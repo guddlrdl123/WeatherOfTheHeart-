@@ -63,6 +63,7 @@ const getEntryLayer = (entry: PlazaEntry) => entry.layer ?? OBJECT_LAYER_MIN;
 const PLAZA_LAYOUT_WIDTH = 1460;
 const PLAZA_LAYOUT_HEIGHT = 650;
 
+// 광장 종료/삭제처럼 되돌리기 어려운 방장 작업을 확인하는 공통 모달입니다.
 function PlazaConfirmModal({ action, onCancel, onConfirm }: PlazaConfirmModalProps) {
   const isDelete = action === "delete";
   const Icon = isDelete ? Trash2 : Power;
@@ -113,6 +114,7 @@ function PlazaConfirmModal({ action, onCancel, onConfirm }: PlazaConfirmModalPro
   );
 }
 
+// 광장 오브젝트 레이어를 0부터 다시 매겨 저장값이 정렬 가능한 범위에 머물게 합니다.
 function normalizeEntryLayers(entries: PlazaEntry[]) {
   const layerById = new Map<string, number>();
 
@@ -165,6 +167,7 @@ export function PlazaRoomPage({
   const visiblePlazaEntries = pendingPlacement?.kind === "move"
     ? plaza.entries.filter((entry) => entry.id !== pendingPlacement.entryId)
     : plaza.entries;
+  // 사이드 목록은 좋아요 순으로 보여주고, 같은 좋아요 수에서는 작성 순서를 유지합니다.
   const popularEntries = getPopularPlazaEntries(plaza.entries);
   const entryTotalPages = Math.max(1, Math.ceil(popularEntries.length / PLAZA_PAGE_SIZE));
   const safeEntryPage = Math.min(entryPage, entryTotalPages);
@@ -173,6 +176,7 @@ export function PlazaRoomPage({
     safeEntryPage * PLAZA_PAGE_SIZE,
   );
   const getNextObjectLayer = () => {
+    // 새 발자취는 기존 오브젝트보다 앞쪽 레이어에서 시작합니다.
     const maxLayer = plaza.entries.reduce(
       (max, entry) => Math.max(max, getEntryLayer(entry)),
       OBJECT_LAYER_MIN - 1,
@@ -182,6 +186,7 @@ export function PlazaRoomPage({
   };
 
   function getOtherEntryLayers(placement: PendingPlacement) {
+    // 위치 수정 중에는 자기 자신을 제외해야 앞/뒤 이동 기준을 정확히 계산할 수 있습니다.
     return plaza.entries
       .filter((entry) => placement.kind !== "move" || entry.id !== placement.entryId)
       .map(getEntryLayer);
@@ -215,6 +220,7 @@ export function PlazaRoomPage({
       window.clearTimeout(highlightTimerRef.current);
     }
 
+    // 목록에서 고른 오브젝트가 광장 안에서 잠깐 강조되도록 타이머로 하이라이트를 해제합니다.
     highlightTimerRef.current = window.setTimeout(() => {
       setHighlightedEntryId(null);
       highlightTimerRef.current = null;
@@ -233,6 +239,7 @@ export function PlazaRoomPage({
     }
 
     const applyConfirmedPlacement = (current: Plaza) => {
+      // 새 글 작성과 기존 오브젝트 이동이 같은 확정 버튼을 공유하므로 kind로 분기합니다.
       if (pendingPlacement.kind === "new") {
         const nextEntry = createPlazaEntry({
           title: pendingPlacement.value.title,
@@ -265,6 +272,7 @@ export function PlazaRoomPage({
     };
 
     if (requiresFirstEntry && pendingPlacement.kind === "new" && onFinalizeDraftPlaza) {
+      // 임시 광장은 첫 글 배치가 끝난 뒤에야 실제 광장 목록에 저장됩니다.
       onFinalizeDraftPlaza(applyConfirmedPlacement(plaza));
     } else {
       onUpdatePlaza(applyConfirmedPlacement);

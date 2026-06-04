@@ -7,6 +7,7 @@ export const OBJECT_LAYER_MAX = 7;
 export const PLAZA_PAGE_SIZE = 10;
 export const DAILY_PLAZA_CREATE_LIMIT = 5;
 
+// 광장 생성 모달에서 보여줄 날씨 배경 선택지입니다.
 export const PLAZA_WEATHER_OPTIONS: Array<{ key: PlazaWeatherKey; label: string; icon: string }> = [
   { key: "rain", label: "비", icon: "🌧️" },
   { key: "night", label: "밤", icon: "🌙" },
@@ -18,6 +19,7 @@ export const PLAZA_WEATHER_OPTIONS: Array<{ key: PlazaWeatherKey; label: string;
   { key: "cherry", label: "벚꽃", icon: "🌸" },
 ];
 
+// 날씨 대신 직접 색을 고를 때 쓰는 프리셋 팔레트입니다.
 export const PLAZA_COLOR_OPTIONS = [
   { color: "#8fa7a0", label: "세이지" },
   { color: "#b7a48a", label: "모래" },
@@ -34,6 +36,7 @@ export const clampObjectLayer = (layer: number) => {
   return Math.min(Math.max(layer, OBJECT_LAYER_MIN), OBJECT_LAYER_MAX);
 };
 
+// 생성 제한 비교는 UTC가 아닌 사용자 로컬 날짜 기준으로 맞춥니다.
 function getLocalDateKey(value: string | Date) {
   const date = value instanceof Date ? value : new Date(value);
 
@@ -58,6 +61,7 @@ export function canCreatePlazaToday(plazas: Plaza[], guestId: string) {
 }
 
 export function getPlazaEntryLikedGuestIds(entry: PlazaEntry) {
+  // 과거 저장값에 중복 좋아요 ID가 있더라도 화면 계산은 고유 사용자 기준으로 처리합니다.
   return Array.from(new Set(entry.likedGuestIds ?? []));
 }
 
@@ -70,6 +74,7 @@ export function getPlazaEntryLikeCount(entry: PlazaEntry) {
 }
 
 export function getPopularPlazaEntries(entries: PlazaEntry[]) {
+  // 좋아요가 같으면 먼저 작성된 글이 앞에 오도록 정렬해 순위가 흔들리지 않게 합니다.
   return [...entries].sort((a, b) => {
     const likeDifference = getPlazaEntryLikeCount(b) - getPlazaEntryLikeCount(a);
 
@@ -139,10 +144,12 @@ export function canViewPlaza(plaza: Plaza) {
 export function getPlazaDescription(plaza: Plaza) {
   const description = plaza.description.trim();
 
+  // 기본 안내 문구는 실제 설명처럼 보이지 않도록 상세 화면에서는 숨깁니다.
   return description === "\uc124\uba85\uc774 \uc5c6\ub294 \uad11\uc7a5" ? "" : description;
 }
 
 export function normalizePlaza(plaza: Plaza): Plaza {
+  // 저장소에서 불러오거나 참여자가 추가될 때 정원 초과 광장을 자동으로 종료 처리합니다.
   if (plaza.status === "closed") {
     return plaza;
   }
