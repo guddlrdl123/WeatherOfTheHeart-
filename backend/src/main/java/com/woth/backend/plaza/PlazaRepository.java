@@ -16,6 +16,8 @@ import java.util.List;
 public interface PlazaRepository extends JpaRepository<Plaza, Long> {
     List<Plaza> findAllByIsActiveTrueOrderByCreatedAtDesc();
 
+    boolean existsByInviteCode(String inviteCode);
+
     @Modifying
     @Query("""
             update Plaza p
