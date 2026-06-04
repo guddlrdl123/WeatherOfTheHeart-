@@ -67,7 +67,7 @@ public class AuthController {
     public record SignupRequest(
             @NotBlank @Email String email,
             @NotBlank @Size(min = 8) @Pattern(regexp = ".*[^A-Za-z0-9].*") String password,
-            @NotBlank @Size(max = 10) String nickname
+            @Size(max = 10) String nickname
     ) {
     }
 
