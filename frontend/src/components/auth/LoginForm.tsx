@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login } from "../../services/authService";
-import { setAuthenticated, setCurrentUserId, setProfileNickname } from "../../utils/authSession";
+import { setAuthenticated, setCurrentUserId, setProfileEmail, setProfileNickname } from "../../utils/authSession";
 // import { useAppStore } from "../../stores/AppStore";
 
 // 백엔드 로그인 API를 호출하는 로그인 폼입니다.
@@ -44,6 +44,7 @@ export function LoginForm() {
         setProfileNickname(auth.nickname);
       }
 
+      setProfileEmail(email.trim());
       setAuthenticated();
       navigate("/room", { replace: true });
     } catch {

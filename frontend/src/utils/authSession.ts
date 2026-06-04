@@ -1,6 +1,7 @@
 // 백엔드 인증 연동 전까지 로그인 상태는 브라우저 저장소에 임시로 보관합니다.
 const AUTH_STORAGE_KEY = "mw-authenticated";
 const PROFILE_NICKNAME_STORAGE_KEY = "mw-profile-nickname";
+const PROFILE_EMAIL_STORAGE_KEY = "mw-profile-email";
 const USER_ID_STORAGE_KEY = "mw-user-id";
 export const DEFAULT_PROFILE_NICKNAME = "나그네";
 export const PROFILE_NICKNAME_MAX_LENGTH = 10;
@@ -31,6 +32,14 @@ export function getProfileNickname() {
 
 export function setProfileNickname(nickname: string) {
     localStorage.setItem(PROFILE_NICKNAME_STORAGE_KEY, normalizeProfileNickname(nickname));
+}
+
+export function getProfileEmail() {
+    return localStorage.getItem(PROFILE_EMAIL_STORAGE_KEY) ?? "";
+}
+
+export function setProfileEmail(email: string) {
+    localStorage.setItem(PROFILE_EMAIL_STORAGE_KEY, email.trim());
 }
 
 export function getCurrentUserId() {

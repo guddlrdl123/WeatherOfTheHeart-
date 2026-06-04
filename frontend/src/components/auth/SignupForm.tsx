@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { sendEmailVerification, signup, verifyEmail } from "../../services/authService";
-import { PROFILE_NICKNAME_MAX_LENGTH, setAuthenticated, setCurrentUserId, setProfileNickname } from "../../utils/authSession";
+import { PROFILE_NICKNAME_MAX_LENGTH, setAuthenticated, setCurrentUserId, setProfileEmail, setProfileNickname } from "../../utils/authSession";
 // import { useAppStore } from "../../stores/AppStore";
 
 // 백엔드 회원가입 API를 호출하고 성공하면 내 방으로 이동시키는 폼입니다.
@@ -124,6 +124,7 @@ export function SignupForm() {
 
             setAuthenticated();
             // 회원가입 직후 마이페이지에서 입력한 닉네임이 바로 보이도록 임시 프로필 저장소에 동기화합니다.
+            setProfileEmail(email.trim());
             setProfileNickname(auth.nickname ?? nickname);
             navigate("/room", { replace: true });
         } catch {

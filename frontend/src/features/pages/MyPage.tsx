@@ -16,6 +16,7 @@ import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
 import type { Plaza, PlazaEntry } from "../../types/plaza";
 import {
   clearAuthenticated,
+  getProfileEmail,
   getProfileNickname,
   normalizeProfileNickname,
   PROFILE_NICKNAME_MAX_LENGTH,
@@ -56,6 +57,7 @@ function MyPage() {
 
   // 프로필 API가 붙기 전까지 닉네임은 authSession 유틸의 로컬 저장값을 사용합니다.
   const [nickname, setNickname] = useState(getProfileNickname);
+  const [email] = useState(getProfileEmail);
   const [nicknameDraft, setNicknameDraft] = useState(nickname);
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [message, setMessage] = useState("");
@@ -135,7 +137,7 @@ function MyPage() {
                   <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[#5a4632]/58">
                     <span className="inline-flex items-center gap-1.5">
                       <Mail size={14} />
-                      admin@maeum.weather
+                      {email || "이메일 정보 없음"}
                     </span>
                     <span className="h-3 w-px bg-[#5a4632]/18" />
                     <span>가입일 2026.05.01</span>
