@@ -50,8 +50,8 @@ export function PlazaCreateModal({ onCreate, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm select-none">
-      <section className="mw-surface flex max-h-[92vh] w-full max-w-[620px] flex-col gap-5 overflow-y-auto rounded-xl bg-[#fffbf6f2] p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
+      <section className="mw-surface flex max-h-[calc(100vh-64px)] w-full max-w-[620px] flex-col gap-5 overflow-y-auto rounded-xl bg-[#fffbf6f2] p-6 shadow-xl">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-normal text-[#5a4632]">새 광장 만들기</h2>
           <button
@@ -211,7 +211,7 @@ export function PlazaCreateModal({ onCreate, onClose }: Props) {
         <button
           type="button"
           onClick={handleCreate}
-          className="mw-button-solid inline-flex items-center justify-center gap-2 rounded-md px-5 py-3 text-sm"
+          className="mw-button-solid inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm"
         >
           <Plus size={16} />
           생성

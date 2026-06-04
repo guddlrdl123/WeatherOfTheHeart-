@@ -28,8 +28,8 @@ type CreateLimitNoticeModalProps = {
 
 function CreateLimitNoticeModal({ onClose }: CreateLimitNoticeModalProps) {
   return (
-    <div className="fixed inset-0 z-[55] flex items-center justify-center bg-black/30 px-4 backdrop-blur-[2px]">
-      <div className="w-full max-w-[380px] rounded-xl border border-[#b65f55]/20 bg-[#fffbf6f2] p-5 text-[#5a4632] shadow-xl">
+    <div className="fixed inset-0 z-[55] flex items-center justify-center bg-black/30 px-4 py-8 backdrop-blur-[2px]">
+      <div className="w-full max-w-[380px] max-h-[calc(100vh-64px)] overflow-y-auto rounded-xl border border-[#b65f55]/20 bg-[#fffbf6f2] p-5 text-[#5a4632] shadow-xl">
         <h3 className="text-base font-semibold">광장 생성 제한</h3>
         <p className="mt-2 text-sm leading-7 text-[#5a4632]/68">
           하루에 최대 {DAILY_PLAZA_CREATE_LIMIT}개만 작성 가능해요. 생성하고 싶다면 오늘 만든 광장을 삭제하고 생성해주세요.
@@ -203,7 +203,7 @@ export function PlazaListPage({ plazas, currentGuestId, onCreate }: Props) {
                       type="button"
                       disabled={!viewable}
                       onClick={() => navigate(`/plaza/${plaza.id}`)}
-                      className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md border border-[#9b6b54]/45 bg-[#9b6b54]/10 px-4 text-sm text-[#9b6b54] transition hover:bg-[#9b6b54]/16 disabled:opacity-45"
+                      className="inline-flex shrink-0 items-center gap-2 rounded-md border border-[#9b6b54]/45 bg-[#9b6b54]/10 px-4 py-2 text-sm text-[#9b6b54] transition hover:bg-[#9b6b54]/16 disabled:opacity-45"
                     >
                       {actionLabel}
                       <ArrowRight size={15} />

@@ -8,7 +8,7 @@ import type { RoomObjectPosition } from "../../types/roomObject";
 import { createPlazaEntry } from "../../utils/plazaStorage";
 import { PlazaSpace } from "./PlazaSpace";
 import { PlazaWriteModal, type PlazaWriteValue } from "./PlazaWriteModal";
-import { PlazaPreviewModal } from "./PlazaPreviewModal";
+import { PlazaPreviewModal, type PlazaPreviewUpdate } from "./PlazaPreviewModal";
 import {
   DEFAULT_PLAZA_OBJECT_POSITION,
   OBJECT_LAYER_MIN,
@@ -63,18 +63,17 @@ const getEntryLayer = (entry: PlazaEntry) => entry.layer ?? OBJECT_LAYER_MIN;
 const PLAZA_LAYOUT_WIDTH = 1460;
 const PLAZA_LAYOUT_HEIGHT = 650;
 
-// 광장 종료/삭제처럼 되돌리기 어려운 방장 작업을 확인하는 공통 모달입니다.
 function PlazaConfirmModal({ action, onCancel, onConfirm }: PlazaConfirmModalProps) {
   const isDelete = action === "delete";
   const Icon = isDelete ? Trash2 : Power;
 
   return (
     <div
-      className="fixed inset-0 z-[130] flex items-center justify-center bg-black/25 px-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[130] flex items-center justify-center bg-black/25 px-4 py-8 backdrop-blur-[2px]"
       onPointerDown={onCancel}
     >
       <div
-        className="w-full max-w-[380px] rounded-xl border border-[#b36a5e]/25 bg-[#fffbf6f2] p-5 text-[#5a4632] shadow-xl"
+        className="w-full max-w-[380px] max-h-[calc(100vh-64px)] overflow-y-auto rounded-xl border border-[#b36a5e]/25 bg-[#fffbf6f2] p-5 text-[#5a4632] shadow-xl"
         onPointerDown={(event) => event.stopPropagation()}
       >
         <div className="mb-4 flex items-start gap-3">
@@ -114,7 +113,6 @@ function PlazaConfirmModal({ action, onCancel, onConfirm }: PlazaConfirmModalPro
   );
 }
 
-// 광장 오브젝트 레이어를 0부터 다시 매겨 저장값이 정렬 가능한 범위에 머물게 합니다.
 function normalizeEntryLayers(entries: PlazaEntry[]) {
   const layerById = new Map<string, number>();
 
@@ -167,7 +165,6 @@ export function PlazaRoomPage({
   const visiblePlazaEntries = pendingPlacement?.kind === "move"
     ? plaza.entries.filter((entry) => entry.id !== pendingPlacement.entryId)
     : plaza.entries;
-  // 사이드 목록은 좋아요 순으로 보여주고, 같은 좋아요 수에서는 작성 순서를 유지합니다.
   const popularEntries = getPopularPlazaEntries(plaza.entries);
   const entryTotalPages = Math.max(1, Math.ceil(popularEntries.length / PLAZA_PAGE_SIZE));
   const safeEntryPage = Math.min(entryPage, entryTotalPages);
@@ -176,7 +173,6 @@ export function PlazaRoomPage({
     safeEntryPage * PLAZA_PAGE_SIZE,
   );
   const getNextObjectLayer = () => {
-    // 새 발자취는 기존 오브젝트보다 앞쪽 레이어에서 시작합니다.
     const maxLayer = plaza.entries.reduce(
       (max, entry) => Math.max(max, getEntryLayer(entry)),
       OBJECT_LAYER_MIN - 1,
@@ -186,7 +182,6 @@ export function PlazaRoomPage({
   };
 
   function getOtherEntryLayers(placement: PendingPlacement) {
-    // 위치 수정 중에는 자기 자신을 제외해야 앞/뒤 이동 기준을 정확히 계산할 수 있습니다.
     return plaza.entries
       .filter((entry) => placement.kind !== "move" || entry.id !== placement.entryId)
       .map(getEntryLayer);
@@ -220,7 +215,6 @@ export function PlazaRoomPage({
       window.clearTimeout(highlightTimerRef.current);
     }
 
-    // 목록에서 고른 오브젝트가 광장 안에서 잠깐 강조되도록 타이머로 하이라이트를 해제합니다.
     highlightTimerRef.current = window.setTimeout(() => {
       setHighlightedEntryId(null);
       highlightTimerRef.current = null;
@@ -239,7 +233,6 @@ export function PlazaRoomPage({
     }
 
     const applyConfirmedPlacement = (current: Plaza) => {
-      // 새 글 작성과 기존 오브젝트 이동이 같은 확정 버튼을 공유하므로 kind로 분기합니다.
       if (pendingPlacement.kind === "new") {
         const nextEntry = createPlazaEntry({
           title: pendingPlacement.value.title,
@@ -272,7 +265,6 @@ export function PlazaRoomPage({
     };
 
     if (requiresFirstEntry && pendingPlacement.kind === "new" && onFinalizeDraftPlaza) {
-      // 임시 광장은 첫 글 배치가 끝난 뒤에야 실제 광장 목록에 저장됩니다.
       onFinalizeDraftPlaza(applyConfirmedPlacement(plaza));
     } else {
       onUpdatePlaza(applyConfirmedPlacement);
@@ -291,11 +283,33 @@ export function PlazaRoomPage({
     setPreviewEntry((current) => current?.id === entryId ? togglePlazaEntryLike(current, currentGuestId) : current);
   }
 
+  function handleUpdateEntry(entryId: string, value: PlazaPreviewUpdate) {
+    onUpdatePlaza((current) => ({
+      ...current,
+      entries: current.entries.map((entry) => entry.id === entryId && entry.ownerId === currentGuestId
+        ? {
+          ...entry,
+          title: value.title,
+          content: value.content,
+        }
+        : entry),
+    }));
+
+    setPreviewEntry((current) => current?.id === entryId
+      ? {
+        ...current,
+        title: value.title,
+        content: value.content,
+      }
+      : current);
+  }
+
   function handleDeleteEntry(entryId: string) {
     onUpdatePlaza((current) => {
       const targetEntry = current.entries.find((entry) => entry.id === entryId);
 
-      if (!targetEntry || targetEntry.ownerId !== currentGuestId) {
+      // 광장장의 첫 오브젝트는 빈 광장 방지를 위해 삭제하지 않고 글 수정만 허용합니다.
+      if (!targetEntry || targetEntry.ownerId !== currentGuestId || targetEntry.ownerId === current.ownerId) {
         return current;
       }
 
@@ -487,16 +501,16 @@ export function PlazaRoomPage({
                   type="button"
                   disabled={requiresFirstEntry || !enterable || Boolean(ownEntry) || Boolean(pendingPlacement)}
                   onClick={() => setIsWriteOpen(true)}
-                  className="mw-button-solid inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm disabled:opacity-45"
+                  className="mw-button-solid inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm disabled:opacity-45"
                 >
-                  < Footprints size={16} />
+                  <Footprints size={16} />
                   발자취 남기기
                 </button>
                 {ownEntry && (
                   <button
                     type="button"
                     onClick={showMyObject}
-                    className="mw-button inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm"
+                    className="mw-button inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm"
                   >
                     <MapPinned size={16} />
                     내 오브젝트 보기
@@ -653,7 +667,8 @@ export function PlazaRoomPage({
           entry={previewEntry}
           currentGuestId={currentGuestId}
           onClose={() => setPreviewEntry(null)}
-          onDelete={previewEntry.ownerId === currentGuestId ? handleDeleteEntry : undefined}
+          onUpdate={previewEntry.ownerId === currentGuestId ? handleUpdateEntry : undefined}
+          onDelete={previewEntry.ownerId === currentGuestId && previewEntry.ownerId !== plaza.ownerId ? handleDeleteEntry : undefined}
         />
       )}
 

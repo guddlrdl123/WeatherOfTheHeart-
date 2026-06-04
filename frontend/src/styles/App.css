@@ -143,7 +143,7 @@
     transition: background-color 160ms ease, border-color 160ms ease, opacity 160ms ease;
 }
 
-.mw-button:hover {
+.mw-button:hover:not(:disabled) {
     background: var(--mw-accent-hover);
     border-color: color-mix(in srgb, var(--mw-accent) 64%, transparent);
 }
@@ -156,8 +156,13 @@
     transition: background-color 160ms ease, opacity 160ms ease;
 }
 
-.mw-button-solid:hover {
+.mw-button-solid:hover:not(:disabled) {
     background: color-mix(in srgb, var(--mw-accent) 90%, transparent);
+}
+
+.mw-button:disabled,
+.mw-button-solid:disabled {
+    opacity: 0.5;
 }
 
 html,

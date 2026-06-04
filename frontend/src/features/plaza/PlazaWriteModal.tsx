@@ -58,8 +58,8 @@ export function PlazaWriteModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm select-none">
-      <div className="w-full max-w-[760px] rounded-xl bg-[#fffbf6f2] p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
+      <div className="w-full max-w-[760px] max-h-[calc(100vh-64px)] overflow-y-auto rounded-xl bg-[#fffbf6f2] p-6 shadow-xl">
         <div className="mb-5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-normal text-[#5a4632]">
@@ -114,7 +114,7 @@ export function PlazaWriteModal({
             type="button"
             disabled={!canContinue}
             onClick={() => setStep("object")}
-            className="mw-button-solid rounded-md px-5 py-2 text-sm disabled:opacity-50"
+            className="mw-button-solid rounded-md px-4 py-2 text-sm disabled:opacity-50"
           >
             다음
           </button>

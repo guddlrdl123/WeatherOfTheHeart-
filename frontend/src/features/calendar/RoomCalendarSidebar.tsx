@@ -108,14 +108,14 @@ export default function Calendar({
                             }}
                             className={`
                                 flex aspect-square w-full flex-col items-center justify-center rounded-md text-[12px]
-                                transition-colors cursor-pointer
+                                transition-colors
 
                                 ${!date
                                     ? "pointer-events-none"
                                     : isFuture
-                                        ? "text-[#5a4632]/20 cursor-not-allowed pointer-events-none"
+                                        ? "text-[#5a4632]/20 pointer-events-none"
                                         : isSelected
-                                            ? "bg-[#5a4632]/20 text-[#5a4632] font-semibold"
+                                            ? "cursor-pointer bg-[#5a4632]/20 text-[#5a4632] font-semibold"
                                             : "text-[#5a4632] hover:bg-[#5a4632]/5 cursor-pointer"}
                             `}
                         >
