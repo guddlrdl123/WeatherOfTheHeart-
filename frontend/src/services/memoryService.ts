@@ -74,3 +74,14 @@ export async function createMemory(userId: string, value: CreateMemoryRequest) {
 
   return toMemory(payload.data);
 }
+
+export async function fetchMemories(userId: string) {
+  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/memories`));
+  const payload = await readJsonResponse<ApiResponse<MemoryResponse[]>>(response);
+
+  if (!response.ok) {
+    throw new Error(payload.message || "기록 목록을 불러오지 못했습니다.");
+  }
+
+  return payload.data.map(toMemory);
+}

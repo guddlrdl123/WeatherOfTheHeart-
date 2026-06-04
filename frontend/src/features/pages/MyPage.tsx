@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Archive,
   ArrowRight,
@@ -13,16 +13,17 @@ import {
 import { useNavigate } from "react-router-dom";
 import { AppHeader } from "../../components/layout/AppHeader";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
+import { fetchUserCreatedPlazas, fetchUserPlazaEntries } from "../../services/plazaService";
+import { fetchUserProfile, updateUserProfile } from "../../services/userService";
 import type { Plaza, PlazaEntry } from "../../types/plaza";
 import {
   clearAuthenticated,
-  getProfileEmail,
-  getProfileNickname,
+  getCurrentUserId,
   normalizeProfileNickname,
   PROFILE_NICKNAME_MAX_LENGTH,
+  setProfileEmail,
   setProfileNickname,
 } from "../../utils/authSession";
-import { getGuestId, loadPlazas } from "../../utils/plazaStorage";
 
 type ArchiveRecord = {
   id: string;
@@ -48,46 +49,129 @@ function formatCreatedAt(value: string) {
   }).format(date);
 }
 
+function formatJoinedAt(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "정보 없음";
+  }
+
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
 function getPlazaStatusLabel(plaza: Plaza) {
   return plaza.status === "closed" ? "종료됨" : "진행 중";
+}
+
+function getPlazaEntryCount(plaza: Plaza) {
+  return plaza.entryCount ?? plaza.entries.length;
 }
 
 function MyPage() {
   const navigate = useNavigate();
 
-  // 프로필 API가 붙기 전까지 닉네임은 authSession 유틸의 로컬 저장값을 사용합니다.
-  const [nickname, setNickname] = useState(getProfileNickname);
-  const [email] = useState(getProfileEmail);
+  const [currentUserId] = useState(() => getCurrentUserId());
+  const [nickname, setNickname] = useState("");
+  const [email, setEmail] = useState("");
+  const [joinedAt, setJoinedAt] = useState("");
   const [nicknameDraft, setNicknameDraft] = useState(nickname);
   const [isEditingNickname, setIsEditingNickname] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isActivityLoading, setIsActivityLoading] = useState(true);
   const [message, setMessage] = useState("");
-  const [currentGuestId] = useState(() => getGuestId());
-  const [plazas] = useState(() => loadPlazas());
+  const [createdPlazas, setCreatedPlazas] = useState<Plaza[]>([]);
+  const [archiveRecords, setArchiveRecords] = useState<ArchiveRecord[]>([]);
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<MyPageView>("writtenObjects");
-
-  // 현재 사용자가 광장에 남긴 글만 모아 마이페이지 보관함 목록으로 사용합니다.
-  const archiveRecords = useMemo<ArchiveRecord[]>(() => {
-    return plazas
-      .flatMap((plaza) => plaza.entries
-        .filter((entry) => entry.ownerId === currentGuestId)
-        .map((entry) => ({
-          id: `${plaza.id}:${entry.id}`,
-          plaza,
-          entry,
-        })))
-      .sort((a, b) => Date.parse(b.entry.createdAt) - Date.parse(a.entry.createdAt));
-  }, [currentGuestId, plazas]);
-
-  const createdPlazas = useMemo(() => {
-    return plazas
-      .filter((plaza) => plaza.ownerId === currentGuestId)
-      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-  }, [currentGuestId, plazas]);
 
   // 사용자가 아직 선택하지 않았을 때는 최신 기록을 기본 상세로 보여줍니다.
   const selectedRecord = archiveRecords.find((record) => record.id === selectedRecordId) ?? archiveRecords[0] ?? null;
   const selectedObject = selectedRecord ? ROOM_OBJECT_BY_KEY[selectedRecord.entry.objectKey] : null;
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadProfile() {
+      try {
+        setIsProfileLoading(true);
+        setMessage("");
+
+        const profile = await fetchUserProfile(currentUserId);
+
+        if (ignore) {
+          return;
+        }
+
+        setNickname(profile.nickname);
+        setNicknameDraft(profile.nickname);
+        setEmail(profile.email);
+        setJoinedAt(profile.joinedAt);
+        setProfileNickname(profile.nickname);
+        setProfileEmail(profile.email);
+      } catch (caughtError) {
+        if (!ignore) {
+          setMessage(caughtError instanceof Error ? caughtError.message : "프로필 정보를 불러오지 못했습니다.");
+        }
+      } finally {
+        if (!ignore) {
+          setIsProfileLoading(false);
+        }
+      }
+    }
+
+    void loadProfile();
+
+    return () => {
+      ignore = true;
+    };
+  }, [currentUserId]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadActivities() {
+      try {
+        setIsActivityLoading(true);
+
+        const [created, writtenEntries] = await Promise.all([
+          fetchUserCreatedPlazas(currentUserId),
+          fetchUserPlazaEntries(currentUserId),
+        ]);
+
+        if (ignore) {
+          return;
+        }
+
+        setCreatedPlazas(created);
+        setArchiveRecords(writtenEntries
+          .map(({ plaza, entry }) => ({
+            id: `${plaza.id}:${entry.id}`,
+            plaza,
+            entry,
+          }))
+          .sort((a, b) => Date.parse(b.entry.createdAt) - Date.parse(a.entry.createdAt)));
+      } catch (caughtError) {
+        if (!ignore) {
+          setMessage(caughtError instanceof Error ? caughtError.message : "마이페이지 활동을 불러오지 못했습니다.");
+        }
+      } finally {
+        if (!ignore) {
+          setIsActivityLoading(false);
+        }
+      }
+    }
+
+    void loadActivities();
+
+    return () => {
+      ignore = true;
+    };
+  }, [currentUserId]);
 
   function handleStartEdit() {
     setNicknameDraft(nickname);
@@ -102,14 +186,28 @@ function MyPage() {
   }
 
   // 저장 버튼과 Enter 키가 같은 검증/저장 흐름을 사용하도록 하나의 함수로 묶었습니다.
-  function handleSaveNickname() {
+  async function handleSaveNickname() {
     const nextNickname = normalizeProfileNickname(nicknameDraft);
 
-    setProfileNickname(nextNickname);
-    setNickname(nextNickname);
-    setNicknameDraft(nextNickname);
-    setIsEditingNickname(false);
-    setMessage("닉네임이 변경되었습니다.");
+    try {
+      setIsSavingProfile(true);
+      setMessage("");
+
+      const profile = await updateUserProfile(currentUserId, { nickname: nextNickname });
+
+      setNickname(profile.nickname);
+      setNicknameDraft(profile.nickname);
+      setEmail(profile.email);
+      setJoinedAt(profile.joinedAt);
+      setProfileNickname(profile.nickname);
+      setProfileEmail(profile.email);
+      setIsEditingNickname(false);
+      setMessage("닉네임이 변경되었습니다.");
+    } catch (caughtError) {
+      setMessage(caughtError instanceof Error ? caughtError.message : "프로필 정보를 수정하지 못했습니다.");
+    } finally {
+      setIsSavingProfile(false);
+    }
   }
 
   // 헤더 로그아웃 버튼과 동일하게 인증 플래그를 지우고 랜딩 페이지로 이동합니다.
@@ -133,14 +231,16 @@ function MyPage() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs tracking-[0.18em] text-[#5a4632]/38">MY PAGE</p>
-                  <h1 className="mt-2 truncate text-2xl font-normal text-[#5a4632]">{nickname}님의 마음 기록</h1>
+                  <h1 className="mt-2 truncate text-2xl font-normal text-[#5a4632]">
+                    {isProfileLoading ? "프로필을 불러오는 중" : `${nickname || "나그네"}님의 마음 기록`}
+                  </h1>
                   <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[#5a4632]/58">
                     <span className="inline-flex items-center gap-1.5">
                       <Mail size={14} />
                       {email || "이메일 정보 없음"}
                     </span>
                     <span className="h-3 w-px bg-[#5a4632]/18" />
-                    <span>가입일 2026.05.01</span>
+                    <span>가입일 {joinedAt ? formatJoinedAt(joinedAt) : "정보 없음"}</span>
                   </div>
                 </div>
               </div>
@@ -155,7 +255,7 @@ function MyPage() {
                       onChange={(event) => setNicknameDraft(event.target.value)}
                       onKeyDown={(event) => {
                         if (event.key === "Enter") {
-                          handleSaveNickname();
+                          void handleSaveNickname();
                         }
 
                         if (event.key === "Escape") {
@@ -163,18 +263,21 @@ function MyPage() {
                         }
                       }}
                       autoFocus
+                      disabled={isSavingProfile}
                     />
                     <button
                       type="button"
-                      className="mw-button-solid inline-flex items-center rounded-md px-4 py-2 text-sm"
-                      onClick={handleSaveNickname}
+                      className="mw-button-solid inline-flex items-center rounded-md px-4 py-2 text-sm disabled:opacity-50"
+                      onClick={() => void handleSaveNickname()}
+                      disabled={isSavingProfile}
                     >
-                      저장
+                      {isSavingProfile ? "저장 중" : "저장"}
                     </button>
                     <button
                       type="button"
-                      className="mw-button inline-flex items-center rounded-md px-4 py-2 text-sm"
+                      className="mw-button inline-flex items-center rounded-md px-4 py-2 text-sm disabled:opacity-50"
                       onClick={handleCancelEdit}
+                      disabled={isSavingProfile}
                     >
                       취소
                     </button>
@@ -185,6 +288,7 @@ function MyPage() {
                       type="button"
                       className="mw-button-solid inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm"
                       onClick={handleStartEdit}
+                      disabled={isProfileLoading}
                     >
                       <Pencil size={14} />
                       정보수정
@@ -233,7 +337,11 @@ function MyPage() {
             </div>
 
             {activeView === "createdPlazas" ? (
-              createdPlazas.length === 0 ? (
+              isActivityLoading ? (
+                <section className="mw-surface grid flex-1 place-items-center rounded-xl p-8 text-center text-sm text-[#5a4632]/55">
+                  마이페이지 활동을 불러오는 중입니다.
+                </section>
+              ) : createdPlazas.length === 0 ? (
                 <section className="mw-surface grid flex-1 place-items-center rounded-xl p-8 text-center">
                   <div>
                     <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full border border-[#5a4632]/15 bg-white/35 text-[#5a4632]/65">
@@ -278,7 +386,7 @@ function MyPage() {
                                 {getPlazaStatusLabel(plaza)}
                               </span>
                               <span className="rounded-full border border-[#5a4632]/12 bg-white/30 px-2 py-1">
-                                {plaza.entries.length}/{plaza.maxParticipants}명
+                                {getPlazaEntryCount(plaza)}/{plaza.maxParticipants}명
                               </span>
                               {description && <span className="min-w-0 truncate">{description}</span>}
                             </div>
@@ -298,6 +406,10 @@ function MyPage() {
                   </div>
                 </section>
               )
+            ) : isActivityLoading ? (
+              <section className="mw-surface grid flex-1 place-items-center rounded-xl p-8 text-center text-sm text-[#5a4632]/55">
+                마이페이지 활동을 불러오는 중입니다.
+              </section>
             ) : archiveRecords.length === 0 ? (
               <section className="mw-surface grid flex-1 place-items-center rounded-xl p-8 text-center">
                 <div>
@@ -332,8 +444,12 @@ function MyPage() {
                             : "border-transparent bg-white/20 hover:border-[#5a4632]/12 hover:bg-white/35"
                             }`}
                         >
-                          <span className="grid h-11 w-11 place-items-center rounded-lg border border-[#5a4632]/10 bg-white/35">
-                            <img src={object.image} alt="" className="h-8 w-8 object-contain" />
+                          <span className="grid h-11 w-11 place-items-center rounded-lg border border-[#5a4632]/10 bg-white/35 text-[#5a4632]/45">
+                            {object ? (
+                              <img src={object.image} alt="" className="h-8 w-8 object-contain" />
+                            ) : (
+                              <Archive size={18} />
+                            )}
                           </span>
 
                           <span className="min-w-0">
@@ -358,7 +474,7 @@ function MyPage() {
 
                 {/* 선택한 광장 글의 상세 내용과 함께 배치한 오브젝트를 보여줍니다. */}
                 <article className="mw-surface min-h-0 rounded-xl p-7">
-                  {selectedRecord && selectedObject ? (
+                  {selectedRecord ? (
                     <div className="flex h-full flex-col">
                       <div className="mb-6 flex items-start justify-between gap-5 border-b border-[#5a4632]/15 pb-6">
                         <div className="min-w-0">
@@ -404,10 +520,14 @@ function MyPage() {
 
                         <aside className="rounded-lg border border-[#5a4632]/12 bg-white/25 p-5">
                           <p className="mb-4 text-xs text-[#5a4632]/45">내 오브젝트</p>
-                          <div className="grid place-items-center rounded-lg border border-[#5a4632]/10 bg-white/30 px-4 py-7">
-                            <img src={selectedObject.image} alt="" className="h-24 w-24 object-contain" />
+                          <div className="grid place-items-center rounded-lg border border-[#5a4632]/10 bg-white/30 px-4 py-7 text-[#5a4632]/45">
+                            {selectedObject ? (
+                              <img src={selectedObject.image} alt="" className="h-24 w-24 object-contain" />
+                            ) : (
+                              <Archive size={32} />
+                            )}
                           </div>
-                          <p className="mt-4 truncate text-sm text-[#5a4632]">{selectedObject.label}</p>
+                          <p className="mt-4 truncate text-sm text-[#5a4632]">{selectedObject?.label ?? "알 수 없는 오브젝트"}</p>
                           <p className="mt-1 text-xs text-[#5a4632]/45">이 글과 함께 광장에 놓인 오브젝트</p>
                         </aside>
                       </div>

@@ -7,7 +7,7 @@ import { MemoryPreviewModal, type MemoryPreviewUpdate } from "../memory/MemoryPr
 // import { getTodayString } from "../utils/date";
 import { AppHeader } from "../../components/layout/AppHeader";
 import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
-import { createMemory } from "../../services/memoryService";
+import { createMemory, fetchMemories } from "../../services/memoryService";
 import type { Memory } from "../../types/memory";
 import type { RoomObjectKey, RoomObjectPosition } from "../../types/roomObject";
 import type { WeatherKey } from "../../types/weather";
@@ -68,7 +68,17 @@ function normalizeMemoryLayers(memories: Memory[], monthKey: string) {
     );
 }
 
+function normalizeAllMemoryLayers(memories: Memory[]) {
+    const monthKeys = Array.from(new Set(memories.map((memory) => getMonthKey(memory.memoryDate))));
+
+    return monthKeys.reduce(
+        (nextMemories, monthKey) => normalizeMemoryLayers(nextMemories, monthKey),
+        memories,
+    );
+}
+
 function RoomPage() {
+    const [currentUserId] = useState(() => getCurrentUserId());
     const [weather] = useState<WeatherKey>('sunny');
     const stageWidth = useResponsiveStageWidth({
         designWidth: ROOM_LAYOUT_WIDTH,
@@ -99,14 +109,52 @@ function RoomPage() {
     // const [viewMonth, setViewMonth] = useState(new Date().getMonth() + 1);
 
     const [memories, setMemories] = useState<Memory[]>([]);
+    const [isMemoryLoading, setIsMemoryLoading] = useState(true);
+    const [memoryLoadError, setMemoryLoadError] = useState("");
     // 사용자가 오브젝트 위치를 고르는 동안 작성한 메모리를 임시로 보관
     const [pendingPlacement, setPendingPlacement] = useState<PendingPlacement | null>(null);
     const [editingPlacement, setEditingPlacement] = useState<EditingPlacement | null>(null);
+    const [isPlacementSaving, setIsPlacementSaving] = useState(false);
     const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
     const [bouncingObjectId, setBouncingObjectId] = useState<string | null>(null);
     const [previewMemory, setPreviewMemory] = useState<Memory | null>(null);
     const bounceStartTimerRef = useRef<number | null>(null);
     const bounceEndTimerRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadMemories = async () => {
+            try {
+                setIsMemoryLoading(true);
+                setMemoryLoadError("");
+
+                const loadedMemories = await fetchMemories(currentUserId);
+
+                if (!isMounted) {
+                    return;
+                }
+
+                setMemories(normalizeAllMemoryLayers(loadedMemories));
+            } catch (error) {
+                if (!isMounted) {
+                    return;
+                }
+
+                setMemoryLoadError(error instanceof Error ? error.message : "기록 목록을 불러오지 못했습니다.");
+            } finally {
+                if (isMounted) {
+                    setIsMemoryLoading(false);
+                }
+            }
+        };
+
+        void loadMemories();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [currentUserId]);
 
 
     const selectedMemory = memories.find(
@@ -128,6 +176,14 @@ function RoomPage() {
             title: memory.title,
         }));
     const roomMonthLabel = formatRoomMonthLabel(roomMonthKey);
+
+    useEffect(() => {
+        const memoryForDate = memories.find(
+            (memory) => memory.memoryDate === selectedDate
+        );
+
+        setRoomWeather(memoryForDate?.weatherKey ?? weather);
+    }, [memories, selectedDate, weather]);
 
     const getNextObjectLayer = (dateString: string) => {
         // 새 오브젝트는 현재 달의 가장 앞 레이어 다음에 배치합니다.
@@ -246,6 +302,10 @@ function RoomPage() {
 
     // 체크 버튼을 누르면 메모리와 오브젝트의 최종 위치를 함께 저장합니다.
     const handleConfirmPlacement = async () => {
+        if (isPlacementSaving) {
+            return;
+        }
+
         if (editingPlacement) {
             const { memoryId, position, layer } = editingPlacement;
 
@@ -280,7 +340,8 @@ function RoomPage() {
         const { value, position, layer } = pendingPlacement;
 
         try {
-            const savedMemory = await createMemory(getCurrentUserId(), {
+            setIsPlacementSaving(true);
+            const savedMemory = await createMemory(currentUserId, {
                 memoryDate: value.memoryDate,
                 title: value.title ?? "",
                 content: value.content,
@@ -313,10 +374,16 @@ function RoomPage() {
             setActiveObjectId(null);
         } catch (error) {
             alert(error instanceof Error ? error.message : "기억 저장에 실패했습니다.");
+        } finally {
+            setIsPlacementSaving(false);
         }
     };
 
     const handleCancelPlacement = () => {
+        if (isPlacementSaving) {
+            return;
+        }
+
         setPendingPlacement(null);
         setEditingPlacement(null);
     };
@@ -375,6 +442,7 @@ function RoomPage() {
                     ? {
                         ...memory,
                         updatedAt,
+                        isUpdated: true,
                         title: value.title,
                         content: value.content,
                         moodKey: value.moodKey,
@@ -388,6 +456,7 @@ function RoomPage() {
                 ? {
                     ...prev,
                     updatedAt,
+                    isUpdated: true,
                     title: value.title,
                     content: value.content,
                     moodKey: value.moodKey,
@@ -459,17 +528,37 @@ function RoomPage() {
                         </div>
 
                         <div className="h-[254px] bg-[#faf8f2] rounded-2xl border border-[#5a4632]/20 overflow-hidden">
-                            <RoomMemoryPanel
-                                selectedDate={selectedDate}
-                                selectedMemory={selectedMemory}
-                                onWrite={handleOpenWriteModal}
-                                onPreview={() => {
-                                    if (selectedMemory) {
-                                        setPreviewMemory(selectedMemory);
-                                    }
-                                }}
-                            // weatherText="맑음"
-                            />
+                            {isMemoryLoading ? (
+                                <section className="flex h-full flex-col rounded-xl p-5 select-none">
+                                    <h2 className="text-lg font-normal text-[#5a4632]">
+                                        기록을 불러오는 중입니다.
+                                    </h2>
+                                    <p className="mt-3 text-sm leading-7 text-[#5a4632]/60">
+                                        기존 기록을 확인한 뒤 작성할 수 있어요.
+                                    </p>
+                                </section>
+                            ) : memoryLoadError ? (
+                                <section className="flex h-full flex-col rounded-xl p-5 select-none">
+                                    <h2 className="text-lg font-normal text-[#5a4632]">
+                                        기록을 불러오지 못했습니다.
+                                    </h2>
+                                    <p className="mt-3 text-sm leading-7 text-[#5a4632]/60">
+                                        {memoryLoadError}
+                                    </p>
+                                </section>
+                            ) : (
+                                <RoomMemoryPanel
+                                    selectedDate={selectedDate}
+                                    selectedMemory={selectedMemory}
+                                    onWrite={handleOpenWriteModal}
+                                    onPreview={() => {
+                                        if (selectedMemory) {
+                                            setPreviewMemory(selectedMemory);
+                                        }
+                                    }}
+                                // weatherText="맑음"
+                                />
+                            )}
                         </div>
                     </div>
 
@@ -516,6 +605,7 @@ function RoomPage() {
                             onPlacementReset={editingPlacement ? handleResetPlacement : undefined}
                             onPlacementLayerDown={handlePlacementLayerDown}
                             onPlacementLayerUp={handlePlacementLayerUp}
+                            isPlacementSaving={isPlacementSaving}
                         />
                         {/* <div className="pointer-events-none absolute inset-0 z-50 rounded-2xl ring-1 ring-inset ring-[#fffbf6]/40" /> */}
                     </div>

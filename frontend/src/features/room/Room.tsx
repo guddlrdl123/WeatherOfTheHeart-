@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
-import { ArrowDown, ArrowUp, Check, RotateCcw, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Loader2, RotateCcw, X } from "lucide-react";
 import RoomImg from "../../assets/room3-clean.png";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
 import { WEATHER_BY_KEY } from "../../constants/weather";
@@ -59,6 +59,7 @@ type Props = {
   onPlacementReset?: () => void;
   onPlacementLayerDown?: () => void;
   onPlacementLayerUp?: () => void;
+  isPlacementSaving?: boolean;
 }
 
 const ROOM_FILTER_BY_WEATHER: Record<WeatherKey, string> = {
@@ -116,6 +117,7 @@ export default function Room({
   onPlacementReset,
   onPlacementLayerDown,
   onPlacementLayerUp,
+  isPlacementSaving = false,
 }: Props) {
   const roomRef = useRef<HTMLDivElement>(null);
   const objectNodeRefs = useRef(new Map<string, HTMLDivElement>());
@@ -473,9 +475,10 @@ export default function Room({
                   <button
                     type="button"
                     onClick={onPlacementLayerUp}
+                    disabled={isPlacementSaving}
                     aria-label="맨 앞으로 가져오기"
                     title="맨 앞으로 가져오기"
-                    className="grid h-9 w-9 place-items-center rounded-full border border-[#5a4632]/20 bg-[#faf8f2] text-[#5a4632] shadow-md transition hover:bg-white"
+                    className="grid h-9 w-9 place-items-center rounded-full border border-[#5a4632]/20 bg-[#faf8f2] text-[#5a4632] shadow-md transition hover:bg-white disabled:opacity-45"
                   >
                     <ArrowUp size={16} />
                   </button>
@@ -484,9 +487,10 @@ export default function Room({
                   <button
                     type="button"
                     onClick={onPlacementLayerDown}
+                    disabled={isPlacementSaving}
                     aria-label="맨 뒤로 보내기"
                     title="맨 뒤로 보내기"
-                    className="grid h-9 w-9 place-items-center rounded-full border border-[#5a4632]/20 bg-[#faf8f2] text-[#5a4632] shadow-md transition hover:bg-white"
+                    className="grid h-9 w-9 place-items-center rounded-full border border-[#5a4632]/20 bg-[#faf8f2] text-[#5a4632] shadow-md transition hover:bg-white disabled:opacity-45"
                   >
                     <ArrowDown size={16} />
                   </button>
@@ -495,8 +499,9 @@ export default function Room({
                   <button
                     type="button"
                     onClick={onPlacementReset}
+                    disabled={isPlacementSaving}
                     // title="위치 초기화"
-                    className="grid h-9 w-9 place-items-center rounded-full border border-[#9b6b54]/30 bg-[#f5eadc] text-[#9b6b54] shadow-md transition hover:bg-[#fbf3e8]"
+                    className="grid h-9 w-9 place-items-center rounded-full border border-[#9b6b54]/30 bg-[#f5eadc] text-[#9b6b54] shadow-md transition hover:bg-[#fbf3e8] disabled:opacity-45"
                   >
                     <RotateCcw size={16} />
                   </button>
@@ -504,20 +509,29 @@ export default function Room({
                 <button
                   type="button"
                   onClick={onPlacementConfirm}
+                  disabled={isPlacementSaving}
                   // title="위치 고정"
-                  className="grid h-9 w-9 place-items-center rounded-full border border-[#4f8f68]/30 bg-[#dff3e6] text-[#4f8f68] shadow-md transition hover:bg-[#edf8f1]"
+                  className="grid h-9 w-9 place-items-center rounded-full border border-[#4f8f68]/30 bg-[#dff3e6] text-[#4f8f68] shadow-md transition hover:bg-[#edf8f1] disabled:opacity-55"
                 >
-                  <Check size={18} />
+                  {isPlacementSaving ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                 </button>
                 <button
                   type="button"
                   onClick={onPlacementCancel}
+                  disabled={isPlacementSaving}
                   // title="취소"
-                  className="grid h-9 w-9 place-items-center rounded-full border border-[#b36a5e]/30 bg-[#f4dfd9] text-[#b36a5e] shadow-md transition hover:bg-[#faebe7]"
+                  className="grid h-9 w-9 place-items-center rounded-full border border-[#b36a5e]/30 bg-[#f4dfd9] text-[#b36a5e] shadow-md transition hover:bg-[#faebe7] disabled:opacity-45"
                 >
                   <X size={18} />
                 </button>
               </div>
+              {isPlacementSaving && (
+                <div
+                  className={`pointer-events-auto absolute left-1/2 w-[210px] -translate-x-1/2 rounded-md border border-[#5a4632]/15 bg-[#fffbf6]/95 px-3 py-2 text-center text-xs leading-5 text-[#5a4632]/70 shadow-md ${controlsBelow ? "top-[calc(100%+56px)]" : "bottom-[calc(100%+56px)]"}`}
+                >
+                  이야기를 확인하고 마음의 날씨를 분석하고 있어요. 잠시만 기다려주세요.
+                </div>
+              )}
             </div>
           </>
         );

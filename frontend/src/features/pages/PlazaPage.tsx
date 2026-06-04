@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppHeader } from "../../components/layout/AppHeader";
+import { createBackendPlaza, createBackendPlazaEntry, fetchPlazas } from "../../services/plazaService";
 import type { Plaza } from "../../types/plaza";
-import { getGuestId, loadPlazas, savePlazas } from "../../utils/plazaStorage";
+import { getCurrentUserId } from "../../utils/authSession";
 import { PlazaListPage } from "../plaza/PlazaListPage";
 import { PlazaRoomPage } from "../plaza/PlazaRoomPage";
 import { canCreatePlazaToday, normalizePlaza } from "../plaza/plazaHelpers";
@@ -10,9 +11,11 @@ import { canCreatePlazaToday, normalizePlaza } from "../plaza/plazaHelpers";
 function PlazaPage() {
   const { plazaId } = useParams();
   const navigate = useNavigate();
-  const currentGuestId = useMemo(() => getGuestId(), []);
-  const [plazas, setPlazas] = useState<Plaza[]>(() => loadPlazas());
+  const currentUserId = useMemo(() => getCurrentUserId(), []);
+  const [plazas, setPlazas] = useState<Plaza[]>([]);
   const [draftPlaza, setDraftPlaza] = useState<Plaza | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [message, setMessage] = useState("");
 
   const normalizedPlazas = useMemo(() => plazas.map(normalizePlaza), [plazas]);
   const selectedSavedPlaza = plazaId ? normalizedPlazas.find((plaza) => plaza.id === plazaId) ?? null : null;
@@ -20,22 +23,59 @@ function PlazaPage() {
   const selectedPlaza = selectedSavedPlaza ?? selectedDraftPlaza;
   const isDraftPlaza = Boolean(selectedDraftPlaza && !selectedSavedPlaza);
 
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadPlazas() {
+      try {
+        setIsLoading(true);
+        setMessage("");
+
+        const data = await fetchPlazas();
+
+        if (!ignore) {
+          setPlazas(data.map(normalizePlaza));
+        }
+      } catch (caughtError) {
+        if (!ignore) {
+          setMessage(caughtError instanceof Error ? caughtError.message : "광장을 불러오지 못했습니다.");
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadPlazas();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
   function persistPlazas(updater: (current: Plaza[]) => Plaza[]) {
     setPlazas((current) => {
       const nextPlazas = updater(current).map(normalizePlaza);
-      savePlazas(nextPlazas);
       return nextPlazas;
     });
   }
 
-  function handleCreatePlaza(plaza: Plaza) {
-    if (!canCreatePlazaToday(normalizedPlazas, currentGuestId)) {
+  async function handleCreatePlaza(plaza: Plaza) {
+    if (!canCreatePlazaToday(normalizedPlazas, currentUserId)) {
       return;
     }
 
-    // 첫 글과 오브젝트 위치가 확정되기 전까지는 빈 광장을 저장소에 쓰지 않습니다.
-    setDraftPlaza(plaza);
-    navigate(`/plaza/${plaza.id}`);
+    try {
+      setMessage("");
+      const createdPlaza = await createBackendPlaza(currentUserId, plaza);
+
+      persistPlazas((current) => [createdPlaza, ...current]);
+      setDraftPlaza(null);
+      navigate(`/plaza/${createdPlaza.id}`);
+    } catch (caughtError) {
+      setMessage(caughtError instanceof Error ? caughtError.message : "광장을 생성하지 못했습니다.");
+    }
   }
 
   function handleUpdateDraftPlaza(updater: (plaza: Plaza) => Plaza) {
@@ -73,7 +113,7 @@ function PlazaPage() {
         <PlazaRoomPage
           key={selectedPlaza.id}
           plaza={selectedPlaza}
-          currentGuestId={currentGuestId}
+          currentGuestId={currentUserId}
           isDraftPlaza={isDraftPlaza}
           onUpdatePlaza={(updater) => {
             if (isDraftPlaza) {
@@ -86,13 +126,21 @@ function PlazaPage() {
           onFinalizeDraftPlaza={handleFinalizeDraftPlaza}
           onCancelDraftPlaza={handleCancelDraftPlaza}
           onDeletePlaza={() => handleDeletePlaza(selectedPlaza.id)}
+          onCreateEntry={(value, position, layer) => createBackendPlazaEntry(selectedPlaza.id, currentUserId, value, position, layer)}
         />
       ) : plazaId ? (
         <main className="grid min-h-[calc(100vh-64px)] place-items-center px-6 text-sm text-[#5a4632]/60">
-          광장을 찾을 수 없습니다.
+          {isLoading ? "광장을 불러오는 중입니다." : message || "광장을 찾을 수 없습니다."}
         </main>
       ) : (
-        <PlazaListPage plazas={normalizedPlazas} currentGuestId={currentGuestId} onCreate={handleCreatePlaza} />
+        <>
+          {message && (
+            <div className="mx-auto mt-4 w-[1460px] rounded-md border border-[#b65f55]/20 bg-[#f4dfd9]/70 px-4 py-3 text-sm text-[#9a4f48]">
+              {message}
+            </div>
+          )}
+          <PlazaListPage plazas={normalizedPlazas} currentGuestId={currentUserId} onCreate={(plaza) => void handleCreatePlaza(plaza)} />
+        </>
       )}
     </div>
   );

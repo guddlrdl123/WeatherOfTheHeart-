@@ -25,6 +25,16 @@ type ApiErrorResponse = {
   message?: string;
 };
 
+export class AuthApiError extends Error {
+  code?: string;
+
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "AuthApiError";
+    this.code = code;
+  }
+}
+
 const AUTH_ERROR_MESSAGE_BY_CODE: Record<string, string> = {
   USER_002: "이미 등록된 이메일입니다.",
   EMAIL_001: "인증번호가 올바르지 않습니다.",
@@ -63,7 +73,7 @@ async function postAuth<TResponse>(path: string, body: object, errorMessage: str
 
   if (!response.ok) {
     const body = await readJsonResponse<ApiErrorResponse>(response).catch(() => null);
-    throw new Error(getAuthErrorMessage(body, errorMessage));
+    throw new AuthApiError(getAuthErrorMessage(body, errorMessage), getErrorCode(body));
   }
 
   return readApiData<TResponse>(response);

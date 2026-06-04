@@ -52,6 +52,15 @@ public class PlazaService {
     }
 
     @Transactional(readOnly = true)
+    public List<Plaza> listPlazasByOwner(Long ownerId) {
+        if (!userRepository.existsById(ownerId)) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        return plazaRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId);
+    }
+
+    @Transactional(readOnly = true)
     public Plaza findPlaza(Long plazaId) {
         return plazaRepository.findById(plazaId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PLAZA_NOT_FOUND));
@@ -59,7 +68,15 @@ public class PlazaService {
 
     @Transactional
     public Plaza createPlaza(CreatePlazaRequest request) {
+        if (request.ownerId() == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        User owner = userRepository.findById(request.ownerId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
         Plaza plaza = Plaza.builder()
+                .owner(owner)
                 .title(request.title())
                 .topic(request.topic())
                 .maxObjects(request.maxObjects())
@@ -82,6 +99,20 @@ public class PlazaService {
     @Transactional(readOnly = true)
     public List<PlazaEntry> listAllEntries() {
         return plazaEntryRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PlazaEntry> listEntriesByOwner(Long ownerId) {
+        if (!userRepository.existsById(ownerId)) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        return plazaEntryRepository.findByOwnerId(ownerId);
+    }
+
+    @Transactional(readOnly = true)
+    public long countEntries(Long plazaId) {
+        return plazaEntryRepository.countByPlazaId(plazaId);
     }
 
     @Transactional
@@ -147,6 +178,7 @@ public class PlazaService {
     }
 
     public record CreatePlazaRequest(
+            Long ownerId,
             String title,
             String topic,
             Integer maxObjects,

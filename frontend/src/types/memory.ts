@@ -10,6 +10,7 @@ export type Memory = {
     memoryDate: string;
     createdAt: string;
     updatedAt?: string;
+    isUpdated?: boolean;
     title?: string;
     content: string;
     moodKey: MoodKey;

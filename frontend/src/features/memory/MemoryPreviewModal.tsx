@@ -6,6 +6,7 @@ import { WEATHER_BY_KEY } from "../../constants/weather";
 import type { Memory } from "../../types/memory";
 import type { MoodKey } from "../../types/mood";
 import { formatDotDate } from "../../utils/date";
+import { hasMemoryBeenUpdated } from "../../utils/memoryStatus";
 
 export type MemoryPreviewUpdate = {
     title?: string;
@@ -71,6 +72,7 @@ export function MemoryPreviewModal({ memory, onClose, onUpdate, onDelete }: Prop
     const mood = MOOD_BY_KEY[memory.moodKey];
     const weather = WEATHER_BY_KEY[memory.weatherKey];
     const selectedObject = memory.objectKey ? ROOM_OBJECT_BY_KEY[memory.objectKey] : null;
+    const isUpdated = hasMemoryBeenUpdated(memory);
 
     const handleCancelEdit = () => {
         setIsEditing(false);
@@ -106,7 +108,7 @@ export function MemoryPreviewModal({ memory, onClose, onUpdate, onDelete }: Prop
                             <h3 className="text-xl font-semibold text-[#5a4632]">
                                 {isEditing ? "이야기 수정" : memory.title || "어느 날의 이야기"}
                             </h3>
-                            {!isEditing && memory.updatedAt && (
+                            {!isEditing && isUpdated && (
                                 <span className="rounded-full border border-[#5a4632]/15 bg-white/45 px-2 py-0.5 text-[0.68rem] text-[#5a4632]/60">
                                     수정됨
                                 </span>

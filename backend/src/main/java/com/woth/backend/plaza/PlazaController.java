@@ -43,6 +43,7 @@ public class PlazaController {
     public ApiResponse<PlazaResponse> create(@RequestBody CreatePlazaRequest request) {
         return ApiResponse.success(toResponse(plazaService.createPlaza(
                 new PlazaService.CreatePlazaRequest(
+                        request.ownerId(),
                         request.title(),
                         request.topic(),
                         request.maxObjects(),
@@ -93,6 +94,7 @@ public class PlazaController {
     private PlazaResponse toResponse(Plaza plaza) {
         return new PlazaResponse(
                 plaza.getId(),
+                plaza.getOwner() == null ? null : plaza.getOwner().getId(),
                 plaza.getTitle(),
                 plaza.getTopic(),
                 plaza.getMaxObjects(),
@@ -103,6 +105,7 @@ public class PlazaController {
                 plaza.getBackgroundType(),
                 plaza.getBackgroundColor(),
                 plaza.getBackgroundKey(),
+                plazaService.countEntries(plaza.getId()),
                 plaza.getCompletedAt() == null ? null : plaza.getCompletedAt().toString(),
                 plaza.getCreatedAt().toString(),
                 plaza.getUpdatedAt().toString()
@@ -128,6 +131,7 @@ public class PlazaController {
     }
 
     public record CreatePlazaRequest(
+            Long ownerId,
             String title,
             String topic,
             Integer maxObjects,
@@ -155,6 +159,7 @@ public class PlazaController {
 
     public record PlazaResponse(
             Long id,
+            Long ownerId,
             String title,
             String topic,
             Integer maxObjects,
@@ -165,6 +170,7 @@ public class PlazaController {
             String backgroundType,
             String backgroundColor,
             String backgroundKey,
+            Long entryCount,
             String completedAt,
             String createdAt,
             String updatedAt

@@ -1,5 +1,6 @@
 package com.woth.backend.plaza;
 
+import com.woth.backend.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,6 +27,10 @@ public class Plaza {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
 
     @Column(nullable = false, length = 100)
     private String title; // 광장 이름 또는 주제
