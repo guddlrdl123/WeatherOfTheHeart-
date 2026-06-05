@@ -52,6 +52,7 @@ export function PlazaListPage({ plazas, currentGuestId, onCreate }: Props) {
   const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");
   const [inviteCode, setInviteCode] = useState("");
+  const [inviteError, setInviteError] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreateLimitNoticeOpen, setIsCreateLimitNoticeOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -82,11 +83,26 @@ export function PlazaListPage({ plazas, currentGuestId, onCreate }: Props) {
 
   function enterByInviteCode() {
     const targetCode = inviteCode.trim().toUpperCase();
+
+    if (!targetCode) {
+      setInviteError("초대 코드를 입력해주세요.");
+      return;
+    }
+
+    if (targetCode.length !== 7) {
+      setInviteError("초대 코드는 7자리입니다.");
+      return;
+    }
+
     const targetPlaza = plazas.find((plaza) => plaza.inviteCode === targetCode);
 
     if (targetPlaza) {
+      setInviteError("");
       navigate(`/plaza/${targetPlaza.id}`);
+      return;
     }
+
+    setInviteError("일치하는 초대 코드가 없습니다.");
   }
 
   function handleCreateClick() {
@@ -119,7 +135,16 @@ export function PlazaListPage({ plazas, currentGuestId, onCreate }: Props) {
                 value={inviteCode}
                 maxLength={7}
                 placeholder="초대 코드"
-                onChange={(event) => setInviteCode(event.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())}
+                aria-invalid={Boolean(inviteError)}
+                onChange={(event) => {
+                  setInviteCode(event.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase());
+                  setInviteError("");
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    enterByInviteCode();
+                  }
+                }}
               />
               <button
                 type="button"
@@ -129,6 +154,11 @@ export function PlazaListPage({ plazas, currentGuestId, onCreate }: Props) {
                 입장
               </button>
             </div>
+            {inviteError && (
+              <span className="text-xs text-[#b65f55]">
+                {inviteError}
+              </span>
+            )}
             <button
               type="button"
               onClick={handleCreateClick}

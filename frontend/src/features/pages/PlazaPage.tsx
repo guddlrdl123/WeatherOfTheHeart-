@@ -131,7 +131,7 @@ function PlazaPage() {
       isFinalizingDraftRef.current = false;
       const errorMessage = caughtError instanceof Error ? caughtError.message : "첫 글과 함께 광장을 생성하지 못했습니다.";
       setMessage(errorMessage);
-      throw new Error(errorMessage);
+      throw new Error(errorMessage, { cause: caughtError });
     }
   }
 
