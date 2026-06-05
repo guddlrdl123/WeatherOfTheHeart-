@@ -95,7 +95,7 @@ function toPlaza(response: PlazaResponse): Plaza {
     allowDuplicateObjects: response.allowDuplicateObjects ?? false,
     background: toBackground(response),
     ownerId: response.ownerId == null ? "" : String(response.ownerId),
-    status: response.completedAt || (maxParticipants > 0 && entryCount >= maxParticipants) ? "closed" : "open",
+    status: response.completedAt ? "closed" : "open",
     entries: [],
     entryCount,
     createdAt: response.createdAt,

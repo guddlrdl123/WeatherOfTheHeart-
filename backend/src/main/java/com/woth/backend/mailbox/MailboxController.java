@@ -29,6 +29,12 @@ public class MailboxController {
                 .collect(Collectors.toList());
         return ApiResponse.success(items);
     }
+
+    @GetMapping("/unread-count")
+    public ApiResponse<MailboxUnreadCountResponse> unreadCount(@PathVariable Long userId) {
+        return ApiResponse.success(new MailboxUnreadCountResponse(mailboxService.countUnreadLetters(userId)));
+    }
+
     @PatchMapping("/{letterId}/read")
     public ApiResponse<MailboxItemResponse> markRead(@PathVariable Long userId,
                                                      @PathVariable Long letterId) {
@@ -56,6 +62,11 @@ public class MailboxController {
             String generatedImageData,
             String completedAt,
             Boolean read
+    ){
+    }
+
+    public record MailboxUnreadCountResponse(
+            Long unreadCount
     ){
     }
 

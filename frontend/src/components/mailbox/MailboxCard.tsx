@@ -31,9 +31,8 @@ export function MailboxCard({ item, onOpen }: Props) {
     <button
       type="button"
       onClick={() => onOpen(item)}
-      className={`mw-surface flex min-h-[270px] flex-col overflow-hidden rounded-xl text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(90,70,50,0.1)] ${
-        item.read ? "opacity-[0.82]" : "border-[#9b6b54]/42 bg-[#fffbf6]"
-      }`}
+      className={`mw-surface flex min-h-[270px] flex-col overflow-hidden rounded-xl text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(90,70,50,0.1)] ${item.read ? "opacity-[0.82]" : "border-[#9b6b54]/42 bg-[#fffbf6]"
+        }`}
     >
       <div className="relative h-32 border-b border-[#5a4632]/10 bg-white/25">
         {/* generatedImageData는 백엔드가 만든 완성 광장 이미지를 그대로 img src에 연결합니다. */}
@@ -50,7 +49,7 @@ export function MailboxCard({ item, onOpen }: Props) {
         )}
 
         {!item.read && (
-          <span className="absolute right-3 top-3 rounded-full border border-[#9b6b54]/35 bg-[#fff7ef]/92 px-2 py-1 text-[11px] text-[#9b6b54]">
+          <span className="absolute right-3 top-3 rounded-full border border-white/80 bg-[#9b6b54]/35 px-2 py-1 text-[11px] text-white/80">
             새 우편
           </span>
         )}

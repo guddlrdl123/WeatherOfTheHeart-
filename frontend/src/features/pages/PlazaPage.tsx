@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppHeader } from "../../components/layout/AppHeader";
 import { completeBackendPlaza, createBackendPlazaEntry, createBackendPlazaWithFirstEntry, deleteBackendPlaza, deleteBackendPlazaEntry, fetchPlazas, toggleBackendPlazaEntryLike, updateBackendPlazaEntry, updateBackendPlazaEntryPosition } from "../../services/plazaService";
@@ -29,6 +29,29 @@ function PlazaPage() {
   const selectedPlaza = selectedSavedPlaza ?? selectedDraftPlaza;
   const isDraftPlaza = Boolean(selectedDraftPlaza && !selectedSavedPlaza);
 
+  const loadPlazaList = useCallback(async (options: { shouldIgnore?: () => boolean } = {}) => {
+    const shouldIgnore = options.shouldIgnore ?? (() => false);
+
+    try {
+      setIsLoading(true);
+      setMessage("");
+
+      const data = await fetchPlazas();
+
+      if (!shouldIgnore()) {
+        setPlazas(data.map(normalizePlaza));
+      }
+    } catch (caughtError) {
+      if (!shouldIgnore()) {
+        setMessage(caughtError instanceof Error ? caughtError.message : "광장을 불러오지 못했습니다.");
+      }
+    } finally {
+      if (!shouldIgnore()) {
+        setIsLoading(false);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (!plazaId?.startsWith("draft-plaza-")) {
       isFinalizingDraftRef.current = false;
@@ -42,34 +65,15 @@ function PlazaPage() {
 
   useEffect(() => {
     let ignore = false;
-
-    async function loadPlazas() {
-      try {
-        setIsLoading(true);
-        setMessage("");
-
-        const data = await fetchPlazas();
-
-        if (!ignore) {
-          setPlazas(data.map(normalizePlaza));
-        }
-      } catch (caughtError) {
-        if (!ignore) {
-          setMessage(caughtError instanceof Error ? caughtError.message : "광장을 불러오지 못했습니다.");
-        }
-      } finally {
-        if (!ignore) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void loadPlazas();
+    const loadTimerId = window.setTimeout(() => {
+      void loadPlazaList({ shouldIgnore: () => ignore });
+    }, 0);
 
     return () => {
       ignore = true;
+      window.clearTimeout(loadTimerId);
     };
-  }, []);
+  }, [loadPlazaList]);
 
   function persistPlazas(updater: (current: Plaza[]) => Plaza[]) {
     setPlazas((current) => {
@@ -209,7 +213,13 @@ function PlazaPage() {
               {message}
             </div>
           )}
-          <PlazaListPage plazas={normalizedPlazas} currentGuestId={currentUserId} onCreate={(plaza) => void handleCreatePlaza(plaza)} />
+          <PlazaListPage
+            plazas={normalizedPlazas}
+            currentGuestId={currentUserId}
+            isRefreshing={isLoading}
+            onRefresh={() => loadPlazaList()}
+            onCreate={(plaza) => void handleCreatePlaza(plaza)}
+          />
         </>
       )}
     </div>

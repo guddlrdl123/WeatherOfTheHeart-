@@ -32,6 +32,15 @@ public class MailboxService {
         }
         return letterRepository.findByReceiverIdOrderByCreatedAtDesc(receiverId);
     }
+
+    @Transactional(readOnly = true)
+    public long countUnreadLetters(Long receiverId) {
+        if(!userRepository.existsById(receiverId)) {
+            throw  new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+        return letterRepository.countByReceiverIdAndIsReadFalse(receiverId);
+    }
+
     @Transactional public Letter markRead(Long letterId) {
         Letter letter = letterRepository.findById(letterId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MAILBOX_NOT_FOUND));

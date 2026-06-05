@@ -13,6 +13,16 @@ export type MailboxItemResponse = {
   read: boolean;
 };
 
+type MailboxUnreadCountResponse = {
+  unreadCount: number;
+};
+
+export const MAILBOX_CHANGED_EVENT = "mw-mailbox-changed";
+
+export function notifyMailboxChanged() {
+  window.dispatchEvent(new Event(MAILBOX_CHANGED_EVENT));
+}
+
 function toMailboxItem(response: MailboxItemResponse): MailboxItem {
   // 백엔드 숫자 ID를 화면/라우팅에서 다루기 편한 string으로 통일합니다.
   return {
@@ -40,6 +50,18 @@ export async function fetchMailbox(userId: string) {
   return data.map(toMailboxItem);
 }
 
+export async function fetchMailboxUnreadCount(userId: string) {
+  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/mailbox/unread-count`));
+
+  if (!response.ok) {
+    throw new Error("?쎌? ?딆? ?고렪 媛쒖닔瑜?遺덈윭?ㅼ? 紐삵뻽?듬땲??");
+  }
+
+  const data = await readApiData<MailboxUnreadCountResponse>(response);
+
+  return data.unreadCount;
+}
+
 export async function markMailboxItemAsRead(userId: string, letterId: string) {
   // 상세 확인 시 서버에도 읽음 상태를 반영합니다.
   const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/mailbox/${encodeURIComponent(letterId)}/read`), {
@@ -51,4 +73,5 @@ export async function markMailboxItemAsRead(userId: string, letterId: string) {
   }
 
   await readApiData<MailboxItemResponse>(response);
+  notifyMailboxChanged();
 }

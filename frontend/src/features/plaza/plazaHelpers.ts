@@ -150,18 +150,6 @@ export function getPlazaDescription(plaza: Plaza) {
 }
 
 export function normalizePlaza(plaza: Plaza): Plaza {
-  // 저장소에서 불러오거나 참여자가 추가될 때 정원 초과 광장을 자동으로 종료 처리합니다.
-  if (plaza.status === "closed") {
-    return plaza;
-  }
-
-  if (isPlazaFull(plaza)) {
-    return {
-      ...plaza,
-      status: "closed",
-      endedAt: plaza.endedAt ?? new Date().toISOString(),
-    };
-  }
-
+  // 정원 초과 여부는 isPlazaFull로 판단하고, status는 광장장이 실제 종료한 상태만 보존합니다.
   return plaza;
 }

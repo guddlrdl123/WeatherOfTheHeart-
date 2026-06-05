@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -148,6 +149,10 @@ public class PlazaService {
         Plaza plaza = plazaRepository.findById(plazaId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PLAZA_NOT_FOUND));
 
+        if (plaza.isCompleted()) {
+            throw new CustomException(ErrorCode.PLAZA_COMPLETE);
+        }
+
         User owner = userRepository.findById(request.ownerId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
@@ -194,6 +199,11 @@ public class PlazaService {
             throw new CustomException(ErrorCode.INVALID_INPUT);
         }
 
+        if (plaza.isCompleted()) {
+            throw new CustomException(ErrorCode.PLAZA_COMPLETE);
+        }
+
+        plaza.markCompleted(LocalDateTime.now());
         eventPublisher.publishEvent(new PlazaEntryCreatedEvent(plazaId, true));
         return plaza;
     }
@@ -271,6 +281,10 @@ public class PlazaService {
             throw new CustomException(ErrorCode.PLAZA_ENTRY_FORBIDDEN);
         }
 
+        if (isEntryChangeLocked(entry.getPlaza())) {
+            throw new CustomException(ErrorCode.PLAZA_COMPLETE);
+        }
+
         entry.updateContent(request.title(), request.content());
         return entry;
     }
@@ -286,6 +300,10 @@ public class PlazaService {
 
         if (!entry.getOwner().getId().equals(request.ownerId())) {
             throw new CustomException(ErrorCode.PLAZA_ENTRY_FORBIDDEN);
+        }
+
+        if (isEntryChangeLocked(entry.getPlaza())) {
+            throw new CustomException(ErrorCode.PLAZA_COMPLETE);
         }
 
         entry.updatePosition(request.positionX(), request.positionY(), request.layer());
@@ -307,8 +325,18 @@ public class PlazaService {
             throw new CustomException(ErrorCode.PLAZA_ENTRY_FORBIDDEN);
         }
 
+        if (isEntryChangeLocked(entry.getPlaza())) {
+            throw new CustomException(ErrorCode.PLAZA_COMPLETE);
+        }
+
         objectLikeRepository.deleteByPlazaEntryId(entryId);
         plazaEntryRepository.delete(entry);
+    }
+
+    private boolean isEntryChangeLocked(Plaza plaza) {
+        return plaza.isCompleted()
+                || (plaza.getMaxObjects() != null
+                && plazaEntryRepository.countByPlazaId(plaza.getId()) >= plaza.getMaxObjects());
     }
 
     public record CreatePlazaRequest(

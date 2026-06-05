@@ -72,7 +72,6 @@ function RoomPage() {
 
     const [selectedDate, setSelectedDate] = useState(() => getTodayString());
     const [roomMonthKey, setRoomMonthKey] = useState(() => getMonthKey(getTodayString()));
-    const [roomWeather, setRoomWeather] = useState<WeatherKey>(weather);
     // const [viewYear, setViewYear] = useState(new Date().getFullYear());
     // const [viewMonth, setViewMonth] = useState(new Date().getMonth() + 1);
 
@@ -128,6 +127,7 @@ function RoomPage() {
     const selectedMemory = memories.find(
         (m) => m.memoryDate === selectedDate
     ) || null;
+    const roomWeather = selectedMemory?.weatherKey ?? weather;
     // Room 컴포넌트가 바로 그릴 수 있는 형태로 현재 월의 저장된 오브젝트만 추려냅니다.
     const placedRoomObjects = memories
         .filter((memory) => (
@@ -144,14 +144,6 @@ function RoomPage() {
             title: memory.title,
         }));
     const roomMonthLabel = formatRoomMonthLabel(roomMonthKey);
-
-    useEffect(() => {
-        const memoryForDate = memories.find(
-            (memory) => memory.memoryDate === selectedDate
-        );
-
-        setRoomWeather(memoryForDate?.weatherKey ?? weather);
-    }, [memories, selectedDate, weather]);
 
     const getNextObjectLayer = (dateString: string) => {
         // 새 오브젝트는 현재 달의 가장 앞 레이어 다음에 배치합니다.
@@ -210,13 +202,9 @@ function RoomPage() {
         setSelectedDate(date);
         setRoomMonthKey(getMonthKey(date));
 
-        const memoryForDate = memories.find(
-            (memory) => memory.memoryDate === date
-        );
         const targetMemory = memories.find(
             (memory) => memory.memoryDate === date && memory.objectKey && memory.objectPosition
         );
-        setRoomWeather(memoryForDate?.weatherKey ?? weather);
 
         if (bounceStartTimerRef.current !== null) {
             window.clearTimeout(bounceStartTimerRef.current);
@@ -348,7 +336,6 @@ function RoomPage() {
             setPendingPlacement(null);
             setSelectedDate(savedMemory.memoryDate);
             setRoomMonthKey(getMonthKey(savedMemory.memoryDate));
-            setRoomWeather(savedMemory.weatherKey);
             setActiveObjectId(null);
         } catch (error) {
             alert(error instanceof Error ? error.message : "기억 저장에 실패했습니다.");
@@ -443,8 +430,6 @@ function RoomPage() {
     };
 
     const handleDeleteMemory = async (memoryId: string) => {
-        const targetMemory = memories.find((memory) => memory.id === memoryId);
-
         try {
             await deleteMemory(currentUserId, memoryId);
         } catch (error) {
@@ -457,10 +442,6 @@ function RoomPage() {
         setEditingPlacement((prev) => prev?.memoryId === memoryId ? null : prev);
         setActiveObjectId(null);
         setBouncingObjectId(null);
-
-        if (targetMemory && targetMemory.memoryDate === selectedDate) {
-            setRoomWeather(weather);
-        }
 
         if (bounceStartTimerRef.current !== null) {
             window.clearTimeout(bounceStartTimerRef.current);

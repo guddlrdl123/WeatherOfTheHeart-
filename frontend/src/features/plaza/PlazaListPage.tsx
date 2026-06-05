@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowRight, ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Plus, RefreshCw, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Plaza } from "../../types/plaza";
 import { PlazaCreateModal } from "./PlazaCreateModal";
@@ -19,6 +19,8 @@ import {
 type Props = {
   plazas: Plaza[];
   currentGuestId: string;
+  isRefreshing?: boolean;
+  onRefresh?: () => void;
   onCreate: (plaza: Plaza) => void;
 };
 
@@ -48,7 +50,7 @@ function CreateLimitNoticeModal({ onClose }: CreateLimitNoticeModalProps) {
   );
 }
 
-export function PlazaListPage({ plazas, currentGuestId, onCreate }: Props) {
+export function PlazaListPage({ plazas, currentGuestId, isRefreshing = false, onRefresh, onCreate }: Props) {
   const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");
   const [inviteCode, setInviteCode] = useState("");
@@ -157,6 +159,7 @@ export function PlazaListPage({ plazas, currentGuestId, onCreate }: Props) {
                 입장
               </button>
             </div>
+
             <button
               type="button"
               onClick={handleCreateClick}
@@ -165,6 +168,18 @@ export function PlazaListPage({ plazas, currentGuestId, onCreate }: Props) {
               <Plus size={14} />
               새 광장 만들기
             </button>
+            {onRefresh && (
+              <button
+                type="button"
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#5a4632]/15 bg-white/35 text-[#5a4632]/70 transition hover:bg-white/60 disabled:opacity-45"
+                aria-label="광장 목록 새로고침"
+                title="광장 목록 새로고침"
+              >
+                <RefreshCw size={15} className={isRefreshing ? "animate-spin" : ""} />
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

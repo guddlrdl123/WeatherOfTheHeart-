@@ -1,6 +1,8 @@
 import { House, Home, Inbox, LogOut, UserRound, CastleIcon } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { clearAuthenticated } from "../../utils/authSession";
+import { fetchMailboxUnreadCount, MAILBOX_CHANGED_EVENT } from "../../services/mailboxService";
+import { clearAuthenticated, getCurrentUserId } from "../../utils/authSession";
 
 export function AppHeader() {
     const navigate = useNavigate();
@@ -10,6 +12,40 @@ export function AppHeader() {
     const plazaNavTarget = isPlazaPage ? "/room" : "/plaza";
     const plazaNavLabel = isPlazaPage ? "내 방 돌아가기" : "광장 들어가기";
     const PlazaNavIcon = isPlazaPage ? House : CastleIcon;
+    const [unreadMailboxCount, setUnreadMailboxCount] = useState(0);
+
+    const loadUnreadMailboxCount = useCallback(async () => {
+        try {
+            const count = await fetchMailboxUnreadCount(getCurrentUserId());
+            setUnreadMailboxCount(count);
+        } catch {
+            setUnreadMailboxCount(0);
+        }
+    }, []);
+
+    useEffect(() => {
+        const initialRefreshId = window.setTimeout(() => {
+            void loadUnreadMailboxCount();
+        }, 0);
+
+        const intervalId = window.setInterval(() => {
+            void loadUnreadMailboxCount();
+        }, 30_000);
+
+        const handleRefresh = () => {
+            void loadUnreadMailboxCount();
+        };
+
+        window.addEventListener("focus", handleRefresh);
+        window.addEventListener(MAILBOX_CHANGED_EVENT, handleRefresh);
+
+        return () => {
+            window.clearTimeout(initialRefreshId);
+            window.clearInterval(intervalId);
+            window.removeEventListener("focus", handleRefresh);
+            window.removeEventListener(MAILBOX_CHANGED_EVENT, handleRefresh);
+        };
+    }, [loadUnreadMailboxCount, location.pathname]);
 
     function handleLogout() {
         clearAuthenticated();
@@ -61,11 +97,16 @@ export function AppHeader() {
                         {/* 우편함은 완성된 광장 이미지가 도착하는 별도 메뉴입니다. */}
                         <Link
                             to="/mailbox"
-                            className="p-2 rounded-md border border-[#5a4632]/20 hover:bg-[#5a4632]/10 text-[#5a4632]/80"
+                            className="relative p-2 rounded-md border border-[#5a4632]/20 hover:bg-[#5a4632]/10 text-[#5a4632]/80"
                             title="우편함"
                             aria-label="우편함"
                         >
                             <Inbox size={14} />
+                            {unreadMailboxCount > 0 && (
+                                <span className="absolute -right-1.5 -top-1.5 grid min-h-4 min-w-4 place-items-center rounded-full border border-[#fffbf6] bg-[#d96a5f] px-1 text-[0.6rem] leading-none text-white shadow-sm">
+                                    {unreadMailboxCount > 99 ? "99+" : unreadMailboxCount}
+                                </span>
+                            )}
                         </Link>
                         <button
                             type="button"

@@ -13,7 +13,7 @@ export type RoomObjectOption = {
 };
 
 const ROOM_OBJECT_IMAGE_MODULES = import.meta.glob<RoomObjectImageModule>(
-    "../assets/{bedding,decor-objects,furniture-clean,furniture-modular,pets,plaza-objects}/*.png",
+    "../assets/{animal,bedding,decor-objects,furniture-clean,furniture-modular,pets,plaza-objects}/*.png",
     { eager: true },
 );
 
@@ -29,11 +29,18 @@ const LABEL_BY_KEY: Record<RoomObjectKey, string> = {
     books: "책",
     frame: "액자",
     dresser: "서랍장",
+    "furniture-wood-chair": "나무 의자",
+    "furniture-side-table": "사이드 테이블",
+    "furniture-low-shelf": "낮은 선반",
+    "furniture-floor-lamp": "스탠드 조명",
     "furniture-fireplace": "벽난로",
     "plaza-bench": "벤치",
     "plaza-puddle": "물 웅덩이",
     "plaza-trash": "쓰레기",
     "plaza-tree": "나무",
+    "plaza-vending-machine": "자판기",
+    "plaza-rainbow": "무지개",
+    "plaza-flower": "꽃",
 };
 
 const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
@@ -41,11 +48,18 @@ const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     books: 88,
     frame: 86,
     dresser: 188,
+    "furniture-wood-chair": 120,
+    "furniture-side-table": 125,
+    "furniture-low-shelf": 180,
+    "furniture-floor-lamp": 100,
     "furniture-fireplace": 210,
     "plaza-bench": 260,
-    "plaza-puddle": 220,
+    "plaza-puddle": 180,
     "plaza-trash": 86,
     "plaza-tree": 220,
+    "plaza-vending-machine": 150,
+    "plaza-rainbow": 270,
+    "plaza-flower": 70,
 };
 
 const FOLDER_ORDER: Record<string, number> = {
@@ -53,8 +67,9 @@ const FOLDER_ORDER: Record<string, number> = {
     "furniture-clean": 1,
     bedding: 2,
     "decor-objects": 3,
-    pets: 4,
-    "plaza-objects": 5,
+    animal: 4,
+    pets: 5,
+    "plaza-objects": 6,
 };
 
 function getFileName(path: string) {
@@ -82,7 +97,7 @@ function getObjectLabel(key: RoomObjectKey) {
     }
 
     return key
-        .replace(/^(bedding|decor|furniture|pet)-/, "")
+        .replace(/^(animal|bedding|decor|furniture|pet)-/, "")
         .replace(/-cropped/g, "")
         .split("-")
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))

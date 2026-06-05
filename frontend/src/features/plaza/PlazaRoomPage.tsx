@@ -19,6 +19,7 @@ import {
   getPlazaStatusLabel,
   getPlazaEntryLikeCount,
   getPopularPlazaEntries,
+  isPlazaFull,
   normalizePlaza,
   togglePlazaEntryLike,
 } from "./plazaHelpers";
@@ -171,10 +172,11 @@ export function PlazaRoomPage({
   const [isManagementMenuOpen, setIsManagementMenuOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<PlazaConfirmAction | null>(null);
 
+  const plazaEnded = plaza.status === "closed" || isPlazaFull(plaza);
   const ownEntry = plaza.entries.find((entry) => entry.ownerId === currentGuestId) ?? null;
-  const canUpdateEntry = (entry: PlazaEntry) => entry.ownerId === currentGuestId && entry.ownerId === plaza.ownerId;
-  const canMoveEntry = (entry: PlazaEntry) => entry.ownerId === currentGuestId;
-  const canDeleteEntry = (entry: PlazaEntry) => entry.ownerId === currentGuestId && entry.ownerId !== plaza.ownerId;
+  const canUpdateEntry = (entry: PlazaEntry) => !plazaEnded && entry.ownerId === currentGuestId && entry.ownerId === plaza.ownerId;
+  const canMoveEntry = (entry: PlazaEntry) => !plazaEnded && entry.ownerId === currentGuestId;
+  const canDeleteEntry = (entry: PlazaEntry) => !plazaEnded && entry.ownerId === currentGuestId && entry.ownerId !== plaza.ownerId;
   const enterable = canEnterPlaza(plaza);
   const unavailableObjectKeys = plaza.entries.map((entry) => entry.objectKey);
   const description = getPlazaDescription(plaza);
@@ -438,9 +440,12 @@ export function PlazaRoomPage({
         return current;
       }
 
+      const nextEntries = normalizeEntryLayers(current.entries.filter((entry) => entry.id !== entryId));
+
       return normalizePlaza({
         ...current,
-        entries: normalizeEntryLayers(current.entries.filter((entry) => entry.id !== entryId)),
+        entries: nextEntries,
+        entryCount: nextEntries.length,
       });
     });
 
@@ -593,7 +598,7 @@ export function PlazaRoomPage({
                     </button>
                     {isManagementMenuOpen && (
                       <div className="absolute right-0 top-[calc(100%+6px)] z-40 flex w-[132px] flex-col rounded-md border border-[#5a4632]/15 bg-[#fffbf6f2] p-1 text-xs text-[#5a4632] shadow-lg backdrop-blur-sm">
-                        {plaza.status === "open" && (
+                        {!plazaEnded && (
                           <button
                             type="button"
                             onClick={() => openPlazaConfirm("close")}
@@ -771,6 +776,7 @@ export function PlazaRoomPage({
                 }
               }}
               onEntryLike={handleLike}
+              canMoveEntry={canMoveEntry}
               onEntryMove={(entryId) => {
                 const entry = plaza.entries.find((item) => item.id === entryId);
                 if (entry && canMoveEntry(entry)) {

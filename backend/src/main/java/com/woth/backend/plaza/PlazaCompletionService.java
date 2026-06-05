@@ -62,7 +62,7 @@ public class PlazaCompletionService {
         );
 
         int marked = markCompleted(snapshot.plazaId(), snapshot.completedAt());
-        if (marked == 0) {
+        if (marked == 0 && !event.forceComplete()) {
             log.info("[plaza-completion-test] plaza already completed. plazaId={}", snapshot.plazaId());
             return;
         }
@@ -89,7 +89,7 @@ public class PlazaCompletionService {
     private CompletionSnapshot loadCompletionSnapshot(Long plazaId, boolean forceComplete) {
         return transactionTemplate.execute(status -> {
             Plaza plaza = plazaRepository.findById(plazaId).orElse(null);
-            if (plaza == null || plaza.isCompleted()) {
+            if (plaza == null || (plaza.isCompleted() && !forceComplete)) {
                 return null;
             }
 
@@ -115,10 +115,12 @@ public class PlazaCompletionService {
                 receivers.add(0, plaza.getOwner());
             }
 
+            LocalDateTime completedAt = plaza.getCompletedAt() == null ? LocalDateTime.now() : plaza.getCompletedAt();
+
             return new CompletionSnapshot(
                     plaza.getId(),
                     plaza.getTitle(),
-                    LocalDateTime.now(),
+                    completedAt,
                     prompt,
                     receivers
             );

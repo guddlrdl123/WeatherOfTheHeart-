@@ -12,4 +12,5 @@ import java.util.List;
 public interface LetterRepository extends JpaRepository<Letter, Long> {
     List<Letter> findByReceiverIdOrderByCreatedAtDesc(Long receiverId);
     boolean existsByReceiverIdAndPlazaId(Long receiverId, Long plazaId);
+    long countByReceiverIdAndIsReadFalse(Long receiverId);
 }

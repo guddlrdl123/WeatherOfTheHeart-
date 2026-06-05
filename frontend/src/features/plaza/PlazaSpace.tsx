@@ -45,6 +45,7 @@ type Props = {
   onEntryPreview: (entryId: string) => void;
   onEntryLike: (entryId: string) => void;
   onEntryMove: (entryId: string) => void;
+  canMoveEntry?: (entry: PlazaEntry) => boolean;
   onPlacementCancel: () => void;
   onPlacementChange: (position: RoomObjectPosition) => void;
   onPlacementConfirm: () => void;
@@ -154,6 +155,7 @@ export function PlazaSpace({
   onEntryPreview,
   onEntryLike,
   onEntryMove,
+  canMoveEntry = (entry) => entry.ownerId === currentGuestId,
   onPlacementCancel,
   onPlacementChange,
   onPlacementConfirm,
@@ -363,7 +365,7 @@ export function PlazaSpace({
         const object = ROOM_OBJECT_BY_KEY[entry.objectKey];
         const objectWidth = getObjectWidthPercent(object.roomWidth);
         const active = entry.id === activeEntryId;
-        const movableEntry = entry.ownerId === currentGuestId;
+        const movableEntry = canMoveEntry(entry);
         const highlighted = entry.id === highlightedEntryId;
         const hoverEnabled = !active && suppressedHoverEntryId !== entry.id;
         const controlsBelow = entry.positionY < 34;

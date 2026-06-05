@@ -109,7 +109,14 @@ public class ObjectCatalogService {
                 object("drawer", "Drawer", "drawer", "/objects/object-27.png", 2.0, false, -1),
                 object("chair", "Chair", "chair", "/objects/object-28.png", 2.0, true, 2),
                 object("trash_can", "Trash Can", "trash_can", "/objects/object-29.png", 1.5, true, 0),
-                object("trash", "Trash", "trash", "/objects/object-30.png", 1.0, false, 0)
+                object("trash", "Trash", "trash", "/objects/object-30.png", 1.0, false, 0),
+                object("furniture-wood-chair", "나무 의자", "furniture-wood-chair", "/objects/furniture-wood-chair.png", 1.2, false, 0),
+                object("furniture-side-table", "사이드 테이블", "furniture-side-table", "/objects/furniture-side-table.png", 1.25, false, 0),
+                object("furniture-low-shelf", "낮은 선반", "furniture-low-shelf", "/objects/furniture-low-shelf.png", 1.8, false, 0),
+                object("furniture-floor-lamp", "스탠드 조명", "furniture-floor-lamp", "/objects/furniture-floor-lamp.png", 0.78, false, 0),
+                object("plaza-vending-machine", "자판기", "plaza-vending-machine", "/objects/plaza-vending-machine.png", 1.5, false, 0),
+                object("plaza-rainbow", "무지개", "plaza-rainbow", "/objects/plaza-rainbow.png", 2.7, false, 0),
+                object("plaza-flower", "꽃", "plaza-flower", "/objects/plaza-flower.png", 1.0, false, 0)
         );
     }
 
