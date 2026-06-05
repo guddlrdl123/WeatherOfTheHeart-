@@ -79,6 +79,7 @@ public class MemoryService {
                 // 최초 배치 좌표가 함께 넘어온 경우 DB에 같이 저장
                 .positionX(request.positionX())
                 .positionY(request.positionY())
+                .layerIndex(request.layer())
                 .build();
 
         return privateMemoryRepository.save(memory);
@@ -94,7 +95,27 @@ public class MemoryService {
                 request.positionX(),
                 request.positionY(),
                 request.flipX(),
-                request.tiltDeg()
+                request.tiltDeg(),
+                request.layer()
+        );
+
+        return memory;
+    }
+
+    @Transactional
+    public PrivateMemory updateMemory(Long userId, Long memoryId, UpdateMemoryRequest request) {
+        if (request.content() == null || request.content().isBlank()
+                || request.moodKey() == null || request.moodKey().isBlank()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        PrivateMemory memory = privateMemoryRepository.findByIdAndPrivateRoomUserId(memoryId, userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMORY_NOT_FOUND));
+
+        memory.updateContent(
+                normalizeTitle(request.title()),
+                request.content(),
+                request.moodKey()
         );
 
         return memory;
@@ -137,7 +158,15 @@ public class MemoryService {
             String objectKey,
             String slotKey,
             Integer positionX,
-            Integer positionY
+            Integer positionY,
+            Integer layer
+    ) {
+    }
+
+    public record UpdateMemoryRequest(
+            String title,
+            String content,
+            String moodKey
     ) {
     }
 
@@ -145,7 +174,8 @@ public class MemoryService {
             Integer positionX,
             Integer positionY,
             Boolean flipX,
-            Integer tiltDeg
+            Integer tiltDeg,
+            Integer layer
     ) {
     }
 }

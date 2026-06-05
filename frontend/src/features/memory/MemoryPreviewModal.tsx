@@ -17,7 +17,7 @@ export type MemoryPreviewUpdate = {
 type Props = {
     memory: Memory;
     onClose: () => void;
-    onUpdate: (memoryId: string, value: MemoryPreviewUpdate) => void;
+    onUpdate: (memoryId: string, value: MemoryPreviewUpdate) => void | Promise<void>;
     onDelete: (memoryId: string) => void;
 };
 
@@ -66,6 +66,7 @@ function DeleteConfirmModal({ onCancel, onConfirm }: DeleteConfirmModalProps) {
 export function MemoryPreviewModal({ memory, onClose, onUpdate, onDelete }: Props) {
     const [isEditing, setIsEditing] = useState(false);
     const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [title, setTitle] = useState(memory.title ?? "");
     const [content, setContent] = useState(memory.content);
     const [moodKey, setMoodKey] = useState<MoodKey>(memory.moodKey);
@@ -82,17 +83,28 @@ export function MemoryPreviewModal({ memory, onClose, onUpdate, onDelete }: Prop
         setMoodKey(memory.moodKey);
     };
 
-    const handleSaveEdit = () => {
+    const handleSaveEdit = async () => {
+        if (isSaving) {
+            return;
+        }
+
         const nextTitle = title.trim();
         const nextContent = content.trim();
 
-        onUpdate(memory.id, {
-            title: nextTitle || undefined,
-            content: nextContent,
-            moodKey,
-        });
-        setIsEditing(false);
-        setIsConfirmingDelete(false);
+        try {
+            setIsSaving(true);
+            await onUpdate(memory.id, {
+                title: nextTitle || undefined,
+                content: nextContent,
+                moodKey,
+            });
+            setIsEditing(false);
+            setIsConfirmingDelete(false);
+        } catch {
+            // Parent handler shows the API error message.
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleDelete = () => {
@@ -232,7 +244,8 @@ export function MemoryPreviewModal({ memory, onClose, onUpdate, onDelete }: Prop
                                 <button
                                     type="button"
                                     onClick={handleSaveEdit}
-                                    className="mw-button-solid rounded-md px-4 py-2 text-sm"
+                                    disabled={isSaving}
+                                    className="mw-button-solid rounded-md px-4 py-2 text-sm disabled:opacity-50"
                                 >
                                     저장
                                 </button>

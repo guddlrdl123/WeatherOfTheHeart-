@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * [private_memories 테이블 매핑 엔티티]
@@ -63,6 +64,13 @@ public class PrivateMemory {
     @Column(name = "tilt_deg")
     private Integer tiltDeg; // 오브젝트 기울기 각도
 
+    @Column(name = "layer_index")
+    private Integer layerIndex;
+
+    @Builder.Default
+    @Column(name = "content_updated", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
+    private Boolean contentUpdated = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -72,6 +80,9 @@ public class PrivateMemory {
     // INSERT 쿼리가 나가기 직전 실행 (생성일, 수정일을 현재 시간으로 초기화)
     @PrePersist
     protected void onCreate() {
+        if (this.contentUpdated == null) {
+            this.contentUpdated = false;
+        }
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
@@ -82,11 +93,27 @@ public class PrivateMemory {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void updatePosition(Integer positionX, Integer positionY, Boolean flipX, Integer tiltDeg) {
+    public void updateContent(String title, String content, String moodKey) {
+        if (!Objects.equals(this.title, title)
+                || !Objects.equals(this.content, content)
+                || !Objects.equals(this.moodKey, moodKey)) {
+            this.contentUpdated = true;
+        }
+        this.title = title;
+        this.content = content;
+        this.moodKey = moodKey;
+    }
+
+    public void updatePosition(Integer positionX, Integer positionY, Boolean flipX, Integer tiltDeg, Integer layerIndex) {
         // 위치 편집 완료 시 프론트에서 전달한 배치 상태를 엔티티에 반영합니다.
         this.positionX = positionX;
         this.positionY = positionY;
-        this.flipX = flipX;
-        this.tiltDeg = tiltDeg;
+        if (flipX != null) {
+            this.flipX = flipX;
+        }
+        if (tiltDeg != null) {
+            this.tiltDeg = tiltDeg;
+        }
+        this.layerIndex = layerIndex;
     }
 }

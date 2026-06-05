@@ -7,7 +7,7 @@ import { MemoryPreviewModal, type MemoryPreviewUpdate } from "../memory/MemoryPr
 // import { getTodayString } from "../utils/date";
 import { AppHeader } from "../../components/layout/AppHeader";
 import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
-import { createMemory, deleteMemory, fetchMemories } from "../../services/memoryService";
+import { createMemory, deleteMemory, fetchMemories, updateMemory, updateMemoryPosition } from "../../services/memoryService";
 import type { Memory } from "../../types/memory";
 import type { RoomObjectKey, RoomObjectPosition } from "../../types/roomObject";
 import type { WeatherKey } from "../../types/weather";
@@ -44,38 +44,6 @@ const formatRoomMonthLabel = (monthKey: string) => {
 };
 
 const getMemoryObjectLayer = (memory: Memory) => memory.objectLayer ?? OBJECT_LAYER_MIN;
-
-// 같은 달 안의 오브젝트 레이어를 0부터 다시 정렬해 앞/뒤 이동 후에도 값이 과도하게 커지지 않게 합니다.
-function normalizeMemoryLayers(memories: Memory[], monthKey: string) {
-    const layerById = new Map<string, number>();
-
-    memories
-        .map((memory, index) => ({ memory, index }))
-        .filter(({ memory }) => (
-            getMonthKey(memory.memoryDate) === monthKey
-            && memory.objectKey
-            && memory.objectPosition
-        ))
-        .sort((a, b) => getMemoryObjectLayer(a.memory) - getMemoryObjectLayer(b.memory) || a.index - b.index)
-        .forEach(({ memory }, layer) => {
-            layerById.set(memory.id, layer);
-        });
-
-    return memories.map((memory) =>
-        layerById.has(memory.id)
-            ? { ...memory, objectLayer: layerById.get(memory.id)! }
-            : memory,
-    );
-}
-
-function normalizeAllMemoryLayers(memories: Memory[]) {
-    const monthKeys = Array.from(new Set(memories.map((memory) => getMonthKey(memory.memoryDate))));
-
-    return monthKeys.reduce(
-        (nextMemories, monthKey) => normalizeMemoryLayers(nextMemories, monthKey),
-        memories,
-    );
-}
 
 function RoomPage() {
     const [currentUserId] = useState(() => getCurrentUserId());
@@ -135,7 +103,7 @@ function RoomPage() {
                     return;
                 }
 
-                setMemories(normalizeAllMemoryLayers(loadedMemories));
+                setMemories(loadedMemories);
             } catch (error) {
                 if (!isMounted) {
                     return;
@@ -309,27 +277,38 @@ function RoomPage() {
         if (editingPlacement) {
             const { memoryId, position, layer } = editingPlacement;
 
-            setMemories((prev) => {
-                const nextMemories = prev.map((memory) =>
-                    memory.id === memoryId
-                        ? { ...memory, objectPosition: position, objectLayer: layer }
-                        : memory,
+            try {
+                setIsPlacementSaving(true);
+                const savedMemory = await updateMemoryPosition(currentUserId, memoryId, position, layer);
+                const memoryWithPlacement = {
+                    ...savedMemory,
+                    objectLayer: savedMemory.objectLayer ?? layer,
+                    objectPosition: savedMemory.objectPosition ?? position,
+                };
+
+                setMemories((prev) => {
+                    const nextMemories = prev.map((memory) =>
+                        memory.id === memoryId
+                            ? memoryWithPlacement
+                            : memory,
+                    );
+
+                    return nextMemories;
+                });
+
+                setPreviewMemory((prev) =>
+                    prev && prev.id === memoryId
+                        ? memoryWithPlacement
+                        : prev,
                 );
-                const targetMemory = nextMemories.find((memory) => memory.id === memoryId);
 
-                return targetMemory
-                    ? normalizeMemoryLayers(nextMemories, getMonthKey(targetMemory.memoryDate))
-                    : nextMemories;
-            });
-
-            setPreviewMemory((prev) =>
-                prev && prev.id === memoryId
-                    ? { ...prev, objectPosition: position, objectLayer: layer }
-                    : prev,
-            );
-
-            setEditingPlacement(null);
-            setActiveObjectId(null);
+                setEditingPlacement(null);
+                setActiveObjectId(null);
+            } catch (error) {
+                alert(error instanceof Error ? error.message : "오브젝트 위치를 저장하지 못했습니다.");
+            } finally {
+                setIsPlacementSaving(false);
+            }
             return;
         }
 
@@ -351,21 +330,20 @@ function RoomPage() {
                 slotKey: value.objectKey,
                 positionX: position.x,
                 positionY: position.y,
+                layer,
             });
 
             const memoryWithPlacement = {
                 ...savedMemory,
                 objectKey: savedMemory.objectKey ?? value.objectKey,
-                objectLayer: layer,
+                objectLayer: savedMemory.objectLayer ?? layer,
                 objectPosition: savedMemory.objectPosition ?? position,
             };
 
-            setMemories((prev) =>
-                normalizeMemoryLayers([
-                    ...prev,
-                    memoryWithPlacement,
-                ], getMonthKey(savedMemory.memoryDate)),
-            );
+            setMemories((prev) => [
+                ...prev,
+                memoryWithPlacement,
+            ]);
 
             setPendingPlacement(null);
             setSelectedDate(savedMemory.memoryDate);
@@ -433,36 +411,35 @@ function RoomPage() {
         });
     };
 
-    const handleUpdateMemory = (memoryId: string, value: MemoryPreviewUpdate) => {
-        const updatedAt = new Date().toISOString();
+    const handleUpdateMemory = async (memoryId: string, value: MemoryPreviewUpdate) => {
+        try {
+            const savedMemory = await updateMemory(currentUserId, memoryId, value);
 
-        setMemories((prev) =>
-            prev.map((memory) =>
-                memory.id === memoryId
+            setMemories((prev) =>
+                prev.map((memory) =>
+                    memory.id === memoryId
+                        ? {
+                            ...savedMemory,
+                            objectLayer: savedMemory.objectLayer ?? memory.objectLayer,
+                            objectPosition: savedMemory.objectPosition ?? memory.objectPosition,
+                        }
+                        : memory,
+                ),
+            );
+
+            setPreviewMemory((prev) =>
+                prev && prev.id === memoryId
                     ? {
-                        ...memory,
-                        updatedAt,
-                        isUpdated: true,
-                        title: value.title,
-                        content: value.content,
-                        moodKey: value.moodKey,
+                        ...savedMemory,
+                        objectLayer: savedMemory.objectLayer ?? prev.objectLayer,
+                        objectPosition: savedMemory.objectPosition ?? prev.objectPosition,
                     }
-                    : memory,
-            ),
-        );
-
-        setPreviewMemory((prev) =>
-            prev && prev.id === memoryId
-                ? {
-                    ...prev,
-                    updatedAt,
-                    isUpdated: true,
-                    title: value.title,
-                    content: value.content,
-                    moodKey: value.moodKey,
-                }
-                : prev,
-        );
+                    : prev,
+            );
+        } catch (error) {
+            alert(error instanceof Error ? error.message : "이야기를 수정하지 못했습니다.");
+            throw error;
+        }
     };
 
     const handleDeleteMemory = async (memoryId: string) => {
@@ -613,6 +590,11 @@ function RoomPage() {
                             onPlacementLayerDown={handlePlacementLayerDown}
                             onPlacementLayerUp={handlePlacementLayerUp}
                             isPlacementSaving={isPlacementSaving}
+                            placementSavingMessage={
+                                editingPlacement
+                                    ? "오브젝트 위치를 저장하고 있어요. 잠시만 기다려주세요."
+                                    : "이야기를 확인하고 마음의 날씨를 분석하고 있어요. 잠시만 기다려주세요."
+                            }
                         />
                         {/* <div className="pointer-events-none absolute inset-0 z-50 rounded-2xl ring-1 ring-inset ring-[#fffbf6]/40" /> */}
                     </div>

@@ -1,6 +1,6 @@
 import type { Memory } from "../types/memory";
 import type { MoodKey } from "../types/mood";
-import type { RoomObjectKey } from "../types/roomObject";
+import type { RoomObjectKey, RoomObjectPosition } from "../types/roomObject";
 import type { WeatherKey } from "../types/weather";
 import { readJsonResponse, toApiUrl } from "./apiClient";
 
@@ -20,6 +20,13 @@ type CreateMemoryRequest = {
   slotKey?: string;
   positionX: number;
   positionY: number;
+  layer: number;
+};
+
+type UpdateMemoryRequest = {
+  title?: string;
+  content: string;
+  moodKey: MoodKey;
 };
 
 type MemoryResponse = {
@@ -35,6 +42,8 @@ type MemoryResponse = {
   positionY?: number | null;
   flipX?: boolean | null;
   tiltDeg?: number | null;
+  layer?: number | null;
+  contentUpdated?: boolean | null;
   createdAt: string;
   updatedAt?: string;
 };
@@ -49,11 +58,13 @@ function toMemory(response: MemoryResponse): Memory {
     content: response.content,
     moodKey: response.moodKey,
     weatherKey: response.weatherKey,
+    isUpdated: response.contentUpdated ?? false,
     objectKey: response.objectKey,
     objectPosition:
       response.positionX != null && response.positionY != null
         ? { x: response.positionX, y: response.positionY }
         : undefined,
+    objectLayer: response.layer ?? undefined,
   };
 }
 
@@ -90,6 +101,46 @@ export async function fetchMemories(userId: string) {
   }
 
   return payload.data.map(toMemory);
+}
+
+export async function updateMemory(userId: string, memoryId: string, value: UpdateMemoryRequest) {
+  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/memories/${encodeURIComponent(memoryId)}`), {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(value),
+  });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, "이야기를 수정하지 못했습니다."));
+  }
+
+  const payload = await readJsonResponse<ApiResponse<MemoryResponse>>(response);
+
+  return toMemory(payload.data);
+}
+
+export async function updateMemoryPosition(userId: string, memoryId: string, position: RoomObjectPosition, layer: number) {
+  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/memories/${encodeURIComponent(memoryId)}/position`), {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      positionX: Math.round(position.x),
+      positionY: Math.round(position.y),
+      layer,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, "오브젝트 위치를 저장하지 못했습니다."));
+  }
+
+  const payload = await readJsonResponse<ApiResponse<MemoryResponse>>(response);
+
+  return toMemory(payload.data);
 }
 
 export async function deleteMemory(userId: string, memoryId: string) {

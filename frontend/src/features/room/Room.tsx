@@ -60,6 +60,7 @@ type Props = {
   onPlacementLayerDown?: () => void;
   onPlacementLayerUp?: () => void;
   isPlacementSaving?: boolean;
+  placementSavingMessage?: string;
 }
 
 const ROOM_FILTER_BY_WEATHER: Record<WeatherKey, string> = {
@@ -118,6 +119,7 @@ export default function Room({
   onPlacementLayerDown,
   onPlacementLayerUp,
   isPlacementSaving = false,
+  placementSavingMessage = "이야기를 확인하고 마음의 날씨를 분석하고 있어요. 잠시만 기다려주세요.",
 }: Props) {
   const roomRef = useRef<HTMLDivElement>(null);
   const objectNodeRefs = useRef(new Map<string, HTMLDivElement>());
@@ -529,7 +531,7 @@ export default function Room({
                 <div
                   className={`pointer-events-auto absolute left-1/2 w-[210px] -translate-x-1/2 rounded-md border border-[#5a4632]/15 bg-[#fffbf6]/95 px-3 py-2 text-center text-xs leading-5 text-[#5a4632]/70 shadow-md ${controlsBelow ? "top-[calc(100%+56px)]" : "bottom-[calc(100%+56px)]"}`}
                 >
-                  이야기를 확인하고 마음의 날씨를 분석하고 있어요. 잠시만 기다려주세요.
+                  {placementSavingMessage}
                 </div>
               )}
             </div>

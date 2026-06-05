@@ -44,12 +44,27 @@ public class MemoryController {
                 request.objectKey(),
                 request.slotKey(),
                 request.positionX(),
-                request.positionY()
+                request.positionY(),
+                request.layer()
         ));
         return ApiResponse.success(toResponse(memory));
     }
 
-    @PutMapping("/{memoryId}/position")
+    @PatchMapping("/{memoryId}")
+    public ApiResponse<MemoryResponse> update(
+            @PathVariable Long userId,
+            @PathVariable Long memoryId,
+            @RequestBody MemoryUpdateRequest request
+    ) {
+        var memory = memoryService.updateMemory(userId, memoryId, new MemoryService.UpdateMemoryRequest(
+                request.title(),
+                request.content(),
+                request.moodKey()
+        ));
+        return ApiResponse.success(toResponse(memory));
+    }
+
+    @RequestMapping(path = "/{memoryId}/position", method = {RequestMethod.PUT, RequestMethod.PATCH})
     public ApiResponse<MemoryResponse> updatePosition(
             @PathVariable Long userId,
             @PathVariable Long memoryId,
@@ -60,7 +75,8 @@ public class MemoryController {
                 request.positionX(),
                 request.positionY(),
                 request.flipX(),
-                request.tiltDeg()
+                request.tiltDeg(),
+                request.layer()
         ));
         return ApiResponse.success(toResponse(memory));
     }
@@ -89,6 +105,8 @@ public class MemoryController {
                 memory.getPositionY(),
                 memory.getFlipX(),
                 memory.getTiltDeg(),
+                memory.getLayerIndex(),
+                memory.getContentUpdated(),
                 memory.getCreatedAt().toString(),
                 memory.getUpdatedAt().toString()
         );
@@ -103,7 +121,15 @@ public class MemoryController {
             String objectKey,
             String slotKey,
             Integer positionX,
-            Integer positionY
+            Integer positionY,
+            Integer layer
+    ) {
+    }
+
+    public record MemoryUpdateRequest(
+            String title,
+            String content,
+            String moodKey
     ) {
     }
 
@@ -111,7 +137,8 @@ public class MemoryController {
             Integer positionX,
             Integer positionY,
             Boolean flipX,
-            Integer tiltDeg
+            Integer tiltDeg,
+            Integer layer
     ) {
     }
 
@@ -128,6 +155,8 @@ public class MemoryController {
             Integer positionY,
             Boolean flipX,
             Integer tiltDeg,
+            Integer layer,
+            Boolean contentUpdated,
             String createdAt,
             String updatedAt
     ) {
