@@ -123,11 +123,7 @@ export function isPlazaFull(plaza: Plaza) {
 }
 
 export function getPlazaStatusLabel(plaza: Plaza) {
-  if (isPlazaFull(plaza)) {
-    return "인원 가득";
-  }
-
-  if (plaza.status === "closed") {
+  if (isPlazaFull(plaza) || plaza.status === "closed") {
     return "종료됨";
   }
 
