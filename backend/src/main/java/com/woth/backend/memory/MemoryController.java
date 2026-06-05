@@ -65,6 +65,15 @@ public class MemoryController {
         return ApiResponse.success(toResponse(memory));
     }
 
+    @DeleteMapping("/{memoryId}")
+    public ApiResponse<Void> delete(
+            @PathVariable Long userId,
+            @PathVariable Long memoryId
+    ) {
+        memoryService.deleteMemory(userId, memoryId);
+        return ApiResponse.success(null);
+    }
+
     private MemoryResponse toResponse(PrivateMemory memory) {
         // 프론트가 방 장면을 복원할 수 있도록 위치/반전/기울기 값까지 응답
         return new MemoryResponse(

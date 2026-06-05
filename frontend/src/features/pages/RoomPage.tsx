@@ -7,7 +7,7 @@ import { MemoryPreviewModal, type MemoryPreviewUpdate } from "../memory/MemoryPr
 // import { getTodayString } from "../utils/date";
 import { AppHeader } from "../../components/layout/AppHeader";
 import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
-import { createMemory, fetchMemories } from "../../services/memoryService";
+import { createMemory, deleteMemory, fetchMemories } from "../../services/memoryService";
 import type { Memory } from "../../types/memory";
 import type { RoomObjectKey, RoomObjectPosition } from "../../types/roomObject";
 import type { WeatherKey } from "../../types/weather";
@@ -465,8 +465,15 @@ function RoomPage() {
         );
     };
 
-    const handleDeleteMemory = (memoryId: string) => {
+    const handleDeleteMemory = async (memoryId: string) => {
         const targetMemory = memories.find((memory) => memory.id === memoryId);
+
+        try {
+            await deleteMemory(currentUserId, memoryId);
+        } catch (error) {
+            alert(error instanceof Error ? error.message : "이야기를 삭제하지 못했습니다.");
+            return;
+        }
 
         setMemories((prev) => prev.filter((memory) => memory.id !== memoryId));
         setPreviewMemory(null);

@@ -57,6 +57,12 @@ function toMemory(response: MemoryResponse): Memory {
   };
 }
 
+async function readErrorMessage(response: Response, fallbackMessage: string) {
+  const body = await readJsonResponse<ApiResponse<null>>(response).catch(() => null);
+
+  return body?.message || fallbackMessage;
+}
+
 export async function createMemory(userId: string, value: CreateMemoryRequest) {
   const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/memories`), {
     method: "POST",
@@ -84,4 +90,14 @@ export async function fetchMemories(userId: string) {
   }
 
   return payload.data.map(toMemory);
+}
+
+export async function deleteMemory(userId: string, memoryId: string) {
+  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/memories/${encodeURIComponent(memoryId)}`), {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, "이야기를 삭제하지 못했습니다."));
+  }
 }

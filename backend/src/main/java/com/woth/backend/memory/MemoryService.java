@@ -100,6 +100,14 @@ public class MemoryService {
         return memory;
     }
 
+    @Transactional
+    public void deleteMemory(Long userId, Long memoryId) {
+        PrivateMemory memory = privateMemoryRepository.findByIdAndPrivateRoomUserId(memoryId, userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMORY_NOT_FOUND));
+
+        privateMemoryRepository.delete(memory);
+    }
+
     private String normalizeTitle(String title) {
         // 프론트에서 제목을 비워도 DB의 NOT NULL 제약을 만족하도록 기본 제목을 사용
         if (title == null || title.isBlank()) {
