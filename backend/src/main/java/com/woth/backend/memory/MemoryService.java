@@ -1,8 +1,8 @@
 package com.woth.backend.memory;
 
-/**
- * 메모리 서비스 클래스
- * 사용자의 개인 방 생성, 메모 중복 검사, 메모 저장을 담당
+/*
+  메모리 서비스 클래스
+  사용자의 개인 방 생성, 메모 중복 검사, 메모 저장을 담당
  */
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;

@@ -1,9 +1,9 @@
 package com.woth.backend.memory;
 
-/**
- * 메모리 컨트롤러 클래스
- * 사용자의 메모 목록 조회와 새 메모 생성 요청을 처리
- * /api/users/{userId}/memories 엔드포인트에서 GET과 POST 요청을 담당하며, 메모 위치 업데이트 API도 포함
+/*
+  메모리 컨트롤러 클래스
+  사용자의 메모 목록 조회와 새 메모 생성 요청을 처리
+  /api/users/{userId}/memories 엔드포인트에서 GET과 POST 요청을 담당하며, 메모 위치 업데이트 API도 포함
  */
 import com.woth.backend.global.dto.ApiResponse;
 import org.springframework.http.MediaType;
