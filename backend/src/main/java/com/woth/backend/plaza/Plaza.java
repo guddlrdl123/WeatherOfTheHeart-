@@ -102,7 +102,4 @@ public class Plaza {
         this.completedAt = completedAt;
     }
 
-    public void deactivate() {
-        this.isActive = false;
-    }
 }

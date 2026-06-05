@@ -62,7 +62,7 @@ public class PlazaService {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);
         }
 
-        return plazaRepository.findByOwnerIdAndIsActiveTrueOrderByCreatedAtDesc(ownerId);
+        return plazaRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId);
     }
 
     @Transactional(readOnly = true)
@@ -207,7 +207,9 @@ public class PlazaService {
             throw new CustomException(ErrorCode.INVALID_INPUT);
         }
 
-        plaza.deactivate();
+        objectLikeRepository.deleteByPlazaId(plazaId);
+        plazaEntryRepository.deleteByPlazaId(plazaId);
+        plazaRepository.delete(plaza);
     }
 
     private String generateUniqueInviteCode() {
@@ -358,7 +360,6 @@ public class PlazaService {
     ) {
     }
 }
-
 
 
 

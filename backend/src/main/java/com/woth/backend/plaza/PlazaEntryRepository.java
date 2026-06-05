@@ -1,6 +1,9 @@
 package com.woth.backend.plaza;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -15,4 +18,8 @@ public interface PlazaEntryRepository extends JpaRepository<PlazaEntry, Long> {
     long countByPlazaId(Long plazaId);
     boolean existsByPlazaIdAndOwnerId(Long plazaId, Long ownerId);
     boolean existsByPlazaIdAndObjectKey(Long plazaId, String objectKey);
+
+    @Modifying
+    @Query("delete from PlazaEntry entry where entry.plaza.id = :plazaId")
+    void deleteByPlazaId(@Param("plazaId") Long plazaId);
 }
