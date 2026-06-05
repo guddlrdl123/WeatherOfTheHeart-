@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, Copy, Footprints, Heart, MapPinned, MoreHorizontal, Power, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Copy, Footprints, Heart, MapPinned, MoreHorizontal, Power, Trash2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
 import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
@@ -68,6 +68,7 @@ type PlazaConfirmModalProps = {
 const getEntryLayer = (entry: PlazaEntry) => entry.layer ?? OBJECT_LAYER_MIN;
 const PLAZA_LAYOUT_WIDTH = 1460;
 const PLAZA_LAYOUT_HEIGHT = 650;
+const PLAZA_COMPLETION_NOTICE = "\uAD11\uC7A5\uC774 \uC885\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uC6B0\uD3B8\uD568\uC73C\uB85C \uC0AC\uC9C4\uC774 \uBC1C\uC1A1\uB429\uB2C8\uB2E4.";
 
 function PlazaConfirmModal({ action, onCancel, onConfirm }: PlazaConfirmModalProps) {
   const isDelete = action === "delete";
@@ -160,6 +161,7 @@ export function PlazaRoomPage({
   const stageScale = stageWidth / PLAZA_LAYOUT_WIDTH;
   const stageHeight = PLAZA_LAYOUT_HEIGHT * stageScale;
   const highlightTimerRef = useRef<number | null>(null);
+  const noticeTimerRef = useRef<number | null>(null);
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
   const [highlightedEntryId, setHighlightedEntryId] = useState<string | null>(null);
   // 임시 광장은 입장 즉시 첫 글 모달을 열고, 위치 확정 전까지 저장소에 추가하지 않습니다.
@@ -171,6 +173,7 @@ export function PlazaRoomPage({
   const [likingEntryIds, setLikingEntryIds] = useState<Set<string>>(() => new Set());
   const [isManagementMenuOpen, setIsManagementMenuOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<PlazaConfirmAction | null>(null);
+  const [completionNotice, setCompletionNotice] = useState<string | null>(null);
 
   const plazaEnded = plaza.status === "closed" || isPlazaFull(plaza);
   const ownEntry = plaza.entries.find((entry) => entry.ownerId === currentGuestId) ?? null;
@@ -190,6 +193,11 @@ export function PlazaRoomPage({
     (safeEntryPage - 1) * PLAZA_PAGE_SIZE,
     safeEntryPage * PLAZA_PAGE_SIZE,
   );
+  const willCompleteAfterNewEntry = () => {
+    const currentEntryCount = plaza.entryCount ?? plaza.entries.length;
+
+    return plaza.maxParticipants > 0 && currentEntryCount + 1 >= plaza.maxParticipants;
+  };
   const getNextObjectLayer = () => {
     // 광장은 최대 30개 오브젝트가 들어올 수 있으므로 레이어를 고정 상한으로 자르지 않습니다.
     const maxLayer = plaza.entries.reduce(
@@ -223,8 +231,25 @@ export function PlazaRoomPage({
       if (highlightTimerRef.current !== null) {
         window.clearTimeout(highlightTimerRef.current);
       }
+
+      if (noticeTimerRef.current !== null) {
+        window.clearTimeout(noticeTimerRef.current);
+      }
     };
   }, []);
+
+  function showCompletionNotice() {
+    setCompletionNotice(PLAZA_COMPLETION_NOTICE);
+
+    if (noticeTimerRef.current !== null) {
+      window.clearTimeout(noticeTimerRef.current);
+    }
+
+    noticeTimerRef.current = window.setTimeout(() => {
+      setCompletionNotice(null);
+      noticeTimerRef.current = null;
+    }, 5200);
+  }
 
   function showEntryObject(entryId: string) {
     setActiveEntryId(entryId);
@@ -250,6 +275,8 @@ export function PlazaRoomPage({
     if (!pendingPlacement || isPlacementSaving) {
       return;
     }
+
+    const shouldShowCompletionNotice = pendingPlacement.kind === "new" && willCompleteAfterNewEntry();
 
     const applyConfirmedPlacement = (current: Plaza, savedEntry?: PlazaEntry, movedEntry?: PlazaEntry) => {
       if (pendingPlacement.kind === "new") {
@@ -328,6 +355,10 @@ export function PlazaRoomPage({
 
     setPendingPlacement(null);
     setActiveEntryId(null);
+
+    if (shouldShowCompletionNotice) {
+      showCompletionNotice();
+    }
   }
 
   async function handleLike(entryId: string) {
@@ -480,6 +511,9 @@ export function PlazaRoomPage({
       }));
 
       setConfirmAction(null);
+      if (owner) {
+        showCompletionNotice();
+      }
     } catch {
       window.alert("광장을 종료하지 못했습니다. 잠시 후 다시 시도해주세요.");
     }
@@ -573,6 +607,25 @@ export function PlazaRoomPage({
 
   return (
     <main className="min-h-0 flex-1 overflow-auto px-6 py-6">
+      {completionNotice && (
+        <div className="fixed left-1/2 top-6 z-[120] w-[min(420px,calc(100vw-32px))] -translate-x-1/2">
+          <div className="mw-surface flex items-start gap-3 rounded-xl bg-[#fffbf6f2] px-4 py-3 text-[#5a4632] shadow-xl backdrop-blur-sm">
+            <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-md border border-[#7c9b78]/30 bg-[#edf5e7] text-[#5f875b]">
+              <CheckCircle2 size={17} />
+            </span>
+            <p className="min-w-0 flex-1 text-sm leading-6">{completionNotice}</p>
+            <button
+              type="button"
+              onClick={() => setCompletionNotice(null)}
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-[#5a4632]/55 hover:bg-[#5a4632]/10 hover:text-[#5a4632]"
+              aria-label="\uC548\uB0B4 \uBA54\uC2DC\uC9C0 \uB2EB\uAE30"
+              title="\uC548\uB0B4 \uBA54\uC2DC\uC9C0 \uB2EB\uAE30"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        </div>
+      )}
       <div className="mx-auto overflow-hidden" style={{ width: `${stageWidth}px`, height: `${stageHeight}px` }}>
         <div
           className="flex h-[650px] w-[1460px] gap-5"
