@@ -101,4 +101,8 @@ public class Plaza {
         // 광장 완성 처리와 우편 발송이 중복 실행되지 않도록 완료 시각을 엔티티에 기록합니다.
         this.completedAt = completedAt;
     }
+
+    public void deactivate() {
+        this.isActive = false;
+    }
 }

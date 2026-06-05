@@ -378,6 +378,19 @@ export async function completeBackendPlaza(plazaId: string, userId: string) {
   return toPlaza(await readApiData<PlazaResponse>(response));
 }
 
+export async function deleteBackendPlaza(plazaId: string, userId: string) {
+  const params = new URLSearchParams({
+    ownerId: String(Number(userId)),
+  });
+  const response = await fetch(toApiUrl(`/api/plazas/${encodeURIComponent(plazaId)}?${params.toString()}`), {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, "광장을 삭제하지 못했습니다."));
+  }
+}
+
 export async function fetchUserCreatedPlazas(userId: string) {
   const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/plazas`));
 

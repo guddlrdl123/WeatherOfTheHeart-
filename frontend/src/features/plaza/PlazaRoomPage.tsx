@@ -47,7 +47,7 @@ type Props = {
   onUpdatePlaza: (updater: (plaza: Plaza) => Plaza) => void;
   onFinalizeDraftPlaza?: (value: PlazaWriteValue, position: RoomObjectPosition, layer: number) => Promise<void>;
   onCancelDraftPlaza?: () => void;
-  onDeletePlaza: () => void;
+  onDeletePlaza: () => Promise<void>;
   onCompletePlaza?: () => Promise<void>;
   onCreateEntry?: (value: PlazaWriteValue, position: RoomObjectPosition, layer: number) => Promise<PlazaEntry>;
   onToggleEntryLike?: (entryId: string) => Promise<PlazaEntry>;
@@ -480,9 +480,13 @@ export function PlazaRoomPage({
     }
   }
 
-  function handleDeletePlaza() {
-    setConfirmAction(null);
-    onDeletePlaza();
+  async function handleDeletePlaza() {
+    try {
+      await onDeletePlaza();
+      setConfirmAction(null);
+    } catch {
+      window.alert("광장을 삭제하지 못했습니다. 잠시 후 다시 시도해주세요.");
+    }
   }
 
   function handleConfirmPlazaAction() {
@@ -492,7 +496,7 @@ export function PlazaRoomPage({
     }
 
     if (confirmAction === "delete") {
-      handleDeletePlaza();
+      void handleDeletePlaza();
     }
   }
 

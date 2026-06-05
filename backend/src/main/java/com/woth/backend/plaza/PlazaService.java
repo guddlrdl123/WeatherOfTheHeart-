@@ -62,7 +62,7 @@ public class PlazaService {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);
         }
 
-        return plazaRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId);
+        return plazaRepository.findByOwnerIdAndIsActiveTrueOrderByCreatedAtDesc(ownerId);
     }
 
     @Transactional(readOnly = true)
@@ -196,6 +196,18 @@ public class PlazaService {
 
         eventPublisher.publishEvent(new PlazaEntryCreatedEvent(plazaId, true));
         return plaza;
+    }
+
+    @Transactional
+    public void deletePlaza(Long plazaId, Long ownerId) {
+        Plaza plaza = plazaRepository.findById(plazaId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PLAZA_NOT_FOUND));
+
+        if (ownerId == null || plaza.getOwner() == null || !plaza.getOwner().getId().equals(ownerId)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        plaza.deactivate();
     }
 
     private String generateUniqueInviteCode() {
@@ -346,7 +358,6 @@ public class PlazaService {
     ) {
     }
 }
-
 
 
 

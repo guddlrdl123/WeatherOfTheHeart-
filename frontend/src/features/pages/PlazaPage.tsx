@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppHeader } from "../../components/layout/AppHeader";
-import { completeBackendPlaza, createBackendPlazaEntry, createBackendPlazaWithFirstEntry, deleteBackendPlazaEntry, fetchPlazas, toggleBackendPlazaEntryLike, updateBackendPlazaEntry, updateBackendPlazaEntryPosition } from "../../services/plazaService";
+import { completeBackendPlaza, createBackendPlazaEntry, createBackendPlazaWithFirstEntry, deleteBackendPlaza, deleteBackendPlazaEntry, fetchPlazas, toggleBackendPlazaEntryLike, updateBackendPlazaEntry, updateBackendPlazaEntryPosition } from "../../services/plazaService";
 import type { Plaza } from "../../types/plaza";
 import type { RoomObjectPosition } from "../../types/roomObject";
 import { getCurrentUserId } from "../../utils/authSession";
@@ -140,8 +140,8 @@ function PlazaPage() {
     navigate("/plaza", { replace: true });
   }
 
-  function handleDeletePlaza(plazaId: string) {
-    // 방장 삭제는 광장 목록 저장소에서 해당 광장을 제거하고 목록 화면으로 되돌립니다.
+  async function handleDeletePlaza(plazaId: string) {
+    await deleteBackendPlaza(plazaId, currentUserId);
     persistPlazas((current) => current.filter((plaza) => plaza.id !== plazaId));
     navigate("/plaza", { replace: true });
   }

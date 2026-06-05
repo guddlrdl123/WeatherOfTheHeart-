@@ -175,6 +175,15 @@ public class PlazaController {
         return ApiResponse.success(null);
     }
 
+    @DeleteMapping("/{plazaId}")
+    public ApiResponse<Void> delete(
+            @PathVariable Long plazaId,
+            @RequestParam Long ownerId
+    ) {
+        plazaService.deletePlaza(plazaId, ownerId);
+        return ApiResponse.success(null);
+    }
+
     @PatchMapping("/{plazaId}/complete")
     public ApiResponse<PlazaResponse> complete(@PathVariable Long plazaId, @RequestBody CompletePlazaRequest request) {
         return ApiResponse.success(toResponse(plazaService.completePlaza(plazaId, request.ownerId())));

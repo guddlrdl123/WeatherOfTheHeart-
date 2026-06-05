@@ -17,6 +17,7 @@ import java.util.List;
 public interface PlazaRepository extends JpaRepository<Plaza, Long> {
     List<Plaza> findAllByIsActiveTrueOrderByCreatedAtDesc();
     List<Plaza> findByOwnerIdOrderByCreatedAtDesc(Long ownerId);
+    List<Plaza> findByOwnerIdAndIsActiveTrueOrderByCreatedAtDesc(Long ownerId);
 
     boolean existsByInviteCode(String inviteCode);
 
