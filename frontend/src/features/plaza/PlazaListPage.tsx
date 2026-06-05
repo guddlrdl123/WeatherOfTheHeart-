@@ -129,6 +129,9 @@ export function PlazaListPage({ plazas, currentGuestId, onCreate }: Props) {
                 setCurrentPage(1);
               }}
             />
+            <span className="min-w-[150px] text-right text-xs text-[#b65f55]">
+              {inviteError}
+            </span>
             <div className="flex items-center gap-2 border-l border-[#5a4632]/15 pl-3">
               <input
                 className="h-9 w-[118px] rounded-md border border-[#5a4632]/15 bg-white/35 px-3 text-xs uppercase text-[#5a4632] outline-none"
@@ -154,11 +157,6 @@ export function PlazaListPage({ plazas, currentGuestId, onCreate }: Props) {
                 입장
               </button>
             </div>
-            {inviteError && (
-              <span className="text-xs text-[#b65f55]">
-                {inviteError}
-              </span>
-            )}
             <button
               type="button"
               onClick={handleCreateClick}
