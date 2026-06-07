@@ -38,6 +38,10 @@ jobs:
           cp build/libs/*-SNAPSHOT.jar deploy/application.jar
           cd deploy && zip -r deploy.zip .
 
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_ENV
+
       - name: Deploy to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v21
         with:
@@ -46,8 +50,7 @@ jobs:
           region: ${{ secrets.AWS_REGION }}
           application_name: WeatherOfTheHeart
           environment_name: WeatherOfTheHeart-env
-          # 👈 시간 값을 추가하여 매번 고유한 버전 이름을 생성합니다.
-          version_label: deploy-${{ github.sha }}-${{ github.run_id }}
+          # 👈 날짜/시간을 포함하여 매번 무조건 새로운 버전 이름 생성
+          version_label: deploy-${{ env.date }}
           deployment_package: backend/deploy/deploy.zip
-          use_existing_version_if_available: true
           wait_for_deployment: true
