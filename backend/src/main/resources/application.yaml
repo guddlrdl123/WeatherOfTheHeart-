@@ -48,3 +48,5 @@ spring:
 # OpenAI 설정
 openai:
   api-key: ${OPENAI_API_KEY:}
+
+#test
