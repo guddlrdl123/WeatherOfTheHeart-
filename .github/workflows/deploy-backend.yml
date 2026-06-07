@@ -43,7 +43,7 @@ jobs:
           region: ${{ secrets.AWS_REGION }}
           application_name: WeatherOfTheHeart
           environment_name: WeatherOfTheHeart-env
-          # 매번 빌드할 때마다 100% 다른 이름이 생성되어 중복 에러가 절대 안 납니다.
+          # 고유 ID 사용으로 중복 방지
           version_label: v-${{ github.run_id }}
           deployment_package: backend/deploy/deploy.zip
           wait_for_deployment: true
