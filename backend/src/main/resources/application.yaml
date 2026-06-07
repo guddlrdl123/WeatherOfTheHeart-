@@ -4,14 +4,12 @@ server:
 spring:
   application:
     name: backend
-
   config:
     import:
       # 실행 위치가 프로젝트 루트, backend 폴더, 또는 그 상위 폴더여도 로컬 .env를 읽습니다.
       - optional:file:.env[.properties]
       - optional:file:backend/.env[.properties]
       - optional:file:WeatherOfTheHeart/backend/.env[.properties]
-
   # 이메일 인증을 위한 메일 서버 설정.
   # .env의 MAIL_HOST/MAIL_PORT/MAIL_USERNAME/MAIL_PASSWORD가 있으면 우선 사용하고, 없으면 기본값을 사용
   mail:
@@ -26,10 +24,10 @@ spring:
           starttls:
             enable: true
 
-  # DB 연결 설정
+  # 이번 DB 연결 변경: 로컬 MySQL의 woth 스키마를 실제 저장소로 사용합니다.
   datasource:
-    # DB 접속 정보는 .env의 DB_URL/DB_USERNAME/DB_PASSWORD가 있으면 우선 사용합니다.
-    # AWS 배포 환경에서는 Elastic Beanstalk 환경 변수로 주입합니다.
+    # DB 접속 정보는 .env의 DB_URL/DB_USERNAME/DB_PASSWORD가 있으면 우선 사용하고, 없으면 로컬 기본값을 사용합니다.
+    # ⚠️ AWS 배포 환경에서 무한 루프를 방지하기 위해 기본값의 localhost를 제거하고 환경변수를 직접 매칭합니다.
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
@@ -55,9 +53,15 @@ spring:
 openai:
   api-key: ${OPENAI_API_KEY:}
 
-# AWS 설정
+# AWS S3 이미지 저장 설정
 aws:
   region: ${AWS_REGION:ap-northeast-2}
   s3:
-    bucket: ${AWS_S3_BUCKET_NAME:}
-    public-base-url: ${AWS_S3_PUBLIC_BASE_URL:}
+    bucket: ${AWS_S3_BUCKET_NAME:weather-heart-image-bucket}
+    public-base-url: ${AWS_S3_PUBLIC_BASE_URL:https://weather-heart-image-bucket.s3.ap-northeast-2.amazonaws.com}
+
+#test1
+#test2
+#test3
+#test4
+#test5
