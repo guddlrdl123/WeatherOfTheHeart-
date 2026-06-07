@@ -19,8 +19,8 @@ repositories {
 
 dependencies {
 
-	// Spring MVC
-	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	// Spring MVC 기반 REST API 서버
+	implementation 'org.springframework.boot:spring-boot-starter-web'
 
 	// JPA
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -30,6 +30,10 @@ dependencies {
 
 	// AWS ELB Health Check를 위한 Actuator
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+	// WebClient 사용을 위한 WebFlux 의존성
+	// OpenAiClient, WebClientConfig에서 WebClient / ExchangeStrategies를 사용하므로 필요합니다.
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
@@ -47,17 +51,17 @@ dependencies {
 	// LangChain4j OpenAI 스타터
 	implementation 'dev.langchain4j:langchain4j-open-ai-spring-boot-starter:0.31.0'
 
-	// JSON 처리
+	// JSON 데이터를 Java 객체로 변환(ObjectMapper, JsonNode 등 Jackson 기능 제공)
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
 
-	// .env 파일 지원
+	// .env 파일의 환경 변수를 Spring Boot에서 읽어오기 위한 라이브러리
 	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
-	// 이메일 인증
+	// 이메일 인증을 위한 의존성 추가
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 
 	// 테스트
-	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
