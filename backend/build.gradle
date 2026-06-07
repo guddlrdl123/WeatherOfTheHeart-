@@ -19,38 +19,46 @@ repositories {
 
 dependencies {
 
+	// Spring MVC
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+
+	// JPA
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+	// Validation
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
 	// AWS ELB Health Check를 위한 Actuator
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
+	// Lombok
 	compileOnly 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	annotationProcessor 'org.projectlombok:lombok'
 
-	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testCompileOnly 'org.projectlombok:lombok'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 
+	// 개발용
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	// MySQL
 	runtimeOnly 'com.mysql:mysql-connector-j'
 
 	// LangChain4j OpenAI 스타터
 	implementation 'dev.langchain4j:langchain4j-open-ai-spring-boot-starter:0.31.0'
 
-	// AI 서비스 호출 및 비동기 통신을 위해 WebFlux 추가
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-
-	// JSON 데이터를 Java 객체로 변환(ObjectMapper, JsonNode 등 Jackson 기능 제공)
+	// JSON 처리
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
 
-	// .env 파일의 환경 변수를 Spring Boot에서 읽어오기 위한 라이브러리
+	// .env 파일 지원
 	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
-	// 이메일 인증을 위한 의존성 추가
+	// 이메일 인증
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+	// 테스트
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
