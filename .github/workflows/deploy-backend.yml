@@ -10,8 +10,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     defaults:
       run:
         working-directory: ./backend
@@ -26,13 +28,16 @@ jobs:
           java-version: '21'
           distribution: 'corretto'
 
+      - name: Grant execute permission for Gradle
+        run: chmod +x gradlew
+
       - name: Build with Gradle
         run: ./gradlew clean build -x test
 
-      - name: Prepare Executable JAR
+      - name: Prepare Deploy Package
         run: |
-          # -plain.jar를 제외한 '진짜 실행 파일'만 찾아서 이름을 application.jar로 변경합니다.
-          find build/libs -name "*.jar" ! -name "*-plain.jar" -exec mv {} application.jar \;
+          find build/libs -name "*.jar" ! -name "*-plain.jar" -exec cp {} application.jar \;
+          zip -r deploy.zip application.jar Procfile
 
       - name: Deploy to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v21
@@ -41,9 +46,8 @@ jobs:
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           region: ${{ secrets.AWS_REGION }}
           application_name: WeatherOfTheHeart
-          environment_name: WeatherOfTheHeart-env
+          environment_name: WeatherOfTheHeart-env-v2
           version_label: v-${{ github.run_id }}
-          #배포 플러그인은 최상단 기준이므로 반드시 'backend/' 경로를 명시해야 합니다!
-          deployment_package: backend/application.jar
+          deployment_package: backend/deploy.zip
           use_existing_version_if_available: true
           wait_for_deployment: true
