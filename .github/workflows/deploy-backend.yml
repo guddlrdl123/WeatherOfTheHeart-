@@ -46,4 +46,5 @@ jobs:
           environment_name: WeatherOfTheHeart-env
           version_label: github-action-${{ github.sha }}
           deployment_package: backend/deploy/deploy.zip
+          use_existing_version_if_available: true  # 동일한 버전 라벨이 있어도 배포 진행
           wait_for_deployment: true
