@@ -44,6 +44,9 @@ dependencies {
 
 	// 이메일 인증을 위한 의존성 추가
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+	// Spring Security 의존성 추가
+	implementation 'org.springframework.boot:spring-boot-starter-security'
 }
 
 tasks.named('test') {
