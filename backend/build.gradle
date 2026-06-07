@@ -1,3 +1,22 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.0.6'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.woth'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
 dependencies {
 
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
@@ -32,4 +51,8 @@ dependencies {
 
 	// 이메일 인증을 위한 의존성 추가
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
 }
