@@ -49,7 +49,7 @@ jobs:
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           region: ${{ secrets.AWS_REGION }}
           application_name: WeatherOfTheHeart
-          environment_name: ${{ secrets.EB_ENVIRONMENT_NAME }}
+          environment_name: WeatherOfTheHeart-env-v2-env
           version_label: v-${{ github.run_id }}-${{ github.run_attempt }}
           deployment_package: backend/deploy.zip
           use_existing_version_if_available: true
