@@ -63,6 +63,10 @@ dependencies {
 	// 테스트
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// S3 버킷 저장 의존성 추가
+	implementation platform("software.amazon.awssdk:bom:2.44.12")
+	implementation "software.amazon.awssdk:s3"
 }
 
 tasks.named('test') {
