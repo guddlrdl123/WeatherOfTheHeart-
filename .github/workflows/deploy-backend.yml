@@ -32,8 +32,10 @@ jobs:
       - name: Generate Deployment Package
         run: |
           mkdir -p deploy
-          cp build/libs/*-SNAPSHOT.jar deploy/application.jar
-          cd deploy && zip -r deploy.zip .
+          # 모든 jar 파일을 찾아 application.jar로 복사 (이름 상관없음)
+          cp build/libs/*.jar deploy/application.jar
+          # -j 옵션으로 폴더 구조 없이 파일만 깔끔하게 압축
+          zip -j deploy/deploy.zip deploy/application.jar
 
       - name: Deploy to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v21
