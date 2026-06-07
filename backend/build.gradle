@@ -65,8 +65,8 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
 	// S3 버킷 저장 의존성 추가
-	implementation platform("software.amazon.awssdk:bom:2.44.12")
-	implementation "software.amazon.awssdk:s3"
+	implementation platform('software.amazon.awssdk:bom:2.25.70')
+	implementation 'software.amazon.awssdk:s3'
 }
 
 tasks.named('test') {
