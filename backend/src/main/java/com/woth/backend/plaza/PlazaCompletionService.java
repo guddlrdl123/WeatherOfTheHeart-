@@ -2,13 +2,14 @@ package com.woth.backend.plaza;
 
 import com.woth.backend.ai.service.OpenAiClient;
 import com.woth.backend.mailbox.MailboxService;
+import com.woth.backend.storage.S3ImageStorageService;
 import com.woth.backend.user.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -27,6 +28,7 @@ public class PlazaCompletionService {
     private final PlazaRepository plazaRepository;
     private final PlazaEntryRepository plazaEntryRepository;
     private final TransactionTemplate transactionTemplate;
+    private final S3ImageStorageService s3ImageStorageService;
 
     public PlazaCompletionService(
             OpenAiClient openAiClient,
@@ -34,7 +36,8 @@ public class PlazaCompletionService {
             PlazaImagePromptBuilder promptBuilder,
             PlazaRepository plazaRepository,
             PlazaEntryRepository plazaEntryRepository,
-            PlatformTransactionManager transactionManager
+            PlatformTransactionManager transactionManager,
+            S3ImageStorageService s3ImageStorageService
     ) {
         this.openAiClient = openAiClient;
         this.mailboxService = mailboxService;
@@ -43,12 +46,14 @@ public class PlazaCompletionService {
         this.plazaEntryRepository = plazaEntryRepository;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.s3ImageStorageService = s3ImageStorageService;
     }
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void completeIfReady(PlazaEntryCreatedEvent event) {
         log.info("[plaza-completion-test] event received. plazaId={}", event.plazaId());
+
         CompletionSnapshot snapshot = loadCompletionSnapshot(event.plazaId(), event.forceComplete());
 
         if (snapshot == null) {
@@ -68,18 +73,28 @@ public class PlazaCompletionService {
         }
 
         log.info("[plaza-completion-test] plaza marked completed. plazaId={}", snapshot.plazaId());
+
         String generatedImageData = generateImage(snapshot);
-        log.info("[plaza-completion-test] image generation finished. plazaId={}, hasImage={}",
+        String generatedImageUrl = uploadImageToS3(snapshot, generatedImageData);
+
+        String imageForMailbox = generatedImageUrl != null && !generatedImageUrl.isBlank()
+                ? generatedImageUrl
+                : generatedImageData;
+
+        log.info("[plaza-completion-test] image processing finished. plazaId={}, hasImage={}, storedAsS3Url={}",
                 snapshot.plazaId(),
-                generatedImageData != null && !generatedImageData.isBlank()
+                imageForMailbox != null && !imageForMailbox.isBlank(),
+                generatedImageUrl != null && !generatedImageUrl.isBlank()
         );
+
         mailboxService.sendPlazaCompletionLetters(
                 snapshot.plazaId(),
                 snapshot.plazaTitle(),
                 snapshot.completedAt(),
                 snapshot.receivers(),
-                generatedImageData
+                imageForMailbox
         );
+
         log.info("[plaza-completion-test] completion letters sent. plazaId={}, receiverCount={}",
                 snapshot.plazaId(),
                 snapshot.receivers().size()
@@ -94,28 +109,35 @@ public class PlazaCompletionService {
             }
 
             List<PlazaEntry> entries = plazaEntryRepository.findByPlazaId(plazaId);
+
             log.info("[plaza-completion-test] entries loaded. plazaId={}, entryCount={}, maxObjects={}",
                     plazaId,
                     entries.size(),
                     plaza.getMaxObjects()
             );
+
             if (!forceComplete && entries.size() < plaza.getMaxObjects()) {
                 return null;
             }
 
             // 프롬프트와 수신자를 트랜잭션 안에서 확정해 lazy loading 영향을 받지 않도록 합니다.
             String prompt = promptBuilder.build(plaza, entries);
+
             List<User> receivers = entries.stream()
                     .map(PlazaEntry::getOwner)
+                    .filter(user -> user != null)
                     .filter(user -> plaza.getOwner() == null || !user.getId().equals(plaza.getOwner().getId()))
                     .distinct()
                     .toList();
+
             if (plaza.getOwner() != null) {
                 receivers = new java.util.ArrayList<>(receivers);
                 receivers.add(0, plaza.getOwner());
             }
 
-            LocalDateTime completedAt = plaza.getCompletedAt() == null ? LocalDateTime.now() : plaza.getCompletedAt();
+            LocalDateTime completedAt = plaza.getCompletedAt() == null
+                    ? LocalDateTime.now()
+                    : plaza.getCompletedAt();
 
             return new CompletionSnapshot(
                     plaza.getId(),
@@ -128,7 +150,11 @@ public class PlazaCompletionService {
     }
 
     private int markCompleted(Long plazaId, LocalDateTime completedAt) {
-        return transactionTemplate.execute(status -> plazaRepository.markCompletedIfNotAlready(plazaId, completedAt));
+        Integer marked = transactionTemplate.execute(
+                status -> plazaRepository.markCompletedIfNotAlready(plazaId, completedAt)
+        );
+
+        return marked == null ? 0 : marked;
     }
 
     private String generateImage(CompletionSnapshot snapshot) {
@@ -137,6 +163,38 @@ public class PlazaCompletionService {
             return openAiClient.generateImageDataUrl(snapshot.prompt());
         } catch (Exception e) {
             log.warn("Plaza image generation failed. plazaId={}, reason={}", snapshot.plazaId(), e.getMessage());
+            return null;
+        }
+    }
+
+    private String uploadImageToS3(CompletionSnapshot snapshot, String generatedImageData) {
+        if (generatedImageData == null || generatedImageData.isBlank()) {
+            log.info("[plaza-completion-test] S3 upload skipped because image data is empty. plazaId={}",
+                    snapshot.plazaId()
+            );
+            return null;
+        }
+
+        try {
+            log.info("[plaza-completion-test] S3 upload started. plazaId={}", snapshot.plazaId());
+
+            String imageUrl = s3ImageStorageService.uploadDataUrl(
+                    generatedImageData,
+                    "plazas/" + snapshot.plazaId()
+            );
+
+            log.info("[plaza-completion-test] S3 upload finished. plazaId={}, imageUrl={}",
+                    snapshot.plazaId(),
+                    imageUrl
+            );
+
+            return imageUrl;
+        } catch (Exception e) {
+            log.warn("[plaza-completion-test] S3 upload failed. plazaId={}, reason={}",
+                    snapshot.plazaId(),
+                    e.getMessage()
+            );
+
             return null;
         }
     }
