@@ -1,0 +1,49 @@
+name: Deploy Backend to AWS Elastic Beanstalk
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'  # backend 폴더 내부가 변경될 때만 실행
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend  # 모노레포 구조이므로 모든 명령어는 backend 폴더 기준
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew clean build -x test
+
+      - name: Generate Deployment Package
+        run: |
+          mkdir -p deploy
+          cp build/libs/*-SNAPSHOT.jar deploy/application.jar
+          cd deploy && zip -r deploy.zip .
+
+      - name: Deploy to Elastic Beanstalk
+        uses: einaregilsson/beanstalk-deploy@v21
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          region: ${{ secrets.AWS_REGION }}
+          application_name: WeatherOfTheHeart
+          environment_name: WeatherOfTheHeart-env
+          version_label: github-action-${{ github.sha }}
+          deployment_package: backend/deploy/deploy.zip
+          wait_for_deployment: true
