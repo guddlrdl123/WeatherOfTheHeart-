@@ -29,12 +29,6 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew clean build -x test
 
-      - name: Generate Deployment Package
-        run: |
-          mkdir -p deploy
-          cp build/libs/*-SNAPSHOT.jar deploy/application.jar
-          cd deploy && zip -r deploy.zip .
-
       - name: Deploy to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v21
         with:
@@ -43,7 +37,8 @@ jobs:
           region: ${{ secrets.AWS_REGION }}
           application_name: WeatherOfTheHeart
           environment_name: WeatherOfTheHeart-env
-          # 고유 ID 사용으로 중복 방지
+          #  중복 방지를 위해 run_id(고유번호)를 사용합니다.
           version_label: v-${{ github.run_id }}
           deployment_package: backend/deploy/deploy.zip
+          use_existing_version_if_available: true
           wait_for_deployment: true
