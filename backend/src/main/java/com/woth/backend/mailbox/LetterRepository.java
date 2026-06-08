@@ -1,6 +1,9 @@
 package com.woth.backend.mailbox;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -13,4 +16,13 @@ public interface LetterRepository extends JpaRepository<Letter, Long> {
     List<Letter> findByReceiverIdOrderByCreatedAtDesc(Long receiverId);
     boolean existsByReceiverIdAndPlazaId(Long receiverId, Long plazaId);
     long countByReceiverIdAndIsReadFalse(Long receiverId);
+
+    @Modifying
+    @Query("""
+            update Letter letter
+            set letter.isRead = true
+            where letter.receiver.id = :receiverId
+              and letter.isRead = false
+            """)
+    int markAllAsReadByReceiverId(@Param("receiverId") Long receiverId);
 }

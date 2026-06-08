@@ -1,15 +1,36 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowRight, CalendarDays, ImageIcon, Inbox, MapPinned, RefreshCw, Users, X } from "lucide-react";
+import { ArrowRight, CalendarDays, ImageIcon, Inbox, MailCheck, MapPinned, RefreshCw, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { MailboxCard } from "../../components/mailbox/MailboxCard";
 import { AppHeader } from "../../components/layout/AppHeader";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
-import { fetchMailbox, markMailboxItemAsRead } from "../../services/mailboxService";
+import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
+import { fetchMailbox, markAllMailboxItemsAsRead, markMailboxItemAsRead } from "../../services/mailboxService";
 import type { MailboxItem } from "../../types/mailbox";
 import { getCurrentUserId } from "../../utils/authSession";
 
-function formatDateTime(value: string) {
-  // 상세 모달에서는 완료 시각을 조금 더 읽기 좋은 긴 날짜로 보여줍니다.
+const MAILBOX_LAYOUT_WIDTH = 1460;
+const MAILBOX_SUMMARY_HEIGHT = 60;
+const MAILBOX_EMPTY_HEIGHT = 460;
+const MAILBOX_ERROR_HEIGHT = 46;
+const MAILBOX_CARD_HEIGHT = 320;
+const MAILBOX_ROW_GAP = 16;
+const MAILBOX_SECTION_GAP = 20;
+const MAILBOX_FIT_HEIGHT = 620;
+const MAILBOX_PAGE_PADDING_X = 128;
+const MAILBOX_PAGE_PADDING_Y = 64;
+
+function getMailboxLayoutHeight(itemCount: number, isLoading: boolean, hasError: boolean) {
+  const bodyHeight = isLoading || itemCount === 0
+    ? MAILBOX_EMPTY_HEIGHT
+    : Math.ceil(itemCount / 3) * MAILBOX_CARD_HEIGHT + Math.max(0, Math.ceil(itemCount / 3) - 1) * MAILBOX_ROW_GAP;
+  const errorHeight = hasError ? MAILBOX_SECTION_GAP + MAILBOX_ERROR_HEIGHT : 0;
+
+  return MAILBOX_SUMMARY_HEIGHT + MAILBOX_SECTION_GAP + errorHeight + bodyHeight;
+}
+
+function formatDate(value: string) {
+  // 상세 모달의 광장 기간은 날짜만 보여줍니다.
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
@@ -20,19 +41,17 @@ function formatDateTime(value: string) {
     year: "numeric",
     month: "long",
     day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   }).format(date);
 }
 
 function formatPlazaPeriod(startValue: string, endValue: string) {
-  const endText = formatDateTime(endValue);
+  const endText = formatDate(endValue);
 
   if (!startValue || startValue === endValue) {
     return `${endText} 종료`;
   }
 
-  return `${formatDateTime(startValue)} ~ ${endText}`;
+  return `${formatDate(startValue)} ~ ${endText}`;
 }
 
 function MailboxDetailModal({
@@ -144,6 +163,16 @@ function MailboxPage() {
 
   const selectedItem = items.find((item) => item.id === selectedItemId) ?? null;
   const unreadCount = useMemo(() => items.filter((item) => !item.read).length, [items]);
+  const hasUnread = unreadCount > 0;
+  const mailboxLayoutHeight = getMailboxLayoutHeight(items.length, isLoading, Boolean(error));
+  const stageWidth = useResponsiveStageWidth({
+    designWidth: MAILBOX_LAYOUT_WIDTH,
+    designHeight: Math.min(mailboxLayoutHeight, MAILBOX_FIT_HEIGHT),
+    pagePaddingX: MAILBOX_PAGE_PADDING_X,
+    pagePaddingY: MAILBOX_PAGE_PADDING_Y,
+  });
+  const stageScale = stageWidth / MAILBOX_LAYOUT_WIDTH;
+  const stageHeight = mailboxLayoutHeight * stageScale;
 
   const loadMailbox = useCallback(async () => {
     // 명세의 GET /api/users/{userId}/mailbox 응답을 화면 상태로 가져옵니다.
@@ -190,13 +219,35 @@ function MailboxPage() {
     }
   }
 
+  async function handleMarkAllAsRead() {
+    if (!hasUnread || isLoading) {
+      return;
+    }
+
+    setItems((current) => current.map((item) => ({ ...item, read: true })));
+
+    try {
+      await markAllMailboxItemsAsRead(userId);
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "우편 전체 읽음 처리에 실패했습니다.");
+      void loadMailbox();
+    }
+  }
+
   return (
     <div className="mw-app flex min-h-screen flex-col select-none">
       <AppHeader />
 
       <main className="min-h-0 flex-1 overflow-auto px-16 py-8">
-        <div className="mx-auto flex w-[1460px] flex-col gap-5">
-          <section className="flex items-end justify-between gap-5">
+        <div className="mx-auto" style={{ width: `${stageWidth}px`, height: `${stageHeight}px` }}>
+          <div
+            className="flex w-[1460px] flex-col gap-5"
+            style={{
+              transform: `scale(${stageScale})`,
+              transformOrigin: "top left",
+            }}
+          >
+          <section className="flex h-[60px] items-end justify-between gap-5">
             <div>
               <h1 className="text-2xl font-normal text-[#5a4632]">도착한 우편</h1>
               <p className="mt-2 text-sm text-[#5a4632]/58">
@@ -204,15 +255,27 @@ function MailboxPage() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => void loadMailbox()}
-              disabled={isLoading}
-              className="mw-button inline-flex h-10 items-center gap-2 rounded-md px-4 text-sm disabled:opacity-50"
-            >
-              <RefreshCw size={15} className={isLoading ? "animate-spin" : ""} />
-              새로고침
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => void loadMailbox()}
+                disabled={isLoading}
+                className="mw-button inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm disabled:opacity-50"
+              >
+                <RefreshCw size={15} className={isLoading ? "animate-spin" : ""} />
+                새로고침
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void handleMarkAllAsRead()}
+                disabled={!hasUnread || isLoading}
+                className="mw-button inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm disabled:opacity-50"
+              >
+                <MailCheck size={15} />
+                모두 읽음
+              </button>
+            </div>
           </section>
 
           {error && (
@@ -242,6 +305,7 @@ function MailboxPage() {
               ))}
             </section>
           )}
+          </div>
         </div>
       </main>
 

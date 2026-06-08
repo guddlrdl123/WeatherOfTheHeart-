@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { ArrowRight, ChevronLeft, ChevronRight, Plus, RefreshCw, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
 import type { Plaza } from "../../types/plaza";
 import { PlazaCreateModal } from "./PlazaCreateModal";
 import {
@@ -27,6 +28,28 @@ type Props = {
 type CreateLimitNoticeModalProps = {
   onClose: () => void;
 };
+
+const PLAZA_LIST_LAYOUT_WIDTH = 1460;
+const PLAZA_LIST_TOOLBAR_HEIGHT = 60;
+const PLAZA_LIST_CARD_HEIGHT = 242;
+const PLAZA_LIST_EMPTY_HEIGHT = 260;
+const PLAZA_LIST_PAGINATION_HEIGHT = 36;
+const PLAZA_LIST_SECTION_GAP = 16;
+const PLAZA_LIST_FIT_HEIGHT = 700;
+const PLAZA_LIST_PAGE_PADDING_X = 128;
+const PLAZA_LIST_PAGE_PADDING_Y = 64;
+
+function getPlazaListLayoutHeight(currentItemCount: number, hasVisiblePlazas: boolean, hasPagination: boolean) {
+  const rowCount = Math.ceil(currentItemCount / 2);
+  const gridHeight = hasVisiblePlazas
+    ? rowCount * PLAZA_LIST_CARD_HEIGHT + Math.max(0, rowCount - 1) * PLAZA_LIST_SECTION_GAP
+    : PLAZA_LIST_EMPTY_HEIGHT;
+  const paginationHeight = hasPagination
+    ? PLAZA_LIST_SECTION_GAP + PLAZA_LIST_PAGINATION_HEIGHT
+    : 0;
+
+  return PLAZA_LIST_TOOLBAR_HEIGHT + PLAZA_LIST_SECTION_GAP + gridHeight + paginationHeight;
+}
 
 function CreateLimitNoticeModal({ onClose }: CreateLimitNoticeModalProps) {
   return (
@@ -82,6 +105,20 @@ export function PlazaListPage({ plazas, currentGuestId, isRefreshing = false, on
     (safeCurrentPage - 1) * PLAZA_PAGE_SIZE,
     safeCurrentPage * PLAZA_PAGE_SIZE,
   );
+  const hasPagination = visiblePlazas.length > PLAZA_PAGE_SIZE;
+  const plazaListLayoutHeight = getPlazaListLayoutHeight(
+    currentPagePlazas.length,
+    visiblePlazas.length > 0,
+    hasPagination,
+  );
+  const stageWidth = useResponsiveStageWidth({
+    designWidth: PLAZA_LIST_LAYOUT_WIDTH,
+    designHeight: Math.min(plazaListLayoutHeight, PLAZA_LIST_FIT_HEIGHT),
+    pagePaddingX: PLAZA_LIST_PAGE_PADDING_X,
+    pagePaddingY: PLAZA_LIST_PAGE_PADDING_Y,
+  });
+  const stageScale = stageWidth / PLAZA_LIST_LAYOUT_WIDTH;
+  const stageHeight = plazaListLayoutHeight * stageScale;
 
   function enterByInviteCode() {
     const targetCode = inviteCode.trim().toUpperCase();
@@ -118,9 +155,16 @@ export function PlazaListPage({ plazas, currentGuestId, isRefreshing = false, on
 
   return (
     <main className="min-h-0 flex-1 overflow-auto px-16 py-8">
-      <div className="mx-auto flex w-[1460px] flex-col gap-4">
+      <div className="mx-auto" style={{ width: `${stageWidth}px`, height: `${stageHeight}px` }}>
+        <div
+          className="flex w-[1460px] flex-col gap-4"
+          style={{
+            transform: `scale(${stageScale})`,
+            transformOrigin: "top left",
+          }}
+        >
         <section className="flex flex-col gap-4">
-          <div className="mw-surface flex items-center gap-3 rounded-xl px-4 py-3">
+          <div className="mw-surface flex h-[60px] items-center gap-3 rounded-xl px-4 py-3">
             <Search size={17} className="text-[#5a4632]/55" />
             <input
               className="min-w-0 flex-1 bg-transparent text-sm text-[#5a4632] outline-none placeholder:text-[#5a4632]/35"
@@ -206,7 +250,7 @@ export function PlazaListPage({ plazas, currentGuestId, isRefreshing = false, on
               const actionLabel = enterable ? "입장하기" : "구경하기";
 
               return (
-                <article key={plaza.id} className="mw-surface flex min-h-[242px] flex-col rounded-xl p-5 shadow-[0_14px_28px_rgba(90,70,50,0.08)]">
+                <article key={plaza.id} className="mw-surface flex h-[242px] flex-col rounded-xl p-5 shadow-[0_14px_28px_rgba(90,70,50,0.08)]">
                   <div className="mb-5 flex items-center justify-between gap-3">
                     <span className="inline-flex max-w-[58%] items-center gap-1.5 rounded-full border border-[#5a4632]/15 bg-white/35 px-3 py-1 text-xs text-[#5a4632]/72">
                       {plaza.background.type === "color" ? (
@@ -269,7 +313,7 @@ export function PlazaListPage({ plazas, currentGuestId, isRefreshing = false, on
             </div>
           )}
 
-          {visiblePlazas.length > PLAZA_PAGE_SIZE && (
+          {hasPagination && (
             <div className="flex items-center justify-center gap-3">
               <button
                 type="button"
@@ -295,6 +339,7 @@ export function PlazaListPage({ plazas, currentGuestId, isRefreshing = false, on
             </div>
           )}
         </section>
+        </div>
       </div>
 
       {isCreateLimitNoticeOpen && (

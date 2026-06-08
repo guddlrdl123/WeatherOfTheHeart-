@@ -206,7 +206,7 @@ export function PlazaCreateModal({ onCreate, onClose }: Props) {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {PLAZA_WEATHER_OPTIONS.map((option) => (
                 <button
                   key={option.key}

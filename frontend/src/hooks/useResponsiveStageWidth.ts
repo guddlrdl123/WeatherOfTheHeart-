@@ -4,16 +4,20 @@ type ResponsiveStageWidthOptions = {
   designWidth: number;
   designHeight: number;
   minWidth?: number;
+  minViewportWidth?: number;
   pagePaddingX?: number;
   pagePaddingY?: number;
   headerHeight?: number;
 };
 
+const DEFAULT_MIN_PC_VIEWPORT_WIDTH = 1280;
+
 // 고정 디자인 캔버스를 뷰포트 안에 맞추되, 너무 작아져 레이아웃이 깨지지 않도록 최소 너비를 보장합니다.
 function getResponsiveStageWidth({
   designWidth,
   designHeight,
-  minWidth = 1180,
+  minWidth,
+  minViewportWidth = DEFAULT_MIN_PC_VIEWPORT_WIDTH,
   pagePaddingX = 48,
   pagePaddingY = 48,
   headerHeight = 64,
@@ -26,8 +30,9 @@ function getResponsiveStageWidth({
   const availableHeight = window.innerHeight - headerHeight - pagePaddingY;
   const heightFitWidth = availableHeight * (designWidth / designHeight);
   const fitWidth = Math.min(designWidth, availableWidth, heightFitWidth);
+  const minimumWidth = minWidth ?? Math.min(designWidth, Math.max(1, minViewportWidth - pagePaddingX));
 
-  return Math.round(Math.max(minWidth, fitWidth));
+  return Math.round(Math.max(minimumWidth, fitWidth, 1));
 }
 
 export function useResponsiveStageWidth(options: ResponsiveStageWidthOptions) {
@@ -35,6 +40,7 @@ export function useResponsiveStageWidth(options: ResponsiveStageWidthOptions) {
     designWidth,
     designHeight,
     minWidth,
+    minViewportWidth,
     pagePaddingX,
     pagePaddingY,
     headerHeight,
@@ -43,6 +49,7 @@ export function useResponsiveStageWidth(options: ResponsiveStageWidthOptions) {
     designWidth,
     designHeight,
     minWidth,
+    minViewportWidth,
     pagePaddingX,
     pagePaddingY,
     headerHeight,
@@ -59,6 +66,7 @@ export function useResponsiveStageWidth(options: ResponsiveStageWidthOptions) {
           designWidth,
           designHeight,
           minWidth,
+          minViewportWidth,
           pagePaddingX,
           pagePaddingY,
           headerHeight,
@@ -77,6 +85,7 @@ export function useResponsiveStageWidth(options: ResponsiveStageWidthOptions) {
     designWidth,
     designHeight,
     minWidth,
+    minViewportWidth,
     pagePaddingX,
     pagePaddingY,
     headerHeight,

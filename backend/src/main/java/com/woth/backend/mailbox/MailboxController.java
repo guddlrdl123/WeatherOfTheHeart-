@@ -41,6 +41,12 @@ public class MailboxController {
         return ApiResponse.success(toResponse(item));
     }
 
+    @PatchMapping("/read-all")
+    public ApiResponse<MailboxReadAllResponse> markAllRead(@PathVariable Long userId) {
+        int updatedCount = mailboxService.markAllRead(userId);
+        return ApiResponse.success(new MailboxReadAllResponse(updatedCount));
+    }
+
     private MailboxItemResponse toResponse(MailboxService.MailboxItemView item) {
         Letter letter = item.letter();
 
@@ -78,6 +84,11 @@ public class MailboxController {
 
     public record MailboxUnreadCountResponse(
             Long unreadCount
+    ){
+    }
+
+    public record MailboxReadAllResponse(
+            Integer updatedCount
     ){
     }
 

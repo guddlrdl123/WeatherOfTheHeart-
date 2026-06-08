@@ -20,6 +20,10 @@ type MailboxUnreadCountResponse = {
   unreadCount: number;
 };
 
+type MailboxReadAllResponse = {
+  updatedCount: number;
+};
+
 export const MAILBOX_CHANGED_EVENT = "mw-mailbox-changed";
 
 export function notifyMailboxChanged() {
@@ -77,5 +81,18 @@ export async function markMailboxItemAsRead(userId: string, letterId: string) {
   }
 
   await readApiData<MailboxItemResponse>(response);
+  notifyMailboxChanged();
+}
+
+export async function markAllMailboxItemsAsRead(userId: string) {
+  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/mailbox/read-all`), {
+    method: "PATCH",
+  });
+
+  if (!response.ok) {
+    throw await readApiError(response, "우편 전체 읽음 처리에 실패했습니다.");
+  }
+
+  await readApiData<MailboxReadAllResponse>(response);
   notifyMailboxChanged();
 }

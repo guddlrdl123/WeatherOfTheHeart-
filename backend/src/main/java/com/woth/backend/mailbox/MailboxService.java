@@ -74,6 +74,15 @@ public class MailboxService {
         return toMailboxItemView(receiverId, letter);
     }
 
+    @Transactional
+    public int markAllRead(Long receiverId) {
+        if(!userRepository.existsById(receiverId)) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        return letterRepository.markAllAsReadByReceiverId(receiverId);
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendPlazaCompletionLetters(
             Long plazaId,

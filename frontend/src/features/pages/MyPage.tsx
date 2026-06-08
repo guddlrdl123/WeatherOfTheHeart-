@@ -13,6 +13,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { AppHeader } from "../../components/layout/AppHeader";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
+import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
 import { fetchUserCreatedPlazas, fetchUserPlazaEntries } from "../../services/plazaService";
 import { fetchUserProfile, updateUserProfile } from "../../services/userService";
 import type { Plaza, PlazaEntry } from "../../types/plaza";
@@ -32,6 +33,14 @@ type ArchiveRecord = {
 };
 
 type MyPageView = "createdPlazas" | "writtenObjects";
+
+const MYPAGE_LAYOUT_WIDTH = 1460;
+const MYPAGE_PROFILE_HEIGHT = 132;
+const MYPAGE_ACTIVITY_HEIGHT = 672;
+const MYPAGE_SECTION_GAP = 20;
+const MYPAGE_LAYOUT_HEIGHT = MYPAGE_PROFILE_HEIGHT + MYPAGE_SECTION_GAP + MYPAGE_ACTIVITY_HEIGHT;
+const MYPAGE_PAGE_PADDING_X = 128;
+const MYPAGE_PAGE_PADDING_Y = 64;
 
 function formatCreatedAt(value: string) {
   const date = new Date(value);
@@ -92,6 +101,14 @@ function MyPage() {
   // 사용자가 아직 선택하지 않았을 때는 최신 기록을 기본 상세로 보여줍니다.
   const selectedRecord = archiveRecords.find((record) => record.id === selectedRecordId) ?? archiveRecords[0] ?? null;
   const selectedObject = selectedRecord ? ROOM_OBJECT_BY_KEY[selectedRecord.entry.objectKey] : null;
+  const stageWidth = useResponsiveStageWidth({
+    designWidth: MYPAGE_LAYOUT_WIDTH,
+    designHeight: MYPAGE_LAYOUT_HEIGHT,
+    pagePaddingX: MYPAGE_PAGE_PADDING_X,
+    pagePaddingY: MYPAGE_PAGE_PADDING_Y,
+  });
+  const stageScale = stageWidth / MYPAGE_LAYOUT_WIDTH;
+  const stageHeight = MYPAGE_LAYOUT_HEIGHT * stageScale;
 
   useEffect(() => {
     let ignore = false;
@@ -221,9 +238,16 @@ function MyPage() {
       <AppHeader />
 
       <main className="min-h-0 flex-1 overflow-auto px-16 py-8">
-        <div className="mx-auto flex w-[1460px] flex-col gap-5">
+        <div className="mx-auto" style={{ width: `${stageWidth}px`, height: `${stageHeight}px` }}>
+          <div
+            className="flex w-[1460px] flex-col gap-5"
+            style={{
+              transform: `scale(${stageScale})`,
+              transformOrigin: "top left",
+            }}
+          >
           {/* 프로필과 활동 요약을 한눈에 보는 마이페이지 상단 영역입니다. */}
-          <section className="mw-surface rounded-xl p-6">
+          <section className="mw-surface h-[132px] rounded-xl p-6">
             <div className="flex items-start justify-between gap-6">
               <div className="flex min-w-0 items-start gap-4">
                 <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl border border-[#5a4632]/15 bg-white/35 text-[#5a4632]/68">
@@ -310,7 +334,7 @@ function MyPage() {
           </section>
 
           {/* 별도 보관함 페이지 대신 마이페이지의 주 콘텐츠로 통합된 기록 영역입니다. */}
-          <section className="flex min-h-[620px] flex-col gap-4">
+          <section className="flex h-[672px] flex-col gap-4">
             <div className="flex items-center justify-between gap-5 border-b border-[#5a4632]/12">
               <div className="flex items-end gap-6">
                 <button
@@ -547,6 +571,7 @@ function MyPage() {
               </section>
             )}
           </section>
+          </div>
         </div>
       </main>
     </div>
