@@ -137,6 +137,8 @@ const getObjectZIndex = (layer = 0) => {
 };
 
 const PLAZA_STAGE_BASE_WIDTH = 1120;
+const CONTROL_FLIP_TOP_BUFFER = 64;
+const CONTROL_FLIP_ANCHOR_Y = 34;
 
 const getObjectWidthPercent = (roomWidth: number) => {
   return `${(roomWidth / PLAZA_STAGE_BASE_WIDTH) * 100}%`;
@@ -147,6 +149,24 @@ const getObjectHalfWidthPercent = (roomWidth: number) => {
 };
 
 const getEntryLayer = (entry: PlazaEntry) => entry.layer ?? 0;
+
+function shouldPlaceControlsBelow(
+  objectNode: HTMLElement | null,
+  stageNode: HTMLElement | null,
+  fallbackAnchorY: number,
+  roomWidth: number,
+) {
+  if (objectNode && stageNode) {
+    const objectRect = objectNode.getBoundingClientRect();
+    const stageRect = stageNode.getBoundingClientRect();
+
+    return objectRect.top - stageRect.top < CONTROL_FLIP_TOP_BUFFER;
+  }
+
+  const objectWidthPercent = (roomWidth / PLAZA_STAGE_BASE_WIDTH) * 100;
+
+  return fallbackAnchorY < CONTROL_FLIP_ANCHOR_Y + objectWidthPercent;
+}
 
 function getBackgroundStyle(background: PlazaBackground) {
   if (background.type === "color") {
@@ -192,8 +212,11 @@ export function PlazaSpace({
   const hoverTooltipTimerRef = useRef<number | null>(null);
   const [suppressedHoverEntryId, setSuppressedHoverEntryId] = useState<string | null>(null);
   const [hoverTooltip, setHoverTooltip] = useState<HoverTooltip | null>(null);
+  const [controlPlacementByEntryId, setControlPlacementByEntryId] = useState<Record<string, HoverTooltip["placement"]>>({});
   const plazaWeatherKey = background.type === "weather" ? background.weatherKey : null;
-  const roomWeatherKey = plazaWeatherKey && plazaWeatherKey !== "snow" && plazaWeatherKey !== "ocean" ? WEATHER_TO_ROOM_WEATHER[plazaWeatherKey] : null;
+  const roomWeatherKey = plazaWeatherKey && plazaWeatherKey !== "snow" && plazaWeatherKey !== "ocean"
+    ? WEATHER_TO_ROOM_WEATHER[plazaWeatherKey]
+    : null;
   const weatherTone = roomWeatherKey ? WEATHER_BY_KEY[roomWeatherKey] : null;
   const objectFilter = plazaWeatherKey ? PLAZA_OBJECT_FILTER_BY_WEATHER[plazaWeatherKey] : undefined;
 
@@ -255,15 +278,36 @@ export function PlazaSpace({
     const nextEntryId = activeIndex >= 0
       ? hitEntryIds[(activeIndex + 1) % hitEntryIds.length]
       : hitEntryIds[0] ?? fallbackEntryId;
+    const nextEntry = entries.find((entry) => entry.id === nextEntryId);
+
+    if (nextEntry) {
+      const object = ROOM_OBJECT_BY_KEY[nextEntry.objectKey];
+      const nextEntryNode = entryNodeRefs.current.get(nextEntryId) ?? event.currentTarget;
+
+      setControlPlacementByEntryId((current) => ({
+        ...current,
+        [nextEntryId]: shouldPlaceControlsBelow(nextEntryNode, spaceRef.current, nextEntry.positionY, object.roomWidth)
+          ? "below"
+          : "above",
+      }));
+    }
 
     setSuppressedHoverEntryId(nextEntryId);
     onEntrySelect(nextEntryId);
   }
 
-  function scheduleHoverTooltip(node: HTMLDivElement, entryId: string, label: string, placement: HoverTooltip["placement"]) {
+  function scheduleHoverTooltip(node: HTMLDivElement, entryId: string, label: string, fallbackAnchorY: number, roomWidth: number) {
     clearHoverTooltip();
 
     const rect = node.getBoundingClientRect();
+    const placement: HoverTooltip["placement"] = shouldPlaceControlsBelow(
+      node,
+      spaceRef.current,
+      fallbackAnchorY,
+      roomWidth,
+    )
+      ? "below"
+      : "above";
     const gap = 16;
 
     hoverTooltipTimerRef.current = window.setTimeout(() => {
@@ -356,6 +400,7 @@ export function PlazaSpace({
         setSuppressedHoverEntryId(activeEntryId);
       }
 
+      setControlPlacementByEntryId({});
       onEntrySelect(null);
     }
   }
@@ -396,7 +441,9 @@ export function PlazaSpace({
         const movableEntry = canMoveEntry(entry);
         const highlighted = entry.id === highlightedEntryId;
         const hoverEnabled = !active && suppressedHoverEntryId !== entry.id;
-        const controlsBelow = entry.positionY < 34;
+        const controlPlacement = controlPlacementByEntryId[entry.id]
+          ?? (shouldPlaceControlsBelow(null, null, entry.positionY, object.roomWidth) ? "below" : "above");
+        const controlsBelow = controlPlacement === "below";
         const likedByCurrentGuest = hasLikedPlazaEntry(entry, currentGuestId);
         const likeCount = getPlazaEntryLikeCount(entry);
 
@@ -413,7 +460,7 @@ export function PlazaSpace({
               }
 
               if (hoverEnabled) {
-                scheduleHoverTooltip(event.currentTarget, entry.id, entry.title || entry.guestName, controlsBelow ? "below" : "above");
+                scheduleHoverTooltip(event.currentTarget, entry.id, entry.title || entry.guestName, entry.positionY, object.roomWidth);
               }
             }}
             onPointerLeave={() => {
@@ -497,7 +544,7 @@ export function PlazaSpace({
       {placementDraft && (() => {
         const object = ROOM_OBJECT_BY_KEY[placementDraft.objectKey];
         const objectWidth = getObjectWidthPercent(object.roomWidth);
-        const controlsBelow = placementDraft.position.y < 34;
+        const controlsBelow = shouldPlaceControlsBelow(null, null, placementDraft.position.y, object.roomWidth);
 
         return (
           <>

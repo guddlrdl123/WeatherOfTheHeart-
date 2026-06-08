@@ -92,6 +92,8 @@ const getObjectZIndex = (layer = 0) => {
 };
 
 const ROOM_STAGE_BASE_WIDTH = 1120;
+const CONTROL_FLIP_TOP_BUFFER = 64;
+const CONTROL_FLIP_ANCHOR_Y = 34;
 
 const getObjectWidthPercent = (roomWidth: number) => {
   return `${(roomWidth / ROOM_STAGE_BASE_WIDTH) * 100}%`;
@@ -102,6 +104,24 @@ const getObjectHalfWidthPercent = (roomWidth: number) => {
 };
 
 const getPlacedObjectLayer = (object: PlacedRoomObject) => object.layer ?? 0;
+
+function shouldPlaceControlsBelow(
+  objectNode: HTMLElement | null,
+  stageNode: HTMLElement | null,
+  fallbackAnchorY: number,
+  roomWidth: number,
+) {
+  if (objectNode && stageNode) {
+    const objectRect = objectNode.getBoundingClientRect();
+    const stageRect = stageNode.getBoundingClientRect();
+
+    return objectRect.top - stageRect.top < CONTROL_FLIP_TOP_BUFFER;
+  }
+
+  const objectWidthPercent = (roomWidth / ROOM_STAGE_BASE_WIDTH) * 100;
+
+  return fallbackAnchorY < CONTROL_FLIP_ANCHOR_Y + objectWidthPercent;
+}
 
 export default function Room({
   weatherKey,
@@ -127,6 +147,7 @@ export default function Room({
   const hoverTooltipTimerRef = useRef<number | null>(null);
   const [suppressedHoverObjectId, setSuppressedHoverObjectId] = useState<string | null>(null);
   const [hoverTooltip, setHoverTooltip] = useState<HoverTooltip | null>(null);
+  const [controlPlacementByObjectId, setControlPlacementByObjectId] = useState<Record<string, HoverTooltip["placement"]>>({});
   const weatherTone = WEATHER_BY_KEY[weatherKey];
 
   function clearHoverTooltip() {
@@ -187,6 +208,19 @@ export default function Room({
     const nextObjectId = activeIndex >= 0
       ? hitObjectIds[(activeIndex + 1) % hitObjectIds.length]
       : hitObjectIds[0] ?? fallbackObjectId;
+    const nextObject = placedObjects.find((placedObject) => placedObject.id === nextObjectId);
+
+    if (nextObject) {
+      const object = ROOM_OBJECT_BY_KEY[nextObject.objectKey];
+      const nextObjectNode = objectNodeRefs.current.get(nextObjectId) ?? event.currentTarget;
+
+      setControlPlacementByObjectId((current) => ({
+        ...current,
+        [nextObjectId]: shouldPlaceControlsBelow(nextObjectNode, roomRef.current, nextObject.position.y, object.roomWidth)
+          ? "below"
+          : "above",
+      }));
+    }
 
     setSuppressedHoverObjectId(nextObjectId);
     onObjectSelect?.(nextObjectId);
@@ -265,14 +299,23 @@ export default function Room({
         setSuppressedHoverObjectId(activeObjectId);
       }
 
+      setControlPlacementByObjectId({});
       onObjectSelect?.(null);
     }
   };
 
-  function scheduleHoverTooltip(node: HTMLDivElement, objectId: string, label: string, placement: HoverTooltip["placement"]) {
+  function scheduleHoverTooltip(node: HTMLDivElement, objectId: string, label: string, fallbackAnchorY: number, roomWidth: number) {
     clearHoverTooltip();
 
     const rect = node.getBoundingClientRect();
+    const placement: HoverTooltip["placement"] = shouldPlaceControlsBelow(
+      node,
+      roomRef.current,
+      fallbackAnchorY,
+      roomWidth,
+    )
+      ? "below"
+      : "above";
     const gap = 16;
 
     hoverTooltipTimerRef.current = window.setTimeout(() => {
@@ -316,7 +359,9 @@ export default function Room({
         const active = placedObject.id === activeObjectId;
         const bouncing = placedObject.id === bouncingObjectId;
         const hoverEnabled = !active && suppressedHoverObjectId !== placedObject.id;
-        const controlsBelow = placedObject.position.y < 34;
+        const controlPlacement = controlPlacementByObjectId[placedObject.id]
+          ?? (shouldPlaceControlsBelow(null, null, placedObject.position.y, object.roomWidth) ? "below" : "above");
+        const controlsBelow = controlPlacement === "below";
 
         return (
           <div
@@ -333,7 +378,7 @@ export default function Room({
               }
 
               if (hoverEnabled) {
-                scheduleHoverTooltip(event.currentTarget, placedObject.id, label, controlsBelow ? "below" : "above");
+                scheduleHoverTooltip(event.currentTarget, placedObject.id, label, placedObject.position.y, object.roomWidth);
               }
             }}
             onPointerLeave={() => {
@@ -418,7 +463,7 @@ export default function Room({
       {placementDraft && (() => {
         const object = ROOM_OBJECT_BY_KEY[placementDraft.objectKey];
         const objectWidth = getObjectWidthPercent(object.roomWidth);
-        const controlsBelow = placementDraft.position.y < 34;
+        const controlsBelow = shouldPlaceControlsBelow(null, null, placementDraft.position.y, object.roomWidth);
 
         return (
           <>

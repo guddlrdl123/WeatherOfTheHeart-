@@ -60,10 +60,16 @@ export type UserPlazaEntry = {
   entry: PlazaEntry;
 };
 
+const PLAZA_WEATHER_KEYS = ["sunny", "rain", "cloud", "snow", "sunset", "night", "dawn", "cherry", "ocean"] as const satisfies readonly PlazaWeatherKey[];
+
 async function readErrorMessage(response: Response, fallbackMessage: string) {
   const body = await readJsonResponse<ApiResponse<null>>(response).catch(() => null);
 
   return body?.message || fallbackMessage;
+}
+
+function normalizePlazaWeatherKey(value?: string | null): PlazaWeatherKey {
+  return PLAZA_WEATHER_KEYS.includes(value as PlazaWeatherKey) ? value as PlazaWeatherKey : "rain";
 }
 
 function toBackground(response: PlazaResponse): PlazaBackground {
@@ -76,7 +82,7 @@ function toBackground(response: PlazaResponse): PlazaBackground {
 
   return {
     type: "weather",
-    weatherKey: (response.backgroundKey || "rain") as PlazaWeatherKey,
+    weatherKey: normalizePlazaWeatherKey(response.backgroundKey),
   };
 }
 

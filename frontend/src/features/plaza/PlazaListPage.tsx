@@ -192,6 +192,12 @@ export function PlazaListPage({ plazas, currentGuestId, isRefreshing = false, on
                 ? Math.min((plaza.entries.length / plaza.maxParticipants) * 100, 100)
                 : 0;
               const gaugeClosed = full || plaza.status === "closed";
+              const gaugeTrackClass = gaugeClosed
+                ? "bg-[#cfccc6]/55"
+                : "bg-[#5a4632]/10";
+              const gaugeBarClass = gaugeClosed
+                ? "bg-[#a8a49e]/50"
+                : "bg-[#6eb950]";
               const statusToneClass = enterable
                 ? "border-[#6f8f62]/30 bg-[#6f8f62]/10 text-[#526f49]"
                 : full
@@ -228,11 +234,11 @@ export function PlazaListPage({ plazas, currentGuestId, isRefreshing = false, on
 
                   {/* 광장 참여 인원을 한눈에 볼 수 있는 진행 게이지입니다. */}
                   <div
-                    className={`mt-5 h-2 overflow-hidden rounded-full ${gaugeClosed ? "bg-[#b65f55]/16" : "bg-[#5a4632]/10"}`}
+                    className={`mt-5 h-2 overflow-hidden rounded-full ${gaugeTrackClass}`}
                     aria-label={`참여 인원 ${plaza.entries.length}/${plaza.maxParticipants}`}
                   >
                     <div
-                      className={`h-full rounded-full transition-[width,background-color] duration-300 ${gaugeClosed ? "bg-[#e97062]" : "bg-[#6eb950]"}`}
+                      className={`h-full rounded-full transition-[width,background-color] duration-300 ${gaugeBarClass}`}
                       style={{ width: `${participantRatio}%` }}
                     />
                   </div>
