@@ -12,6 +12,8 @@ export type RoomObjectOption = {
     roomWidth: number;
 };
 
+const MISSING_ROOM_OBJECT_IMAGE = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2080%2080'%3E%3Crect%20x='10'%20y='10'%20width='60'%20height='60'%20rx='10'%20fill='%23f8f1e8'%20stroke='%239b6b54'%20stroke-opacity='.35'%20stroke-width='4'/%3E%3Cpath%20d='M25%2028h30M25%2040h30M25%2052h18'%20stroke='%239b6b54'%20stroke-opacity='.5'%20stroke-width='5'%20stroke-linecap='round'/%3E%3C/svg%3E";
+
 const ROOM_OBJECT_IMAGE_MODULES = import.meta.glob<RoomObjectImageModule>(
     "../assets/{animal,bedding,decor-objects,furniture-clean,furniture-modular,pets,plaza-objects}/*.png",
     { eager: true },
@@ -186,11 +188,30 @@ export const ROOM_OBJECT_OPTIONS: RoomObjectOption[] = Object.entries(ROOM_OBJEC
         roomWidth: object.roomWidth,
     }));
 
+function createMissingRoomObjectOption(key: RoomObjectKey): RoomObjectOption {
+    return {
+        key,
+        label: getObjectLabel(key),
+        image: MISSING_ROOM_OBJECT_IMAGE,
+        roomWidth: getRoomWidth(key),
+    };
+}
+
 // 저장된 오브젝트를 그릴 때 key로 빠르게 찾기 위한 맵
-export const ROOM_OBJECT_BY_KEY = ROOM_OBJECT_OPTIONS.reduce<Record<RoomObjectKey, RoomObjectOption>>(
+const ROOM_OBJECT_BY_KEY_BASE = ROOM_OBJECT_OPTIONS.reduce<Record<RoomObjectKey, RoomObjectOption>>(
     (acc, object) => {
         acc[object.key] = object;
         return acc;
     },
     {},
 );
+
+export const ROOM_OBJECT_BY_KEY = new Proxy(ROOM_OBJECT_BY_KEY_BASE, {
+    get(target, property) {
+        if (typeof property !== "string") {
+            return Reflect.get(target, property);
+        }
+
+        return target[property] ?? createMissingRoomObjectOption(property);
+    },
+}) as Record<RoomObjectKey, RoomObjectOption>;

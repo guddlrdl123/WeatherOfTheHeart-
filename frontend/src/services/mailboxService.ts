@@ -1,7 +1,6 @@
 import type { MailboxItem } from "../types/mailbox";
-import { readApiData, toApiUrl } from "./apiClient";
+import { readApiData, readApiError, toApiUrl } from "./apiClient";
 
-// 백엔드 MailboxItemResponse record와 같은 필드명을 유지합니다.
 export type MailboxItemResponse = {
   id: number | string;
   title: string;
@@ -10,6 +9,10 @@ export type MailboxItemResponse = {
   plazaId: number | string;
   generatedImageData?: string | null;
   completedAt: string;
+  plazaCreatedAt?: string | null;
+  participantCount?: number | null;
+  myObjectKey?: string | null;
+  myObjectTitle?: string | null;
   read: boolean;
 };
 
@@ -24,7 +27,6 @@ export function notifyMailboxChanged() {
 }
 
 function toMailboxItem(response: MailboxItemResponse): MailboxItem {
-  // 백엔드 숫자 ID를 화면/라우팅에서 다루기 편한 string으로 통일합니다.
   return {
     id: String(response.id),
     title: response.title,
@@ -33,16 +35,19 @@ function toMailboxItem(response: MailboxItemResponse): MailboxItem {
     plazaId: String(response.plazaId),
     generatedImageData: response.generatedImageData ?? "",
     completedAt: response.completedAt,
+    plazaCreatedAt: response.plazaCreatedAt ?? response.completedAt,
+    participantCount: response.participantCount ?? 0,
+    myObjectKey: response.myObjectKey ?? "",
+    myObjectTitle: response.myObjectTitle ?? "",
     read: response.read,
   };
 }
 
 export async function fetchMailbox(userId: string) {
-  // 완성된 광장 이미지가 담긴 우편 목록을 사용자 우편함에서 가져옵니다.
   const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/mailbox`));
 
   if (!response.ok) {
-    throw new Error("우편함을 불러오지 못했습니다.");
+    throw await readApiError(response, "우편함을 불러오지 못했습니다.");
   }
 
   const data = await readApiData<MailboxItemResponse[]>(response);
@@ -54,7 +59,7 @@ export async function fetchMailboxUnreadCount(userId: string) {
   const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/mailbox/unread-count`));
 
   if (!response.ok) {
-    throw new Error("?쎌? ?딆? ?고렪 媛쒖닔瑜?遺덈윭?ㅼ? 紐삵뻽?듬땲??");
+    throw await readApiError(response, "읽지 않은 우편 개수를 불러오지 못했습니다.");
   }
 
   const data = await readApiData<MailboxUnreadCountResponse>(response);
@@ -63,13 +68,12 @@ export async function fetchMailboxUnreadCount(userId: string) {
 }
 
 export async function markMailboxItemAsRead(userId: string, letterId: string) {
-  // 상세 확인 시 서버에도 읽음 상태를 반영합니다.
   const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/mailbox/${encodeURIComponent(letterId)}/read`), {
     method: "PATCH",
   });
 
   if (!response.ok) {
-    throw new Error("우편 읽음 처리에 실패했습니다.");
+    throw await readApiError(response, "우편 읽음 처리에 실패했습니다.");
   }
 
   await readApiData<MailboxItemResponse>(response);

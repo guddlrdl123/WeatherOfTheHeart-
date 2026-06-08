@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 플라자 엔트리 엔티티에 대한 JPA 리포지토리입니다.
@@ -15,6 +16,7 @@ public interface PlazaEntryRepository extends JpaRepository<PlazaEntry, Long> {
 
     List<PlazaEntry> findByPlazaId(Long plazaId);
     List<PlazaEntry> findByOwnerId(Long ownerId);
+    Optional<PlazaEntry> findByPlazaIdAndOwnerId(Long plazaId, Long ownerId);
     long countByPlazaId(Long plazaId);
     boolean existsByPlazaIdAndOwnerId(Long plazaId, Long ownerId);
     boolean existsByPlazaIdAndObjectKey(Long plazaId, String objectKey);

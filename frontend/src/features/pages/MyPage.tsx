@@ -417,7 +417,7 @@ function MyPage() {
                     <MessageSquareText size={20} />
                   </div>
                   <h3 className="text-lg font-normal text-[#5a4632]">아직 보관된 광장 글이 없어요.</h3>
-                  <p className="mt-2 text-sm text-[#5a4632]/55">광장에서 글을 작성하면 마이페이지에 남습니다.</p>
+                  <p className="mt-2 text-sm text-[#5a4632]/55">광장에서 발자취를 남기면 마이페이지에 남습니다.</p>
                 </div>
               </section>
             ) : (

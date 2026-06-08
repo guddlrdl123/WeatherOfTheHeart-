@@ -3,9 +3,9 @@ const AUTH_STORAGE_KEY = "mw-authenticated";
 const PROFILE_NICKNAME_STORAGE_KEY = "mw-profile-nickname";
 const PROFILE_EMAIL_STORAGE_KEY = "mw-profile-email";
 const USER_ID_STORAGE_KEY = "mw-user-id";
+export const AUTH_SESSION_CHANGED_EVENT = "mw-auth-session-changed";
 export const DEFAULT_PROFILE_NICKNAME = "나그네";
 export const PROFILE_NICKNAME_MAX_LENGTH = 10;
-const DEFAULT_USER_ID = "1";
 
 function getSessionValue(key: string) {
     return sessionStorage.getItem(key);
@@ -21,12 +21,19 @@ function removeSessionValue(key: string) {
     localStorage.removeItem(key);
 }
 
+function notifyAuthSessionChanged() {
+    if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(AUTH_SESSION_CHANGED_EVENT));
+    }
+}
+
 export function isAuthenticated() {
-    return getSessionValue(AUTH_STORAGE_KEY) === "true";
+    return getSessionValue(AUTH_STORAGE_KEY) === "true" && Boolean(getSessionValue(USER_ID_STORAGE_KEY));
 }
 
 export function setAuthenticated() {
     setSessionValue(AUTH_STORAGE_KEY, "true");
+    notifyAuthSessionChanged();
 }
 
 export function clearAuthenticated() {
@@ -34,6 +41,7 @@ export function clearAuthenticated() {
     removeSessionValue(PROFILE_NICKNAME_STORAGE_KEY);
     removeSessionValue(PROFILE_EMAIL_STORAGE_KEY);
     removeSessionValue(USER_ID_STORAGE_KEY);
+    notifyAuthSessionChanged();
 }
 
 // 마이페이지 닉네임도 프로필 API가 붙기 전까지 같은 로컬 저장소를 사용합니다.
@@ -61,9 +69,10 @@ export function setProfileEmail(email: string) {
 
 export function getCurrentUserId() {
     // 실제 로그인 API가 userId를 내려주기 전까지 우편함 API 테스트용 기본 ID를 사용합니다.
-    return getSessionValue(USER_ID_STORAGE_KEY) || DEFAULT_USER_ID;
+    return getSessionValue(USER_ID_STORAGE_KEY) ?? "";
 }
 export function setCurrentUserId(userId: string | number) {
     // 백엔드 로그인 연동 시 응답의 사용자 ID를 저장하면 우편함 API가 같은 값을 사용합니다.
     setSessionValue(USER_ID_STORAGE_KEY, String(userId));
+    notifyAuthSessionChanged();
 }

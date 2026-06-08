@@ -7,5 +7,9 @@ export type MailboxItem = {
   plazaId: string;
   generatedImageData: string;
   completedAt: string;
+  plazaCreatedAt: string;
+  participantCount: number;
+  myObjectKey: string;
+  myObjectTitle: string;
   read: boolean;
 };

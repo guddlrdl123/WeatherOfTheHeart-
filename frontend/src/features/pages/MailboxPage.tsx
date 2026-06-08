@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowRight, ImageIcon, Inbox, RefreshCw, X } from "lucide-react";
+import { ArrowRight, CalendarDays, ImageIcon, Inbox, MapPinned, RefreshCw, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { MailboxCard } from "../../components/mailbox/MailboxCard";
 import { AppHeader } from "../../components/layout/AppHeader";
+import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
 import { fetchMailbox, markMailboxItemAsRead } from "../../services/mailboxService";
 import type { MailboxItem } from "../../types/mailbox";
 import { getCurrentUserId } from "../../utils/authSession";
 
-function formatCompletedAt(value: string) {
+function formatDateTime(value: string) {
   // 상세 모달에서는 완료 시각을 조금 더 읽기 좋은 긴 날짜로 보여줍니다.
   const date = new Date(value);
 
@@ -24,6 +25,16 @@ function formatCompletedAt(value: string) {
   }).format(date);
 }
 
+function formatPlazaPeriod(startValue: string, endValue: string) {
+  const endText = formatDateTime(endValue);
+
+  if (!startValue || startValue === endValue) {
+    return `${endText} 종료`;
+  }
+
+  return `${formatDateTime(startValue)} ~ ${endText}`;
+}
+
 function MailboxDetailModal({
   item,
   onClose,
@@ -33,10 +44,12 @@ function MailboxDetailModal({
   onClose: () => void;
   onGoToPlaza: (plazaId: string) => void;
 }) {
+  const myObject = item.myObjectKey ? ROOM_OBJECT_BY_KEY[item.myObjectKey] : null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
-      <section className="mw-surface grid h-[calc(100vh-64px)] max-h-[720px] w-full max-w-[980px] grid-cols-[1.2fr_0.8fr] overflow-hidden rounded-xl bg-[#fffbf6f2] shadow-xl">
-        <div className="min-h-0 bg-[#5a4632]/[0.07]">
+      <section className="mw-surface grid max-h-[calc(100vh-64px)] w-full max-w-[980px] grid-cols-1 overflow-y-auto rounded-xl bg-[#fffbf6f2] shadow-xl lg:grid-cols-[minmax(0,640px)_340px] lg:overflow-hidden">
+        <div className="aspect-square w-full bg-[#5a4632]/[0.07]">
           {/* 우편의 핵심 데이터인 generatedImageData를 크게 보여주는 영역입니다. */}
           {item.generatedImageData ? (
             <img
@@ -52,10 +65,10 @@ function MailboxDetailModal({
         </div>
 
         <div className="flex min-h-0 flex-col p-6">
-          <div className="mb-5 flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-xs text-[#5a4632]/45">완성된 광장 우편</p>
-              <h2 className="mt-2 text-xl font-normal leading-8 text-[#5a4632]">{item.title}</h2>
+              <p className="text-xs tracking-[0.18em] text-[#5a4632]/40">MAILBOX</p>
+              <h2 className="mt-3 text-2xl font-normal leading-9 text-[#5a4632]">{item.title}</h2>
             </div>
 
             <button
@@ -69,26 +82,48 @@ function MailboxDetailModal({
             </button>
           </div>
 
-          <div className="mb-5 flex flex-wrap gap-2 text-xs text-[#5a4632]/58">
-            <span className="rounded-full border border-[#5a4632]/12 bg-white/35 px-3 py-1.5">
-              {item.plazaTitle}
-            </span>
-            <span className="rounded-full border border-[#5a4632]/12 bg-white/35 px-3 py-1.5">
-              {formatCompletedAt(item.completedAt)}
-            </span>
-            <span className="rounded-full border border-[#5a4632]/12 bg-white/35 px-3 py-1.5">
-              {item.read ? "읽음" : "안읽음"}
-            </span>
+          <div className="mt-6 flex flex-col gap-3 text-sm text-[#5a4632]/65">
+            <div className="flex items-center gap-3 rounded-lg border border-[#5a4632]/12 bg-white/30 px-4 py-3">
+              <MapPinned size={16} className="shrink-0 text-[#9b6b54]" />
+              <span className="min-w-0 truncate">{item.plazaTitle}</span>
+            </div>
+            <div className="flex items-start gap-3 rounded-lg border border-[#5a4632]/12 bg-white/30 px-4 py-3">
+              <CalendarDays size={16} className="mt-0.5 shrink-0 text-[#9b6b54]" />
+              <div className="min-w-0">
+                <p className="text-[11px] text-[#5a4632]/42">광장 기간</p>
+                <span className="mt-1 block leading-6">{formatPlazaPeriod(item.plazaCreatedAt, item.completedAt)}</span>
+              </div>
+            </div>
+            <div className="rounded-lg border border-[#5a4632]/12 bg-white/30 px-4 py-4">
+              <p className="text-[11px] text-[#5a4632]/42">내가 남긴 오브젝트</p>
+              {myObject ? (
+                <div className="mt-3 flex items-center gap-3">
+                  <div className="grid h-14 w-14 shrink-0 place-items-center rounded-lg bg-[#5a4632]/[0.06]">
+                    <img src={myObject.image} alt="" className="h-11 w-11 object-contain" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-base text-[#5a4632]">{myObject.label}</p>
+                    {item.myObjectTitle && (
+                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#5a4632]/52">{item.myObjectTitle}</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-[#5a4632]/48">작성한 오브젝트 기록이 없어요.</p>
+              )}
+            </div>
+            <div className="flex items-center gap-3 rounded-lg border border-[#5a4632]/12 bg-white/30 px-4 py-3">
+              <Users size={16} className="shrink-0 text-[#9b6b54]" />
+              <span>총 {item.participantCount}명이 오브젝트를 남겼어요.</span>
+            </div>
           </div>
 
-          <p className="min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap rounded-xl border border-[#5a4632]/12 bg-white/30 p-4 text-sm leading-7 text-[#5a4632]/68">
-            {item.message}
-          </p>
+          <div className="min-h-6 flex-1" />
 
           <button
             type="button"
             onClick={() => onGoToPlaza(item.plazaId)}
-            className="mw-button mt-5 inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm"
+            className="mw-button mt-6 inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm"
           >
             연결된 광장 보기
             <ArrowRight size={15} />
@@ -163,10 +198,6 @@ function MailboxPage() {
         <div className="mx-auto flex w-[1460px] flex-col gap-5">
           <section className="flex items-end justify-between gap-5">
             <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#5a4632]/15 bg-white/30 px-3 py-1.5 text-xs text-[#5a4632]/60">
-                <Inbox size={14} />
-                우편함
-              </div>
               <h1 className="text-2xl font-normal text-[#5a4632]">도착한 우편</h1>
               <p className="mt-2 text-sm text-[#5a4632]/58">
                 완성된 광장 사진 {items.length}개, 읽지 않은 우편 {unreadCount}개

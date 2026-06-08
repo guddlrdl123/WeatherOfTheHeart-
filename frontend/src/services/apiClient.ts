@@ -1,3 +1,5 @@
+import { clearAuthenticated } from "../utils/authSession";
+
 export const API_BASE_URL = import.meta.env.NEXT_PUBLIC_API_BASE_URL ?? import.meta.env.VITE_API_BASE_URL ?? "";
 export const APP_NAME = import.meta.env.NEXT_PUBLIC_APP_NAME ?? "마음의 날씨";
 export const S3_ASSET_BASE_URL = import.meta.env.NEXT_PUBLIC_S3_ASSET_BASE_URL ?? "";
@@ -7,6 +9,45 @@ export type ApiResponse<T> = {
   message: string;
   data: T;
 };
+
+type ApiErrorBody = Partial<ApiResponse<unknown>> & {
+  code?: string;
+};
+
+export class ApiRequestError extends Error {
+  code?: string;
+  status: number;
+
+  constructor(message: string, status: number, code?: string) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
+function getApiErrorCode(body: ApiErrorBody | null) {
+  if (body?.code) {
+    return body.code;
+  }
+
+  return body?.message?.match(/\[Code:\s*([^\]]+)\]/)?.[1];
+}
+
+function handleApiErrorCode(code?: string) {
+  if (code === "USER_001") {
+    clearAuthenticated();
+  }
+}
+
+export async function readApiError(response: Response, fallbackMessage: string) {
+  const body = await readJsonResponse<ApiErrorBody>(response).catch(() => null);
+  const code = getApiErrorCode(body);
+
+  handleApiErrorCode(code);
+
+  return new ApiRequestError(body?.message || fallbackMessage, response.status, code);
+}
 
 // 모든 서비스 레이어가 같은 API base URL 규칙을 쓰도록 경로 조합을 한곳에 모았습니다.
 export function toApiUrl(path: string) {

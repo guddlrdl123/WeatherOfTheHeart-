@@ -3,6 +3,10 @@ package com.woth.backend.mailbox;
 
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
+import com.woth.backend.plaza.Plaza;
+import com.woth.backend.plaza.PlazaEntry;
+import com.woth.backend.plaza.PlazaEntryRepository;
+import com.woth.backend.plaza.PlazaRepository;
 import com.woth.backend.user.User;
 import com.woth.backend.user.UserRepository;
 import org.springframework.stereotype.Service;
@@ -20,17 +24,29 @@ import java.util.List;
 public class MailboxService {
     private final LetterRepository letterRepository;
     private final UserRepository userRepository;
+    private final PlazaRepository plazaRepository;
+    private final PlazaEntryRepository plazaEntryRepository;
 
-    public MailboxService(LetterRepository letterRepository, UserRepository userRepository) {
+    public MailboxService(
+            LetterRepository letterRepository,
+            UserRepository userRepository,
+            PlazaRepository plazaRepository,
+            PlazaEntryRepository plazaEntryRepository
+    ) {
         this.letterRepository = letterRepository;
         this.userRepository = userRepository;
+        this.plazaRepository = plazaRepository;
+        this.plazaEntryRepository = plazaEntryRepository;
     }
+
     @Transactional(readOnly = true)
-    public List<Letter> listLetters(Long receiverId) {
+    public List<MailboxItemView> listLetters(Long receiverId) {
         if(!userRepository.existsById(receiverId)) {
             throw  new CustomException(ErrorCode.USER_NOT_FOUND);
         }
-        return letterRepository.findByReceiverIdOrderByCreatedAtDesc(receiverId);
+        return letterRepository.findByReceiverIdOrderByCreatedAtDesc(receiverId).stream()
+                .map(letter -> toMailboxItemView(receiverId, letter))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -41,15 +57,23 @@ public class MailboxService {
         return letterRepository.countByReceiverIdAndIsReadFalse(receiverId);
     }
 
-    @Transactional public Letter markRead(Long letterId) {
+    @Transactional
+    public MailboxItemView markRead(Long receiverId, Long letterId) {
         Letter letter = letterRepository.findById(letterId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MAILBOX_NOT_FOUND));
+
+        if(!letter.getReceiver().getId().equals(receiverId)) {
+            throw new CustomException(ErrorCode.MAILBOX_NOT_FOUND);
+        }
+
         if(!letter.getIsRead()) {
             letter.markRead();
-            return letterRepository.save(letter);
+            letter = letterRepository.save(letter);
         }
-        return letter;
+
+        return toMailboxItemView(receiverId, letter);
     }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendPlazaCompletionLetters(
             Long plazaId,
@@ -77,6 +101,38 @@ public class MailboxService {
                     .build();
             letterRepository.save(letter);
         }
+    }
+
+    private MailboxItemView toMailboxItemView(Long receiverId, Letter letter) {
+        Long plazaId = letter.getPlazaId();
+
+        if(plazaId == null) {
+            return new MailboxItemView(letter, null, 0L, null, null);
+        }
+
+        LocalDateTime plazaCreatedAt = plazaRepository.findById(plazaId)
+                .map(Plaza::getCreatedAt)
+                .orElse(null);
+        long participantCount = plazaEntryRepository.countByPlazaId(plazaId);
+        PlazaEntry myEntry = plazaEntryRepository.findByPlazaIdAndOwnerId(plazaId, receiverId)
+                .orElse(null);
+
+        return new MailboxItemView(
+                letter,
+                plazaCreatedAt,
+                participantCount,
+                myEntry == null ? null : myEntry.getObjectKey(),
+                myEntry == null ? null : myEntry.getTitle()
+        );
+    }
+
+    public record MailboxItemView(
+            Letter letter,
+            LocalDateTime plazaCreatedAt,
+            Long participantCount,
+            String myObjectKey,
+            String myObjectTitle
+    ) {
     }
 }
 

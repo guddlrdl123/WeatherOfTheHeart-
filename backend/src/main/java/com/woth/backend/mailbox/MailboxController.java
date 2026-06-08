@@ -5,7 +5,6 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -38,10 +37,13 @@ public class MailboxController {
     @PatchMapping("/{letterId}/read")
     public ApiResponse<MailboxItemResponse> markRead(@PathVariable Long userId,
                                                      @PathVariable Long letterId) {
-        var letter = mailboxService.markRead(letterId);
-        return ApiResponse.success(toResponse(letter));
+        var item = mailboxService.markRead(userId, letterId);
+        return ApiResponse.success(toResponse(item));
     }
-    private MailboxItemResponse toResponse(Letter letter) {
+
+    private MailboxItemResponse toResponse(MailboxService.MailboxItemView item) {
+        Letter letter = item.letter();
+
         return new MailboxItemResponse(
                 letter.getId(),
                 letter.getTitle(),
@@ -50,9 +52,14 @@ public class MailboxController {
                 letter.getPlazaId(),
                 letter.getGeneratedImageData(),
                 letter.getCompletedAt().toString(),
+                item.plazaCreatedAt() == null ? null : item.plazaCreatedAt().toString(),
+                item.participantCount(),
+                item.myObjectKey(),
+                item.myObjectTitle(),
                 letter.getIsRead()
         );
     }
+
     public record MailboxItemResponse(
             Long id,
             String title,
@@ -61,6 +68,10 @@ public class MailboxController {
             Long plazaId,
             String generatedImageData,
             String completedAt,
+            String plazaCreatedAt,
+            Long participantCount,
+            String myObjectKey,
+            String myObjectTitle,
             Boolean read
     ){
     }

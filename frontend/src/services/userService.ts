@@ -1,10 +1,4 @@
-import { readApiData, readJsonResponse, toApiUrl } from "./apiClient";
-
-type ApiResponse<T> = {
-  status: string;
-  message: string;
-  data: T;
-};
+import { readApiData, readApiError, toApiUrl } from "./apiClient";
 
 export type UserProfile = {
   id: number | string;
@@ -19,17 +13,11 @@ type UserProfileUpdateRequest = {
   nickname: string;
 };
 
-async function readErrorMessage(response: Response, fallbackMessage: string) {
-  const body = await readJsonResponse<ApiResponse<null>>(response).catch(() => null);
-
-  return body?.message || fallbackMessage;
-}
-
 export async function fetchUserProfile(userId: string) {
   const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}`));
 
   if (!response.ok) {
-    throw new Error(await readErrorMessage(response, "프로필 정보를 불러오지 못했습니다."));
+    throw await readApiError(response, "프로필 정보를 불러오지 못했습니다.");
   }
 
   return readApiData<UserProfile>(response);
@@ -45,7 +33,7 @@ export async function updateUserProfile(userId: string, value: UserProfileUpdate
   });
 
   if (!response.ok) {
-    throw new Error(await readErrorMessage(response, "프로필 정보를 수정하지 못했습니다."));
+    throw await readApiError(response, "프로필 정보를 수정하지 못했습니다.");
   }
 
   return readApiData<UserProfile>(response);

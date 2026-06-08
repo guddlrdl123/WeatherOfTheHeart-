@@ -1,10 +1,10 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Navigate, Routes, Route, useLocation } from "react-router-dom";
 import RoomPage from "../features/pages/RoomPage";
 import LoginPage from "../features/pages/LoginPage";
 import { SignupPage } from "../features/pages/SignupPage";
 import { LandingPage } from "../features/pages/LandingPage";
-import { isAuthenticated } from "../utils/authSession";
+import { AUTH_SESSION_CHANGED_EVENT, isAuthenticated } from "../utils/authSession";
 import "../styles/App.css";
 import MyPage from "../features/pages/MyPage";
 import PlazaPage from "../features/pages/PlazaPage";
@@ -14,18 +14,22 @@ type RouteGuardProps = {
   children: ReactNode;
 };
 
+type AuthAwareRouteProps = RouteGuardProps & {
+  authenticated: boolean;
+};
+
 type AuthRouteState = {
   fromLanding?: boolean;
 };
 
 // 이미 로그인한 사용자가 랜딩에 머물지 않도록 개인 방으로 바로 보냅니다.
-function LandingRoute() {
-  return isAuthenticated() ? <Navigate to="/room" replace /> : <LandingPage />;
+function LandingRoute({ authenticated }: Pick<AuthAwareRouteProps, "authenticated">) {
+  return authenticated ? <Navigate to="/room" replace /> : <LandingPage />;
 }
 
 // 로그인 상태가 필요한 화면을 감싸는 라우트 가드입니다.
-function ProtectedRoute({ children }: RouteGuardProps) {
-  if (!isAuthenticated()) {
+function ProtectedRoute({ children, authenticated }: AuthAwareRouteProps) {
+  if (!authenticated) {
     return <Navigate to="/" replace />;
   }
 
@@ -33,11 +37,11 @@ function ProtectedRoute({ children }: RouteGuardProps) {
 }
 
 // 로그인/회원가입은 랜딩의 진입 버튼을 통해서만 접근하게 해 흐름을 단순하게 유지합니다.
-function AuthEntryRoute({ children }: RouteGuardProps) {
+function AuthEntryRoute({ children, authenticated }: AuthAwareRouteProps) {
   const location = useLocation();
   const routeState = location.state as AuthRouteState | null;
 
-  if (isAuthenticated()) {
+  if (authenticated) {
     return <Navigate to="/room" replace />;
   }
 
@@ -49,18 +53,36 @@ function AuthEntryRoute({ children }: RouteGuardProps) {
 }
 
 // 알 수 없는 URL은 현재 인증 상태에 맞는 시작 화면으로 정리합니다.
-function FallbackRoute() {
-  return <Navigate to={isAuthenticated() ? "/room" : "/"} replace />;
+function FallbackRoute({ authenticated }: Pick<AuthAwareRouteProps, "authenticated">) {
+  return <Navigate to={authenticated ? "/room" : "/"} replace />;
 }
 
 function App() {
+  const [authenticated, setAuthenticatedState] = useState(() => isAuthenticated());
+
+  useEffect(() => {
+    const syncAuthenticated = () => {
+      setAuthenticatedState(isAuthenticated());
+    };
+
+    window.addEventListener(AUTH_SESSION_CHANGED_EVENT, syncAuthenticated);
+    window.addEventListener("storage", syncAuthenticated);
+    window.addEventListener("focus", syncAuthenticated);
+
+    return () => {
+      window.removeEventListener(AUTH_SESSION_CHANGED_EVENT, syncAuthenticated);
+      window.removeEventListener("storage", syncAuthenticated);
+      window.removeEventListener("focus", syncAuthenticated);
+    };
+  }, []);
+
   return (
     <Routes>
-      <Route path="/" element={<LandingRoute />} />
+      <Route path="/" element={<LandingRoute authenticated={authenticated} />} />
       <Route
         path="/room"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute authenticated={authenticated}>
             <RoomPage />
           </ProtectedRoute>
         }
@@ -68,7 +90,7 @@ function App() {
       <Route
         path="/login"
         element={
-          <AuthEntryRoute>
+          <AuthEntryRoute authenticated={authenticated}>
             <LoginPage />
           </AuthEntryRoute>
         }
@@ -76,7 +98,7 @@ function App() {
       <Route
         path="/signup"
         element={
-          <AuthEntryRoute>
+          <AuthEntryRoute authenticated={authenticated}>
             <SignupPage />
           </AuthEntryRoute>
         }
@@ -84,7 +106,7 @@ function App() {
       <Route
         path="/mypage"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute authenticated={authenticated}>
             <MyPage />
           </ProtectedRoute>
         }
@@ -93,7 +115,7 @@ function App() {
       <Route
         path="/plaza"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute authenticated={authenticated}>
             <PlazaPage />
           </ProtectedRoute>
         }
@@ -101,7 +123,7 @@ function App() {
       <Route
         path="/plaza/:plazaId"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute authenticated={authenticated}>
             <PlazaPage />
           </ProtectedRoute>
         }
@@ -110,12 +132,12 @@ function App() {
       <Route
         path="/mailbox"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute authenticated={authenticated}>
             <MailboxPage />
           </ProtectedRoute>
         }
       />
-      <Route path="*" element={<FallbackRoute />} />
+      <Route path="*" element={<FallbackRoute authenticated={authenticated} />} />
     </Routes>
   );
 }
