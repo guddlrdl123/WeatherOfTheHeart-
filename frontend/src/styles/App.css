@@ -239,34 +239,117 @@ body {
     animation-delay: -3s;
 }
 
-@keyframes mw-ocean-shore-wave {
+@keyframes mw-ocean-glint {
     0% {
-        transform: translateY(-4px) scaleX(0.94);
-        opacity: 0.26;
+        background-position: 0 18px, 120px 52px, 0 0;
+        transform: translateX(-3%);
+        opacity: 0.42;
     }
 
-    42% {
-        transform: translateY(4px) scaleX(1.08);
-        opacity: 0.78;
+    50% {
+        background-position: 180px 20px, 0 50px, 90px 0;
+        transform: translateX(3%);
+        opacity: 0.68;
     }
 
     100% {
-        transform: translateY(-4px) scaleX(0.94);
-        opacity: 0.26;
+        background-position: 360px 18px, -120px 52px, 180px 0;
+        transform: translateX(-3%);
+        opacity: 0.42;
     }
 }
 
-.mw-ocean-shore-wave {
-    animation: mw-ocean-shore-wave 5.8s ease-in-out infinite;
+.mw-ocean-glint {
+    background-image:
+        radial-gradient(ellipse at center, rgba(255, 255, 255, 0.5) 0 12%, rgba(255, 255, 255, 0.18) 28%, transparent 64%),
+        radial-gradient(ellipse at center, rgba(199, 255, 247, 0.34) 0 11%, rgba(199, 255, 247, 0.12) 30%, transparent 68%),
+        linear-gradient(104deg, transparent 0 35%, rgba(255, 255, 255, 0.2) 44%, transparent 54% 100%);
+    background-size:
+        180px 32px,
+        240px 34px,
+        420px 100%;
+    background-repeat: repeat-x;
+    animation: mw-ocean-glint 13s ease-in-out infinite;
+    filter: blur(0.4px);
 }
 
-.mw-ocean-shore-wave-back {
-    animation-duration: 8.5s;
-    animation-delay: -2.6s;
+@keyframes mw-ocean-wave-line {
+    0% {
+        background-position: 0 0, 48px 14px, 0 0;
+        transform: translateX(-2%) translateY(0);
+    }
+
+    50% {
+        background-position: 92px 0, 0 14px, 44px 0;
+        transform: translateX(2%) translateY(3px);
+    }
+
+    100% {
+        background-position: 184px 0, -48px 14px, 88px 0;
+        transform: translateX(-2%) translateY(0);
+    }
+}
+
+.mw-ocean-wave-line {
+    background-image:
+        radial-gradient(ellipse at center, rgba(255, 255, 255, 0.44) 0 18%, rgba(255, 255, 255, 0.18) 28%, transparent 62%),
+        radial-gradient(ellipse at center, rgba(202, 247, 246, 0.36) 0 16%, rgba(202, 247, 246, 0.14) 32%, transparent 66%),
+        linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+    background-size:
+        184px 20px,
+        138px 18px,
+        280px 2px;
+    background-repeat: repeat-x;
+    background-position:
+        0 0,
+        48px 14px,
+        0 0;
+    filter: blur(0.3px);
+    animation: mw-ocean-wave-line 10s linear infinite;
+}
+
+.mw-ocean-wave-line-back {
+    animation-duration: 15s;
+    animation-direction: reverse;
+    filter: blur(0.8px);
+}
+
+@keyframes mw-ocean-wet-sand {
+    0% {
+        background-position: 0 0, 0 0, 120px 16px, 0 0;
+        opacity: 0.38;
+    }
+
+    50% {
+        background-position: 0 0, 180px 4px, -80px 20px, 90px 0;
+        opacity: 0.62;
+    }
+
+    100% {
+        background-position: 0 0, 360px 0, -280px 16px, 180px 0;
+        opacity: 0.38;
+    }
+}
+
+.mw-ocean-wet-sand {
+    background:
+        linear-gradient(180deg, rgba(103, 174, 180, 0.34) 0%, rgba(250, 241, 203, 0.18) 52%, transparent 100%),
+        radial-gradient(ellipse at 18% 28%, rgba(255, 255, 255, 0.2) 0 8%, transparent 38%),
+        radial-gradient(ellipse at 58% 40%, rgba(92, 155, 156, 0.18) 0 12%, transparent 46%),
+        linear-gradient(103deg, transparent 0 12%, rgba(255, 255, 255, 0.18) 23%, transparent 37% 100%);
+    background-size:
+        100% 100%,
+        520px 70px,
+        680px 90px,
+        760px 100%;
+    clip-path: polygon(0 18%, 8% 28%, 17% 14%, 29% 31%, 42% 16%, 55% 30%, 68% 15%, 81% 27%, 92% 17%, 100% 29%, 100% 82%, 90% 75%, 78% 88%, 65% 76%, 52% 90%, 40% 78%, 27% 86%, 15% 76%, 0 84%);
+    mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 70%, transparent 100%);
+    animation: mw-ocean-wet-sand 8.2s ease-in-out infinite;
+    filter: blur(0.4px);
 }
 
 .mw-ocean-sand-grain {
-    opacity: 0.58;
+    opacity: 0.66;
     background-image:
         radial-gradient(circle at 11px 7px, rgba(255, 246, 211, 0.42) 0 1px, transparent 1.8px),
         radial-gradient(circle at 29px 18px, rgba(122, 86, 49, 0.2) 0 0.9px, transparent 1.7px),

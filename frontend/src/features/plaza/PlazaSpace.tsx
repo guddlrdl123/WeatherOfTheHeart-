@@ -112,18 +112,22 @@ const PLAZA_TINT_OPACITY_BY_WEATHER: Record<PlazaWeatherKey, number> = {
 function OceanPlazaWeather() {
   return (
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-      <div className="absolute inset-x-0 top-0 h-[44%] bg-[linear-gradient(180deg,#bfeaf1_0%,#9ad2de_100%)]" />
-      <div className="absolute left-[12%] top-[10%] h-16 w-16 rounded-full bg-[#fff0a6] shadow-[0_0_34px_rgba(255,222,128,0.72)]" />
-      <div className="absolute inset-x-0 top-[36%] h-[27%] bg-[linear-gradient(180deg,#55aec4_0%,#2f879d_54%,#277184_100%)]" />
+      <div className="absolute inset-x-0 top-0 h-[44%] bg-[linear-gradient(180deg,#c8f2f5_0%,#a7dde4_62%,#91cfd9_100%)]" />
+      <div className="absolute left-[10%] top-[9%] h-[4.4rem] w-[4.4rem] rounded-full bg-[#fff0a6] shadow-[0_0_26px_rgba(255,234,160,0.9),0_0_58px_rgba(255,211,101,0.55)]" />
+      <div className="absolute inset-x-0 top-[29%] h-[17%] bg-[linear-gradient(180deg,transparent_0%,rgba(255,255,255,0.22)_56%,rgba(255,255,255,0.42)_100%)]" />
+      <div className="absolute inset-x-0 top-[36%] h-[27%] bg-[linear-gradient(180deg,#58bdd1_0%,#3391aa_48%,#1f6d83_100%)]" />
+      <div className="absolute inset-x-0 top-[36%] h-[27%] bg-[radial-gradient(ellipse_at_28%_22%,rgba(213,255,250,0.42)_0%,transparent_36%),radial-gradient(ellipse_at_76%_58%,rgba(11,90,116,0.26)_0%,transparent_42%)]" />
       <div className="absolute inset-x-0 top-[36%] h-px bg-white/55 shadow-[0_0_18px_rgba(255,255,255,0.48)]" />
       <div className="mw-ocean-ripple absolute inset-x-[-10%] top-[45%] h-6 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.38)_0%,rgba(255,255,255,0.2)_28%,transparent_70%)] opacity-70" />
       <div className="mw-ocean-ripple mw-ocean-ripple-slow absolute inset-x-[-14%] top-[53%] h-7 bg-[radial-gradient(ellipse_at_center,rgba(210,248,246,0.38)_0%,rgba(255,255,255,0.16)_34%,transparent_72%)] opacity-75" />
-      <div className="absolute inset-x-0 top-[64%] h-14 bg-[#f0ddb0] [clip-path:polygon(0_18%,8%_13%,17%_20%,28%_10%,39%_18%,51%_12%,63%_20%,75%_11%,88%_17%,100%_10%,100%_100%,0_100%)]" />
-      <div className="mw-ocean-shore-wave absolute inset-x-[-8%] top-[62%] h-8 rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.68)_0%,rgba(255,255,255,0.42)_26%,rgba(255,255,255,0)_68%)] opacity-75" />
-      <div className="mw-ocean-shore-wave mw-ocean-shore-wave-back absolute inset-x-[-10%] top-[59%] h-7 rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(237,255,252,0.48)_0%,rgba(237,255,252,0.22)_34%,rgba(255,255,255,0)_74%)] opacity-65" />
-      <div className="absolute inset-x-0 bottom-0 h-[34%] bg-[linear-gradient(180deg,#f0ddb0_0%,#e2c88f_48%,#cfaa70_100%)] [clip-path:polygon(0_0,7%_3%,15%_0,25%_5%,34%_1%,45%_6%,55%_2%,66%_7%,77%_1%,88%_5%,100%_0,100%_100%,0_100%)]" />
+      <div className="mw-ocean-glint absolute inset-x-[-20%] top-[41%] h-[20%] opacity-55" />
+      <div className="mw-ocean-wave-line absolute inset-x-[-12%] top-[48%] h-16 opacity-60" />
+      <div className="mw-ocean-wave-line mw-ocean-wave-line-back absolute inset-x-[-15%] top-[55%] h-14 opacity-45" />
+      <div className="absolute inset-x-0 top-[63%] h-[13%] bg-[linear-gradient(180deg,rgba(102,178,186,0.46)_0%,rgba(222,207,160,0.62)_52%,rgba(240,221,176,0)_100%)] [clip-path:polygon(0_7%,9%_14%,18%_4%,30%_16%,42%_6%,54%_15%,66%_5%,78%_13%,90%_5%,100%_14%,100%_100%,0_100%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-[34%] bg-[linear-gradient(180deg,#f3e4bd_0%,#e8ce95_45%,#d5b176_100%)] [clip-path:polygon(0_0,7%_3%,15%_0,25%_5%,34%_1%,45%_6%,55%_2%,66%_7%,77%_1%,88%_5%,100%_0,100%_100%,0_100%)]" />
+      <div className="mw-ocean-wet-sand absolute inset-x-[-4%] bottom-[21%] h-[15%]" />
       <div className="mw-ocean-sand-grain absolute inset-x-0 bottom-0 h-[34%]" />
-      <div className="absolute inset-x-0 bottom-0 h-[34%] bg-[linear-gradient(100deg,rgba(255,255,255,0.16),transparent_20%,rgba(122,89,54,0.08)_48%,transparent_70%,rgba(255,241,190,0.14)_90%)] opacity-62" />
+      <div className="absolute inset-x-0 bottom-0 h-[34%] bg-[linear-gradient(100deg,rgba(255,255,255,0.2),transparent_20%,rgba(122,89,54,0.08)_48%,transparent_70%,rgba(255,241,190,0.18)_90%)] opacity-62" />
     </div>
   );
 }
