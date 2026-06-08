@@ -248,7 +248,7 @@ export function PlazaRoomPage({
     noticeTimerRef.current = window.setTimeout(() => {
       setCompletionNotice(null);
       noticeTimerRef.current = null;
-    }, 5200);
+    }, 3500);
   }
 
   function showEntryObject(entryId: string) {

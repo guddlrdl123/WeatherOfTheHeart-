@@ -5,6 +5,7 @@ import com.woth.backend.plaza.Plaza;
 import com.woth.backend.plaza.PlazaEntry;
 import com.woth.backend.plaza.PlazaService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,7 +62,12 @@ public class UserController {
             @PathVariable Long userId,
             @Valid @RequestBody UserProfileUpdateRequest request
     ) {
-        return ApiResponse.success(toResponse(userService.updateNickname(userId, request.nickname())));
+        return ApiResponse.success(toResponse(userService.updateProfile(
+                userId,
+                request.nickname(),
+                request.currentPassword(),
+                request.newPassword()
+        )));
     }
 
     private UserProfileResponse toResponse(User user) {
@@ -114,7 +120,11 @@ public class UserController {
         );
     }
 
-    public record UserProfileUpdateRequest(@Size(max = 10) String nickname) {
+    public record UserProfileUpdateRequest(
+            @Size(max = 10) String nickname,
+            String currentPassword,
+            @Size(min = 8) @Pattern(regexp = ".*[^A-Za-z0-9].*") String newPassword
+    ) {
     }
 
     public record UserProfileResponse(

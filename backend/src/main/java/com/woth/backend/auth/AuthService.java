@@ -4,6 +4,7 @@ import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
 import com.woth.backend.user.User;
 import com.woth.backend.user.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 /*
@@ -19,10 +20,16 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final EmailVerificationService emailVerificationService;
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository, EmailVerificationService emailVerificationService) {
+    public AuthService(
+            UserRepository userRepository,
+            EmailVerificationService emailVerificationService,
+            PasswordEncoder passwordEncoder
+    ) {
         this.userRepository = userRepository;
         this.emailVerificationService = emailVerificationService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional
@@ -30,15 +37,21 @@ public class AuthService {
         if (ADMIN_EMAIL.equals(email) && ADMIN_PASSWORD.equals(password)) {
             return userRepository.findByEmail(email)
                     .map(user -> {
-                        user.promoteToAdmin(password);
+                        user.promoteToAdmin(passwordEncoder.encode(password));
                         return user;
                     })
                     .orElseGet(() -> createAdminUser(email, password));
         }
 
-        return userRepository.findByEmail(email)
-                .filter(user -> user.getPassword().equals(password))
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if (!matchesPassword(password, user.getPassword())) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        migratePlainTextPasswordIfNeeded(user, password);
+        return user;
     }
 
     @Transactional
@@ -50,7 +63,7 @@ public class AuthService {
 
         User user = User.builder()
                 .email(email)
-                .password(password)
+                .password(passwordEncoder.encode(password))
                 .nickname(resolveNickname(nickname))
                 // 일반 회원가입 사용자는 관리자 권한 없이 생성
                 .isAdmin(false)
@@ -64,12 +77,31 @@ public class AuthService {
     private User createAdminUser(String email, String password) {
         User admin = User.builder()
                 .email(email)
-                .password(password)
+                .password(passwordEncoder.encode(password))
                 .nickname("Admin")
                 .isAdmin(true)
                 .build();
 
         return userRepository.save(admin);
+    }
+
+    private boolean matchesPassword(String rawPassword, String storedPassword) {
+        if (isBcryptHash(storedPassword)) {
+            return passwordEncoder.matches(rawPassword, storedPassword);
+        }
+
+        return storedPassword.equals(rawPassword);
+    }
+
+    private void migratePlainTextPasswordIfNeeded(User user, String rawPassword) {
+        if (user.getPassword().equals(rawPassword)) {
+            user.updatePassword(passwordEncoder.encode(rawPassword));
+        }
+    }
+
+    private boolean isBcryptHash(String value) {
+        return value != null
+                && (value.startsWith("$2a$") || value.startsWith("$2b$") || value.startsWith("$2y$"));
     }
 
     private String resolveNickname(String nickname) {

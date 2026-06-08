@@ -27,6 +27,7 @@ dependencies {
 
 	// Validation
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.security:spring-security-crypto'
 
 	// AWS ELB Health Check를 위한 Actuator
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'

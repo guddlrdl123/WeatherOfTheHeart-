@@ -11,6 +11,8 @@ export type UserProfile = {
 
 type UserProfileUpdateRequest = {
   nickname: string;
+  currentPassword?: string;
+  newPassword?: string;
 };
 
 export async function fetchUserProfile(userId: string) {

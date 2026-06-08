@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { AuthApiError, sendEmailVerification, signup, verifyEmail } from "../../services/authService";
 import { Link, useNavigate } from "react-router-dom";
-import { PROFILE_NICKNAME_MAX_LENGTH, setAuthenticated, setCurrentUserId, setProfileEmail, setProfileNickname } from "../../utils/authSession";
+import { normalizeProfileNickname, PROFILE_NICKNAME_MAX_LENGTH, setAuthenticated, setCurrentUserId, setProfileEmail, setProfileNickname } from "../../utils/authSession";
 // import { useAppStore } from "../../stores/AppStore";
 
 const VERIFICATION_CODE_TTL_SECONDS = 10 * 60;
@@ -70,6 +70,10 @@ export function SignupForm() {
 
     function handleVerificationCodeChange(value: string) {
         setVerificationCode(value.replace(/\D/g, "").slice(0, 6));
+    }
+
+    function handleNicknameChange(value: string) {
+        setNickname(value.slice(0, PROFILE_NICKNAME_MAX_LENGTH));
     }
 
     async function handleSendVerificationCode() {
@@ -157,7 +161,7 @@ export function SignupForm() {
 
         try {
             setIsSubmitting(true);
-            const signupNickname = nickname.trim() || "나그네";
+            const signupNickname = normalizeProfileNickname(nickname);
             const auth = await signup({ email: email.trim(), password, nickname: signupNickname });
             const userId = auth.userId ?? auth.id;
 
@@ -251,7 +255,15 @@ export function SignupForm() {
 
             <label className="flex flex-col gap-2 text-sm text-white/54">
                 닉네임
-                <input className="mw-input h-11 px-3 text-sm" value={nickname} maxLength={PROFILE_NICKNAME_MAX_LENGTH} onChange={(event) => setNickname(event.target.value)} />
+                <input
+                    className="mw-input h-11 px-3 text-sm"
+                    value={nickname}
+                    maxLength={PROFILE_NICKNAME_MAX_LENGTH}
+                    onChange={(event) => handleNicknameChange(event.target.value)}
+                />
+                <span className="text-right text-[0.68rem] text-white/42">
+                    {nickname.length}/{PROFILE_NICKNAME_MAX_LENGTH}
+                </span>
             </label>
 
             <label className="flex flex-col gap-2 text-sm text-white/54">
