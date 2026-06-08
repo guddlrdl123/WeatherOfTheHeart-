@@ -9,6 +9,7 @@ export const DAILY_PLAZA_CREATE_LIMIT = 5;
 
 // 광장 생성 모달에서 보여줄 날씨 배경 선택지입니다.
 export const PLAZA_WEATHER_OPTIONS: Array<{ key: PlazaWeatherKey; label: string; icon: string }> = [
+  { key: "ocean", label: "바다", icon: "🌊" },
   { key: "rain", label: "비", icon: "🌧️" },
   { key: "night", label: "밤", icon: "🌙" },
   { key: "sunny", label: "맑음", icon: "☀️" },

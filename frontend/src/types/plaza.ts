@@ -1,7 +1,7 @@
 import type { RoomObjectKey } from "./roomObject";
 
 // 광장 배경에서 선택할 수 있는 날씨는 기존 방 날씨 컴포넌트와 맞춥니다.
-export type PlazaWeatherKey = "sunny" | "rain" | "cloud" | "snow" | "sunset" | "night" | "dawn" | "cherry";
+export type PlazaWeatherKey = "sunny" | "rain" | "cloud" | "snow" | "sunset" | "night" | "dawn" | "cherry" | "ocean";
 
 // 광장 배경은 직접 고른 색상 또는 날씨 연출 중 하나만 사용합니다.
 export type PlazaBackground =

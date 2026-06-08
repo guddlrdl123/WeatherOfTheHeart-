@@ -55,7 +55,7 @@ type Props = {
   isPlacementSaving?: boolean;
 };
 
-type SharedPlazaWeatherKey = Exclude<PlazaWeatherKey, "snow">;
+type SharedPlazaWeatherKey = Exclude<PlazaWeatherKey, "snow" | "ocean">;
 
 // 광장 날씨 키 중 방과 공유하는 키를 기존 Weather 컴포넌트가 이해하는 날씨 키로 연결합니다.
 const WEATHER_TO_ROOM_WEATHER: Record<SharedPlazaWeatherKey, Parameters<typeof Weather>[0]["weather"]> = {
@@ -78,6 +78,7 @@ const WEATHER_BACKGROUNDS: Record<PlazaWeatherKey, string> = {
   dawn: "linear-gradient(180deg, #1b5d6f 0%, #172642 45%, #3b2a68 100%)",
   sunset: "linear-gradient(180deg, #c35e2f 0%, #7b2f1d 48%, #231711 100%)",
   cherry: "linear-gradient(180deg, #f1b5ca 0%, #ffe1cf 42%, #3a2a3d 100%)",
+  ocean: "linear-gradient(180deg, #7fd1e8 0%, #45a9c8 34%, #0f6985 66%, #d8bd83 100%)",
 };
 
 const PLAZA_FLOOR_OVERLAYS: Partial<Record<PlazaWeatherKey, string>> = {
@@ -93,6 +94,7 @@ const PLAZA_OBJECT_FILTER_BY_WEATHER: Record<PlazaWeatherKey, string> = {
   dawn: "saturate(0.94) brightness(0.88) contrast(1.04) hue-rotate(6deg)",
   sunset: "saturate(1.14) brightness(0.96) sepia(0.18) contrast(1.05)",
   cherry: "saturate(1.04) brightness(1.02) sepia(0.08) contrast(1.01)",
+  ocean: "saturate(1.08) brightness(1.02) contrast(1.03)",
 };
 
 const PLAZA_TINT_OPACITY_BY_WEATHER: Record<PlazaWeatherKey, number> = {
@@ -104,7 +106,27 @@ const PLAZA_TINT_OPACITY_BY_WEATHER: Record<PlazaWeatherKey, number> = {
   dawn: 0.28,
   sunset: 0.36,
   cherry: 0.26,
+  ocean: 0.2,
 };
+
+function OceanPlazaWeather() {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+      <div className="absolute inset-x-0 top-0 h-[44%] bg-[linear-gradient(180deg,#bfeaf1_0%,#9ad2de_100%)]" />
+      <div className="absolute left-[12%] top-[10%] h-16 w-16 rounded-full bg-[#fff0a6] shadow-[0_0_34px_rgba(255,222,128,0.72)]" />
+      <div className="absolute inset-x-0 top-[36%] h-[27%] bg-[linear-gradient(180deg,#55aec4_0%,#2f879d_54%,#277184_100%)]" />
+      <div className="absolute inset-x-0 top-[36%] h-px bg-white/55 shadow-[0_0_18px_rgba(255,255,255,0.48)]" />
+      <div className="mw-ocean-ripple absolute inset-x-[-10%] top-[45%] h-6 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.38)_0%,rgba(255,255,255,0.2)_28%,transparent_70%)] opacity-70" />
+      <div className="mw-ocean-ripple mw-ocean-ripple-slow absolute inset-x-[-14%] top-[53%] h-7 bg-[radial-gradient(ellipse_at_center,rgba(210,248,246,0.38)_0%,rgba(255,255,255,0.16)_34%,transparent_72%)] opacity-75" />
+      <div className="absolute inset-x-0 top-[64%] h-14 bg-[#f0ddb0] [clip-path:polygon(0_18%,8%_13%,17%_20%,28%_10%,39%_18%,51%_12%,63%_20%,75%_11%,88%_17%,100%_10%,100%_100%,0_100%)]" />
+      <div className="mw-ocean-shore-wave absolute inset-x-[-8%] top-[62%] h-8 rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.68)_0%,rgba(255,255,255,0.42)_26%,rgba(255,255,255,0)_68%)] opacity-75" />
+      <div className="mw-ocean-shore-wave mw-ocean-shore-wave-back absolute inset-x-[-10%] top-[59%] h-7 rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(237,255,252,0.48)_0%,rgba(237,255,252,0.22)_34%,rgba(255,255,255,0)_74%)] opacity-65" />
+      <div className="absolute inset-x-0 bottom-0 h-[34%] bg-[linear-gradient(180deg,#f0ddb0_0%,#e2c88f_48%,#cfaa70_100%)] [clip-path:polygon(0_0,7%_3%,15%_0,25%_5%,34%_1%,45%_6%,55%_2%,66%_7%,77%_1%,88%_5%,100%_0,100%_100%,0_100%)]" />
+      <div className="mw-ocean-sand-grain absolute inset-x-0 bottom-0 h-[34%]" />
+      <div className="absolute inset-x-0 bottom-0 h-[34%] bg-[linear-gradient(100deg,rgba(255,255,255,0.16),transparent_20%,rgba(122,89,54,0.08)_48%,transparent_70%,rgba(255,241,190,0.14)_90%)] opacity-62" />
+    </div>
+  );
+}
 
 const clamp = (value: number, min: number, max: number) => {
   return Math.min(Math.max(value, min), max);
@@ -171,7 +193,7 @@ export function PlazaSpace({
   const [suppressedHoverEntryId, setSuppressedHoverEntryId] = useState<string | null>(null);
   const [hoverTooltip, setHoverTooltip] = useState<HoverTooltip | null>(null);
   const plazaWeatherKey = background.type === "weather" ? background.weatherKey : null;
-  const roomWeatherKey = plazaWeatherKey && plazaWeatherKey !== "snow" ? WEATHER_TO_ROOM_WEATHER[plazaWeatherKey] : null;
+  const roomWeatherKey = plazaWeatherKey && plazaWeatherKey !== "snow" && plazaWeatherKey !== "ocean" ? WEATHER_TO_ROOM_WEATHER[plazaWeatherKey] : null;
   const weatherTone = roomWeatherKey ? WEATHER_BY_KEY[roomWeatherKey] : null;
   const objectFilter = plazaWeatherKey ? PLAZA_OBJECT_FILTER_BY_WEATHER[plazaWeatherKey] : undefined;
 
@@ -347,7 +369,9 @@ export function PlazaSpace({
         background: getBackgroundStyle(background),
       }}
     >
-      {plazaWeatherKey === "snow" ? (
+      {plazaWeatherKey === "ocean" ? (
+        <OceanPlazaWeather />
+      ) : plazaWeatherKey === "snow" ? (
         <div className="absolute inset-0 z-0">
           <SnowWeather />
         </div>
@@ -355,11 +379,15 @@ export function PlazaSpace({
         <Weather weather={roomWeatherKey} />
       ) : null}
 
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[34%]"
-        style={{ background: getFloorOverlay(plazaWeatherKey) }}
-      />
-      <div className="pointer-events-none absolute inset-x-0 bottom-[29%] z-10 h-px bg-white/28" />
+      {plazaWeatherKey !== "ocean" && (
+        <>
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[34%]"
+            style={{ background: getFloorOverlay(plazaWeatherKey) }}
+          />
+          <div className="pointer-events-none absolute inset-x-0 bottom-[29%] z-10 h-px bg-white/28" />
+        </>
+      )}
 
       {entries.map((entry) => {
         const object = ROOM_OBJECT_BY_KEY[entry.objectKey];
