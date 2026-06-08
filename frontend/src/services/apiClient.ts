@@ -34,6 +34,10 @@ function getApiErrorCode(body: ApiErrorBody | null) {
   return body?.message?.match(/\[Code:\s*([^\]]+)\]/)?.[1];
 }
 
+function getApiErrorMessage(body: ApiErrorBody | null, fallbackMessage: string) {
+  return body?.message?.replace(/\s*\[Code:\s*[^\]]+\]\s*$/, "").trim() || fallbackMessage;
+}
+
 function handleApiErrorCode(code?: string) {
   if (code === "USER_001") {
     clearAuthenticated();
@@ -46,7 +50,7 @@ export async function readApiError(response: Response, fallbackMessage: string) 
 
   handleApiErrorCode(code);
 
-  return new ApiRequestError(body?.message || fallbackMessage, response.status, code);
+  return new ApiRequestError(getApiErrorMessage(body, fallbackMessage), response.status, code);
 }
 
 // 모든 서비스 레이어가 같은 API base URL 규칙을 쓰도록 경로 조합을 한곳에 모았습니다.

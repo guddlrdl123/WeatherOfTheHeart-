@@ -82,6 +82,8 @@ const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     "plaza-tea-stand": 180,
     "plaza-wooden-fence": 200,
     "plaza-bush": 120,
+    "벚꽃_": 160,
+    "벚꽃_작은나무": 220,
 };
 
 const FOLDER_ORDER: Record<string, number> = {

@@ -212,7 +212,7 @@ export function PlazaCreateModal({ onCreate, onClose }: Props) {
                   key={option.key}
                   type="button"
                   onClick={() => setWeatherKey(option.key)}
-                  className={`rounded-md border px-2 py-2 text-xs transition ${weatherKey === option.key ? "border-[#9b6b54]/45 bg-[#9b6b54]/12 text-[#5a4632]" : "border-[#5a4632]/15 bg-white/30 text-[#5a4632]/55"}`}
+                  className={`rounded-md border px-3 py-2 text-xs transition ${weatherKey === option.key ? "border-[#9b6b54]/45 bg-[#9b6b54]/12 text-[#5a4632]" : "border-[#5a4632]/15 bg-white/30 text-[#5a4632]/55"}`}
                 >
                   {option.label}
                 </button>
