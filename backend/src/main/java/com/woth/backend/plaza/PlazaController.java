@@ -1,5 +1,7 @@
 package com.woth.backend.plaza;
 
+import com.woth.backend.auth.AuthenticatedUser;
+import com.woth.backend.auth.CurrentUser;
 import com.woth.backend.global.dto.ApiResponse;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,10 +42,10 @@ public class PlazaController {
     }
 
     @PostMapping
-    public ApiResponse<PlazaResponse> create(@RequestBody CreatePlazaRequest request) {
+    public ApiResponse<PlazaResponse> create(@CurrentUser AuthenticatedUser currentUser, @RequestBody CreatePlazaRequest request) {
         return ApiResponse.success(toResponse(plazaService.createPlaza(
                 new PlazaService.CreatePlazaRequest(
-                        request.ownerId(),
+                        currentUser.id(),
                         request.title(),
                         request.topic(),
                         request.maxObjects(),
@@ -58,10 +60,13 @@ public class PlazaController {
     }
 
     @PostMapping("/with-first-entry")
-    public ApiResponse<PlazaWithFirstEntryResponse> createWithFirstEntry(@RequestBody CreatePlazaWithFirstEntryRequest request) {
+    public ApiResponse<PlazaWithFirstEntryResponse> createWithFirstEntry(
+            @CurrentUser AuthenticatedUser currentUser,
+            @RequestBody CreatePlazaWithFirstEntryRequest request
+    ) {
         var result = plazaService.createPlazaWithFirstEntry(
                 new PlazaService.CreatePlazaRequest(
-                        request.ownerId(),
+                        currentUser.id(),
                         request.title(),
                         request.topic(),
                         request.maxObjects(),
@@ -73,7 +78,7 @@ public class PlazaController {
                         request.backgroundKey()
                 ),
                 new PlazaService.CreatePlazaEntryRequest(
-                        request.ownerId(),
+                        currentUser.id(),
                         request.entryTitle(),
                         request.entryContent(),
                         request.moodKey(),
@@ -111,9 +116,13 @@ public class PlazaController {
     }
 
     @PostMapping("/{plazaId}/entries")
-    public ApiResponse<PlazaEntryResponse> createEntry(@PathVariable Long plazaId, @RequestBody CreatePlazaEntryRequest request) {
+    public ApiResponse<PlazaEntryResponse> createEntry(
+            @CurrentUser AuthenticatedUser currentUser,
+            @PathVariable Long plazaId,
+            @RequestBody CreatePlazaEntryRequest request
+    ) {
         var entry = plazaService.createEntry(plazaId, new PlazaService.CreatePlazaEntryRequest(
-                request.ownerId(),
+                currentUser.id(),
                 request.title(),
                 request.content(),
                 request.moodKey(),
@@ -129,21 +138,22 @@ public class PlazaController {
 
     @PostMapping("/entries/{entryId}/likes")
     public ApiResponse<PlazaEntryResponse> toggleEntryLike(
-            @PathVariable Long entryId,
-            @RequestBody ToggleEntryLikeRequest request
+            @CurrentUser AuthenticatedUser currentUser,
+            @PathVariable Long entryId
     ) {
-        return ApiResponse.success(toEntryResponse(plazaService.toggleEntryLike(entryId, request.userId())));
+        return ApiResponse.success(toEntryResponse(plazaService.toggleEntryLike(entryId, currentUser.id())));
     }
 
     @PatchMapping("/entries/{entryId}")
     public ApiResponse<PlazaEntryResponse> updateEntry(
+            @CurrentUser AuthenticatedUser currentUser,
             @PathVariable Long entryId,
             @RequestBody UpdatePlazaEntryRequest request
     ) {
         return ApiResponse.success(toEntryResponse(plazaService.updateEntry(
                 entryId,
                 new PlazaService.UpdatePlazaEntryRequest(
-                        request.ownerId(),
+                        currentUser.id(),
                         request.title(),
                         request.content()
                 )
@@ -152,13 +162,14 @@ public class PlazaController {
 
     @PatchMapping("/entries/{entryId}/position")
     public ApiResponse<PlazaEntryResponse> updateEntryPosition(
+            @CurrentUser AuthenticatedUser currentUser,
             @PathVariable Long entryId,
             @RequestBody UpdatePlazaEntryPositionRequest request
     ) {
         return ApiResponse.success(toEntryResponse(plazaService.updateEntryPosition(
                 entryId,
                 new PlazaService.UpdatePlazaEntryPositionRequest(
-                        request.ownerId(),
+                        currentUser.id(),
                         request.positionX(),
                         request.positionY(),
                         request.layer()
@@ -168,25 +179,25 @@ public class PlazaController {
 
     @DeleteMapping("/entries/{entryId}")
     public ApiResponse<Void> deleteEntry(
-            @PathVariable Long entryId,
-            @RequestParam Long ownerId
+            @CurrentUser AuthenticatedUser currentUser,
+            @PathVariable Long entryId
     ) {
-        plazaService.deleteEntry(entryId, ownerId);
+        plazaService.deleteEntry(entryId, currentUser.id());
         return ApiResponse.success(null);
     }
 
     @DeleteMapping("/{plazaId}")
     public ApiResponse<Void> delete(
-            @PathVariable Long plazaId,
-            @RequestParam Long ownerId
+            @CurrentUser AuthenticatedUser currentUser,
+            @PathVariable Long plazaId
     ) {
-        plazaService.deletePlaza(plazaId, ownerId);
+        plazaService.deletePlaza(plazaId, currentUser.id());
         return ApiResponse.success(null);
     }
 
     @PatchMapping("/{plazaId}/complete")
-    public ApiResponse<PlazaResponse> complete(@PathVariable Long plazaId, @RequestBody CompletePlazaRequest request) {
-        return ApiResponse.success(toResponse(plazaService.completePlaza(plazaId, request.ownerId())));
+    public ApiResponse<PlazaResponse> complete(@CurrentUser AuthenticatedUser currentUser, @PathVariable Long plazaId) {
+        return ApiResponse.success(toResponse(plazaService.completePlaza(plazaId, currentUser.id())));
     }
 
     private PlazaResponse toResponse(Plaza plaza) {

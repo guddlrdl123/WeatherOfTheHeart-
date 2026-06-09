@@ -29,10 +29,10 @@ export function MailboxCard({ item, onOpen }: Props) {
     <button
       type="button"
       onClick={() => onOpen(item)}
-      className={`mw-surface flex h-[320px] flex-col overflow-hidden rounded-xl text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(90,70,50,0.1)] ${item.read ? "opacity-[0.82]" : "border-[#9b6b54]/42 bg-[#fffbf6]"
+      className={`mw-surface flex h-[300px] flex-col overflow-hidden rounded-xl text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(90,70,50,0.1)] ${item.read ? "opacity-[0.82]" : "border-[#9b6b54]/42 bg-[#fffbf6]"
         }`}
     >
-      <div className="relative h-32 border-b border-[#5a4632]/10 bg-white/25">
+      <div className="relative h-40 border-b border-[#5a4632]/10 bg-white/25">
         {/* generatedImageData는 백엔드가 만든 완성 광장 이미지를 그대로 img src에 연결합니다. */}
         {item.generatedImageData ? (
           <img

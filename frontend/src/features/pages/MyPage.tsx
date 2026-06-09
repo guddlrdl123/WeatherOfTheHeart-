@@ -19,13 +19,13 @@ import {
 import { useNavigate } from "react-router-dom";
 import { AppHeader } from "../../components/layout/AppHeader";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
+import { useRoomObjectCatalog } from "../../hooks/useRoomObjectCatalog";
 import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
 import { fetchUserCreatedPlazas, fetchUserPlazaEntries } from "../../services/plazaService";
 import { fetchUserProfile, updateUserProfile } from "../../services/userService";
 import type { Plaza, PlazaEntry } from "../../types/plaza";
 import {
   clearAuthenticated,
-  getCurrentUserId,
   normalizeProfileNickname,
   PROFILE_NICKNAME_MAX_LENGTH,
   setProfileEmail,
@@ -286,10 +286,11 @@ function ProfileEditModal({ nickname, isSaving, onClose, onSave }: ProfileEditMo
 }
 
 function MyPage() {
+  useRoomObjectCatalog();
+
   const navigate = useNavigate();
   const profileNoticeTimerRef = useRef<number | null>(null);
 
-  const [currentUserId] = useState(() => getCurrentUserId());
   const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
   const [joinedAt, setJoinedAt] = useState("");
@@ -354,7 +355,7 @@ function MyPage() {
         setIsProfileLoading(true);
         closeProfileNotice();
 
-        const profile = await fetchUserProfile(currentUserId);
+        const profile = await fetchUserProfile();
 
         if (ignore) {
           return;
@@ -382,7 +383,7 @@ function MyPage() {
     return () => {
       ignore = true;
     };
-  }, [currentUserId]);
+  }, []);
 
   useEffect(() => {
     let ignore = false;
@@ -392,8 +393,8 @@ function MyPage() {
         setIsActivityLoading(true);
 
         const [created, writtenEntries] = await Promise.all([
-          fetchUserCreatedPlazas(currentUserId),
-          fetchUserPlazaEntries(currentUserId),
+          fetchUserCreatedPlazas(),
+          fetchUserPlazaEntries(),
         ]);
 
         if (ignore) {
@@ -424,7 +425,7 @@ function MyPage() {
     return () => {
       ignore = true;
     };
-  }, [currentUserId]);
+  }, []);
 
   function handleStartEdit() {
     setNicknameDraft(nickname);
@@ -471,7 +472,7 @@ function MyPage() {
       setIsSavingProfile(true);
       closeProfileNotice();
 
-      const profile = await updateUserProfile(currentUserId, isChangingPassword
+      const profile = await updateUserProfile(isChangingPassword
         ? { nickname: nextNickname, currentPassword, newPassword }
         : { nickname: nextNickname });
 

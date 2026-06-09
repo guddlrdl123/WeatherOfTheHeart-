@@ -2,7 +2,7 @@ import type { Memory } from "../types/memory";
 import type { MoodKey } from "../types/mood";
 import type { RoomObjectKey, RoomObjectPosition } from "../types/roomObject";
 import type { WeatherKey } from "../types/weather";
-import { readJsonResponse, toApiUrl } from "./apiClient";
+import { authFetch, readJsonResponse, toApiUrl } from "./apiClient";
 
 type ApiResponse<T> = {
   status: string;
@@ -74,8 +74,8 @@ async function readErrorMessage(response: Response, fallbackMessage: string) {
   return body?.message || fallbackMessage;
 }
 
-export async function createMemory(userId: string, value: CreateMemoryRequest) {
-  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/memories`), {
+export async function createMemory(value: CreateMemoryRequest) {
+  const response = await authFetch(toApiUrl("/api/memories"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -92,8 +92,8 @@ export async function createMemory(userId: string, value: CreateMemoryRequest) {
   return toMemory(payload.data);
 }
 
-export async function fetchMemories(userId: string) {
-  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/memories`));
+export async function fetchMemories() {
+  const response = await authFetch(toApiUrl("/api/memories"));
   const payload = await readJsonResponse<ApiResponse<MemoryResponse[]>>(response);
 
   if (!response.ok) {
@@ -103,8 +103,8 @@ export async function fetchMemories(userId: string) {
   return payload.data.map(toMemory);
 }
 
-export async function updateMemory(userId: string, memoryId: string, value: UpdateMemoryRequest) {
-  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/memories/${encodeURIComponent(memoryId)}`), {
+export async function updateMemory(memoryId: string, value: UpdateMemoryRequest) {
+  const response = await authFetch(toApiUrl(`/api/memories/${encodeURIComponent(memoryId)}`), {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -121,8 +121,8 @@ export async function updateMemory(userId: string, memoryId: string, value: Upda
   return toMemory(payload.data);
 }
 
-export async function updateMemoryPosition(userId: string, memoryId: string, position: RoomObjectPosition, layer: number) {
-  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/memories/${encodeURIComponent(memoryId)}/position`), {
+export async function updateMemoryPosition(memoryId: string, position: RoomObjectPosition, layer: number) {
+  const response = await authFetch(toApiUrl(`/api/memories/${encodeURIComponent(memoryId)}/position`), {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -143,8 +143,8 @@ export async function updateMemoryPosition(userId: string, memoryId: string, pos
   return toMemory(payload.data);
 }
 
-export async function deleteMemory(userId: string, memoryId: string) {
-  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/memories/${encodeURIComponent(memoryId)}`), {
+export async function deleteMemory(memoryId: string) {
+  const response = await authFetch(toApiUrl(`/api/memories/${encodeURIComponent(memoryId)}`), {
     method: "DELETE",
   });
 

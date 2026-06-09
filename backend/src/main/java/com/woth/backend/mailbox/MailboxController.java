@@ -1,5 +1,7 @@
 package com.woth.backend.mailbox;
 
+import com.woth.backend.auth.AuthenticatedUser;
+import com.woth.backend.auth.CurrentUser;
 import com.woth.backend.global.dto.ApiResponse;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +15,7 @@ import java.util.stream.Collectors;
  */
 
 @RestController
-@RequestMapping(path = "/api/users/{userId}/mailbox", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(path = "/api/mailbox", produces = MediaType.APPLICATION_JSON_VALUE)
 public class MailboxController {
 
     private final MailboxService mailboxService;
@@ -22,28 +24,28 @@ public class MailboxController {
         this.mailboxService = mailboxService;
     }
     @GetMapping
-    public ApiResponse<List<MailboxItemResponse>> list(@PathVariable Long userId) {
-        List<MailboxItemResponse> items = mailboxService.listLetters(userId).stream()
+    public ApiResponse<List<MailboxItemResponse>> list(@CurrentUser AuthenticatedUser currentUser) {
+        List<MailboxItemResponse> items = mailboxService.listLetters(currentUser.id()).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
         return ApiResponse.success(items);
     }
 
     @GetMapping("/unread-count")
-    public ApiResponse<MailboxUnreadCountResponse> unreadCount(@PathVariable Long userId) {
-        return ApiResponse.success(new MailboxUnreadCountResponse(mailboxService.countUnreadLetters(userId)));
+    public ApiResponse<MailboxUnreadCountResponse> unreadCount(@CurrentUser AuthenticatedUser currentUser) {
+        return ApiResponse.success(new MailboxUnreadCountResponse(mailboxService.countUnreadLetters(currentUser.id())));
     }
 
     @PatchMapping("/{letterId}/read")
-    public ApiResponse<MailboxItemResponse> markRead(@PathVariable Long userId,
+    public ApiResponse<MailboxItemResponse> markRead(@CurrentUser AuthenticatedUser currentUser,
                                                      @PathVariable Long letterId) {
-        var item = mailboxService.markRead(userId, letterId);
+        var item = mailboxService.markRead(currentUser.id(), letterId);
         return ApiResponse.success(toResponse(item));
     }
 
     @PatchMapping("/read-all")
-    public ApiResponse<MailboxReadAllResponse> markAllRead(@PathVariable Long userId) {
-        int updatedCount = mailboxService.markAllRead(userId);
+    public ApiResponse<MailboxReadAllResponse> markAllRead(@CurrentUser AuthenticatedUser currentUser) {
+        int updatedCount = mailboxService.markAllRead(currentUser.id());
         return ApiResponse.success(new MailboxReadAllResponse(updatedCount));
     }
 

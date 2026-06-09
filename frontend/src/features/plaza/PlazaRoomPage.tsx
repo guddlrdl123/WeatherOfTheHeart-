@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Copy, Footprints, Heart, MapPinned, MoreHorizontal, Power, Trash2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
+import { useRoomObjectCatalog } from "../../hooks/useRoomObjectCatalog";
 import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
 import type { Plaza, PlazaEntry } from "../../types/plaza";
 import type { RoomObjectPosition } from "../../types/roomObject";
@@ -151,6 +152,8 @@ export function PlazaRoomPage({
   onUpdateEntryPosition,
   onDeleteEntry,
 }: Props) {
+  useRoomObjectCatalog();
+
   const navigate = useNavigate();
   const owner = plaza.ownerId === currentGuestId;
   const requiresFirstEntry = isDraftPlaza && owner && plaza.entries.length === 0;

@@ -1,5 +1,7 @@
 package com.woth.backend.user;
 
+import com.woth.backend.auth.AuthenticatedUser;
+import com.woth.backend.auth.CurrentUser;
 import com.woth.backend.global.dto.ApiResponse;
 import com.woth.backend.plaza.Plaza;
 import com.woth.backend.plaza.PlazaEntry;
@@ -33,14 +35,31 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    public ApiResponse<UserProfileResponse> getUser(@PathVariable Long userId) {
+    public ApiResponse<UserProfileResponse> getUser(@CurrentUser AuthenticatedUser currentUser, @PathVariable Long userId) {
+        requireSelf(currentUser, userId);
         return ApiResponse.success(toResponse(userService.getUser(userId)));
+    }
+
+    @GetMapping("/me")
+    public ApiResponse<UserProfileResponse> getMe(@CurrentUser AuthenticatedUser currentUser) {
+        return ApiResponse.success(toResponse(userService.getUser(currentUser.id())));
     }
 
     @GetMapping("/{userId}/plazas")
     @Transactional(readOnly = true)
-    public ApiResponse<List<UserPlazaResponse>> listCreatedPlazas(@PathVariable Long userId) {
+    public ApiResponse<List<UserPlazaResponse>> listCreatedPlazas(@CurrentUser AuthenticatedUser currentUser, @PathVariable Long userId) {
+        requireSelf(currentUser, userId);
         List<UserPlazaResponse> plazas = plazaService.listPlazasByOwner(userId).stream()
+                .map(this::toPlazaResponse)
+                .collect(Collectors.toList());
+
+        return ApiResponse.success(plazas);
+    }
+
+    @GetMapping("/me/plazas")
+    @Transactional(readOnly = true)
+    public ApiResponse<List<UserPlazaResponse>> listMyCreatedPlazas(@CurrentUser AuthenticatedUser currentUser) {
+        List<UserPlazaResponse> plazas = plazaService.listPlazasByOwner(currentUser.id()).stream()
                 .map(this::toPlazaResponse)
                 .collect(Collectors.toList());
 
@@ -49,8 +68,19 @@ public class UserController {
 
     @GetMapping("/{userId}/plaza-entries")
     @Transactional(readOnly = true)
-    public ApiResponse<List<UserPlazaEntryResponse>> listWrittenPlazaEntries(@PathVariable Long userId) {
+    public ApiResponse<List<UserPlazaEntryResponse>> listWrittenPlazaEntries(@CurrentUser AuthenticatedUser currentUser, @PathVariable Long userId) {
+        requireSelf(currentUser, userId);
         List<UserPlazaEntryResponse> entries = plazaService.listEntriesByOwner(userId).stream()
+                .map(this::toPlazaEntryResponse)
+                .collect(Collectors.toList());
+
+        return ApiResponse.success(entries);
+    }
+
+    @GetMapping("/me/plaza-entries")
+    @Transactional(readOnly = true)
+    public ApiResponse<List<UserPlazaEntryResponse>> listMyWrittenPlazaEntries(@CurrentUser AuthenticatedUser currentUser) {
+        List<UserPlazaEntryResponse> entries = plazaService.listEntriesByOwner(currentUser.id()).stream()
                 .map(this::toPlazaEntryResponse)
                 .collect(Collectors.toList());
 
@@ -59,11 +89,26 @@ public class UserController {
 
     @PatchMapping("/{userId}")
     public ApiResponse<UserProfileResponse> updateUser(
+            @CurrentUser AuthenticatedUser currentUser,
             @PathVariable Long userId,
             @Valid @RequestBody UserProfileUpdateRequest request
     ) {
+        requireSelf(currentUser, userId);
         return ApiResponse.success(toResponse(userService.updateProfile(
                 userId,
+                request.nickname(),
+                request.currentPassword(),
+                request.newPassword()
+        )));
+    }
+
+    @PatchMapping("/me")
+    public ApiResponse<UserProfileResponse> updateMe(
+            @CurrentUser AuthenticatedUser currentUser,
+            @Valid @RequestBody UserProfileUpdateRequest request
+    ) {
+        return ApiResponse.success(toResponse(userService.updateProfile(
+                currentUser.id(),
                 request.nickname(),
                 request.currentPassword(),
                 request.newPassword()
@@ -79,6 +124,14 @@ public class UserController {
                 user.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                 user.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
         );
+    }
+
+    private void requireSelf(AuthenticatedUser currentUser, Long userId) {
+        if (!currentUser.id().equals(userId)) {
+            throw new com.woth.backend.global.exception.CustomException(
+                    com.woth.backend.global.exception.ErrorCode.AUTH_INVALID
+            );
+        }
     }
 
     private UserPlazaResponse toPlazaResponse(Plaza plaza) {

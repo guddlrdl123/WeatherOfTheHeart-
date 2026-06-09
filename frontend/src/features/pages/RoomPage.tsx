@@ -6,13 +6,13 @@ import { MemoryWriteModal, type WriteModalValue } from "../memory/MemoryWriteMod
 import { MemoryPreviewModal, type MemoryPreviewUpdate } from "../memory/MemoryPreviewModal";
 // import { getTodayString } from "../utils/date";
 import { AppHeader } from "../../components/layout/AppHeader";
+import { useRoomObjectCatalog } from "../../hooks/useRoomObjectCatalog";
 import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
 import { createMemory, deleteMemory, fetchMemories, updateMemory, updateMemoryPosition } from "../../services/memoryService";
 import type { Memory } from "../../types/memory";
 import type { RoomObjectKey, RoomObjectPosition } from "../../types/roomObject";
 import type { WeatherKey } from "../../types/weather";
 import { getTodayString } from "../../utils/date";
-import { getCurrentUserId } from "../../utils/authSession";
 
 type PendingPlacement = {
     value: WriteModalValue;
@@ -46,7 +46,8 @@ const formatRoomMonthLabel = (monthKey: string) => {
 const getMemoryObjectLayer = (memory: Memory) => memory.objectLayer ?? OBJECT_LAYER_MIN;
 
 function RoomPage() {
-    const [currentUserId] = useState(() => getCurrentUserId());
+    useRoomObjectCatalog();
+
     const [weather] = useState<WeatherKey>('sunny');
     const stageWidth = useResponsiveStageWidth({
         designWidth: ROOM_LAYOUT_WIDTH,
@@ -96,7 +97,7 @@ function RoomPage() {
                 setIsMemoryLoading(true);
                 setMemoryLoadError("");
 
-                const loadedMemories = await fetchMemories(currentUserId);
+                const loadedMemories = await fetchMemories();
 
                 if (!isMounted) {
                     return;
@@ -121,7 +122,7 @@ function RoomPage() {
         return () => {
             isMounted = false;
         };
-    }, [currentUserId]);
+    }, []);
 
 
     const selectedMemory = memories.find(
@@ -267,7 +268,7 @@ function RoomPage() {
 
             try {
                 setIsPlacementSaving(true);
-                const savedMemory = await updateMemoryPosition(currentUserId, memoryId, position, layer);
+                const savedMemory = await updateMemoryPosition(memoryId, position, layer);
                 const memoryWithPlacement = {
                     ...savedMemory,
                     objectLayer: savedMemory.objectLayer ?? layer,
@@ -308,7 +309,7 @@ function RoomPage() {
 
         try {
             setIsPlacementSaving(true);
-            const savedMemory = await createMemory(currentUserId, {
+            const savedMemory = await createMemory({
                 memoryDate: value.memoryDate,
                 title: value.title ?? "",
                 content: value.content,
@@ -400,7 +401,7 @@ function RoomPage() {
 
     const handleUpdateMemory = async (memoryId: string, value: MemoryPreviewUpdate) => {
         try {
-            const savedMemory = await updateMemory(currentUserId, memoryId, value);
+            const savedMemory = await updateMemory(memoryId, value);
 
             setMemories((prev) =>
                 prev.map((memory) =>
@@ -431,7 +432,7 @@ function RoomPage() {
 
     const handleDeleteMemory = async (memoryId: string) => {
         try {
-            await deleteMemory(currentUserId, memoryId);
+            await deleteMemory(memoryId);
         } catch (error) {
             alert(error instanceof Error ? error.message : "이야기를 삭제하지 못했습니다.");
             return;

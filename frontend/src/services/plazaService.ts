@@ -1,7 +1,7 @@
 import type { Plaza, PlazaBackground, PlazaEntry, PlazaWeatherKey } from "../types/plaza";
 import type { RoomObjectPosition } from "../types/roomObject";
 import type { RoomObjectKey } from "../types/roomObject";
-import { readApiData, readJsonResponse, toApiUrl } from "./apiClient";
+import { authFetch, readApiData, readJsonResponse, toApiUrl } from "./apiClient";
 
 type ApiResponse<T> = {
   status: string;
@@ -127,7 +127,7 @@ function toEntry(response: PlazaEntryResponse): PlazaEntry {
 }
 
 async function fetchAllPlazaEntries() {
-  const response = await fetch(toApiUrl("/api/plazas/entries"));
+  const response = await authFetch(toApiUrl("/api/plazas/entries"));
 
   if (!response.ok) {
     throw new Error(await readErrorMessage(response, "광장 글을 불러오지 못했습니다."));
@@ -138,7 +138,7 @@ async function fetchAllPlazaEntries() {
 
 export async function fetchPlazas() {
   const [plazaResponse, entries] = await Promise.all([
-    fetch(toApiUrl("/api/plazas")),
+    authFetch(toApiUrl("/api/plazas")),
     fetchAllPlazaEntries(),
   ]);
 
@@ -169,14 +169,13 @@ export async function fetchPlazas() {
   });
 }
 
-export async function createBackendPlaza(userId: string, plaza: Plaza) {
-  const response = await fetch(toApiUrl("/api/plazas"), {
+export async function createBackendPlaza(plaza: Plaza) {
+  const response = await authFetch(toApiUrl("/api/plazas"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      ownerId: Number(userId),
       title: plaza.topic,
       topic: plaza.description,
       maxObjects: plaza.maxParticipants,
@@ -197,19 +196,17 @@ export async function createBackendPlaza(userId: string, plaza: Plaza) {
 }
 
 export async function createBackendPlazaWithFirstEntry(
-  userId: string,
   plaza: Plaza,
   value: CreatePlazaEntryValue,
   position: RoomObjectPosition,
   layer: number,
 ) {
-  const response = await fetch(toApiUrl("/api/plazas/with-first-entry"), {
+  const response = await authFetch(toApiUrl("/api/plazas/with-first-entry"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      ownerId: Number(userId),
       title: plaza.topic,
       topic: plaza.description,
       maxObjects: plaza.maxParticipants,
@@ -251,18 +248,16 @@ export async function createBackendPlazaWithFirstEntry(
 
 export async function createBackendPlazaEntry(
   plazaId: string,
-  userId: string,
   value: CreatePlazaEntryValue,
   position: RoomObjectPosition,
   layer: number,
 ) {
-  const response = await fetch(toApiUrl(`/api/plazas/${encodeURIComponent(plazaId)}/entries`), {
+  const response = await authFetch(toApiUrl(`/api/plazas/${encodeURIComponent(plazaId)}/entries`), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      ownerId: Number(userId),
       title: value.title,
       content: value.content,
       moodKey: "plaza",
@@ -285,15 +280,9 @@ export async function createBackendPlazaEntry(
   };
 }
 
-export async function toggleBackendPlazaEntryLike(entryId: string, userId: string) {
-  const response = await fetch(toApiUrl(`/api/plazas/entries/${encodeURIComponent(entryId)}/likes`), {
+export async function toggleBackendPlazaEntryLike(entryId: string) {
+  const response = await authFetch(toApiUrl(`/api/plazas/entries/${encodeURIComponent(entryId)}/likes`), {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      userId: Number(userId),
-    }),
   });
 
   if (!response.ok) {
@@ -305,16 +294,14 @@ export async function toggleBackendPlazaEntryLike(entryId: string, userId: strin
 
 export async function updateBackendPlazaEntry(
   entryId: string,
-  userId: string,
   value: Pick<PlazaEntry, "title" | "content">,
 ) {
-  const response = await fetch(toApiUrl(`/api/plazas/entries/${encodeURIComponent(entryId)}`), {
+  const response = await authFetch(toApiUrl(`/api/plazas/entries/${encodeURIComponent(entryId)}`), {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      ownerId: Number(userId),
       title: value.title,
       content: value.content,
     }),
@@ -329,17 +316,15 @@ export async function updateBackendPlazaEntry(
 
 export async function updateBackendPlazaEntryPosition(
   entryId: string,
-  userId: string,
   position: RoomObjectPosition,
   layer: number,
 ) {
-  const response = await fetch(toApiUrl(`/api/plazas/entries/${encodeURIComponent(entryId)}/position`), {
+  const response = await authFetch(toApiUrl(`/api/plazas/entries/${encodeURIComponent(entryId)}/position`), {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      ownerId: Number(userId),
       positionX: Math.round(position.x),
       positionY: Math.round(position.y),
       layer,
@@ -353,11 +338,8 @@ export async function updateBackendPlazaEntryPosition(
   return toEntry(await readApiData<PlazaEntryResponse>(response));
 }
 
-export async function deleteBackendPlazaEntry(entryId: string, userId: string) {
-  const params = new URLSearchParams({
-    ownerId: String(Number(userId)),
-  });
-  const response = await fetch(toApiUrl(`/api/plazas/entries/${encodeURIComponent(entryId)}?${params.toString()}`), {
+export async function deleteBackendPlazaEntry(entryId: string) {
+  const response = await authFetch(toApiUrl(`/api/plazas/entries/${encodeURIComponent(entryId)}`), {
     method: "DELETE",
   });
 
@@ -366,15 +348,9 @@ export async function deleteBackendPlazaEntry(entryId: string, userId: string) {
   }
 }
 
-export async function completeBackendPlaza(plazaId: string, userId: string) {
-  const response = await fetch(toApiUrl(`/api/plazas/${encodeURIComponent(plazaId)}/complete`), {
+export async function completeBackendPlaza(plazaId: string) {
+  const response = await authFetch(toApiUrl(`/api/plazas/${encodeURIComponent(plazaId)}/complete`), {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      ownerId: Number(userId),
-    }),
   });
 
   if (!response.ok) {
@@ -384,11 +360,8 @@ export async function completeBackendPlaza(plazaId: string, userId: string) {
   return toPlaza(await readApiData<PlazaResponse>(response));
 }
 
-export async function deleteBackendPlaza(plazaId: string, userId: string) {
-  const params = new URLSearchParams({
-    ownerId: String(Number(userId)),
-  });
-  const response = await fetch(toApiUrl(`/api/plazas/${encodeURIComponent(plazaId)}?${params.toString()}`), {
+export async function deleteBackendPlaza(plazaId: string) {
+  const response = await authFetch(toApiUrl(`/api/plazas/${encodeURIComponent(plazaId)}`), {
     method: "DELETE",
   });
 
@@ -397,8 +370,8 @@ export async function deleteBackendPlaza(plazaId: string, userId: string) {
   }
 }
 
-export async function fetchUserCreatedPlazas(userId: string) {
-  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/plazas`));
+export async function fetchUserCreatedPlazas() {
+  const response = await authFetch(toApiUrl("/api/users/me/plazas"));
 
   if (!response.ok) {
     throw new Error(await readErrorMessage(response, "내가 만든 광장을 불러오지 못했습니다."));
@@ -409,8 +382,8 @@ export async function fetchUserCreatedPlazas(userId: string) {
   return data.map(toPlaza);
 }
 
-export async function fetchUserPlazaEntries(userId: string) {
-  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/plaza-entries`));
+export async function fetchUserPlazaEntries() {
+  const response = await authFetch(toApiUrl("/api/users/me/plaza-entries"));
 
   if (!response.ok) {
     throw new Error(await readErrorMessage(response, "내가 작성한 오브젝트를 불러오지 못했습니다."));

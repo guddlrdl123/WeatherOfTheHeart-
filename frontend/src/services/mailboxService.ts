@@ -1,5 +1,5 @@
 import type { MailboxItem } from "../types/mailbox";
-import { readApiData, readApiError, toApiUrl } from "./apiClient";
+import { authFetch, readApiData, readApiError, toApiUrl } from "./apiClient";
 
 export type MailboxItemResponse = {
   id: number | string;
@@ -47,8 +47,8 @@ function toMailboxItem(response: MailboxItemResponse): MailboxItem {
   };
 }
 
-export async function fetchMailbox(userId: string) {
-  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/mailbox`));
+export async function fetchMailbox() {
+  const response = await authFetch(toApiUrl("/api/mailbox"));
 
   if (!response.ok) {
     throw await readApiError(response, "우편함을 불러오지 못했습니다.");
@@ -59,8 +59,8 @@ export async function fetchMailbox(userId: string) {
   return data.map(toMailboxItem);
 }
 
-export async function fetchMailboxUnreadCount(userId: string) {
-  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/mailbox/unread-count`));
+export async function fetchMailboxUnreadCount() {
+  const response = await authFetch(toApiUrl("/api/mailbox/unread-count"));
 
   if (!response.ok) {
     throw await readApiError(response, "읽지 않은 우편 개수를 불러오지 못했습니다.");
@@ -71,8 +71,8 @@ export async function fetchMailboxUnreadCount(userId: string) {
   return data.unreadCount;
 }
 
-export async function markMailboxItemAsRead(userId: string, letterId: string) {
-  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/mailbox/${encodeURIComponent(letterId)}/read`), {
+export async function markMailboxItemAsRead(letterId: string) {
+  const response = await authFetch(toApiUrl(`/api/mailbox/${encodeURIComponent(letterId)}/read`), {
     method: "PATCH",
   });
 
@@ -84,8 +84,8 @@ export async function markMailboxItemAsRead(userId: string, letterId: string) {
   notifyMailboxChanged();
 }
 
-export async function markAllMailboxItemsAsRead(userId: string) {
-  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}/mailbox/read-all`), {
+export async function markAllMailboxItemsAsRead() {
+  const response = await authFetch(toApiUrl("/api/mailbox/read-all"), {
     method: "PATCH",
   });
 

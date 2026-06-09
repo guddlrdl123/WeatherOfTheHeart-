@@ -4,10 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { MailboxCard } from "../../components/mailbox/MailboxCard";
 import { AppHeader } from "../../components/layout/AppHeader";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
+import { useRoomObjectCatalog } from "../../hooks/useRoomObjectCatalog";
 import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
 import { fetchMailbox, markAllMailboxItemsAsRead, markMailboxItemAsRead } from "../../services/mailboxService";
 import type { MailboxItem } from "../../types/mailbox";
-import { getCurrentUserId } from "../../utils/authSession";
 
 const MAILBOX_LAYOUT_WIDTH = 1460;
 const MAILBOX_SUMMARY_HEIGHT = 60;
@@ -154,8 +154,9 @@ function MailboxDetailModal({
 }
 
 function MailboxPage() {
+  useRoomObjectCatalog();
+
   const navigate = useNavigate();
-  const [userId] = useState(() => getCurrentUserId());
   const [items, setItems] = useState<MailboxItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -175,18 +176,18 @@ function MailboxPage() {
   const stageHeight = mailboxLayoutHeight * stageScale;
 
   const loadMailbox = useCallback(async () => {
-    // 명세의 GET /api/users/{userId}/mailbox 응답을 화면 상태로 가져옵니다.
+    // GET /api/mailbox 응답을 현재 로그인 사용자 기준으로 가져옵니다.
     try {
       setIsLoading(true);
       setError("");
-      const nextItems = await fetchMailbox(userId);
+      const nextItems = await fetchMailbox();
       setItems(nextItems);
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "우편함을 불러오지 못했습니다.");
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     // React 훅 린트 규칙에 맞춰 초기 API 호출을 effect 밖 비동기 작업으로 넘깁니다.
@@ -210,7 +211,7 @@ function MailboxPage() {
       : currentItem));
 
     try {
-      await markMailboxItemAsRead(userId, item.id);
+      await markMailboxItemAsRead(item.id);
     } catch {
       setItems((current) => current.map((currentItem) => currentItem.id === item.id
         ? { ...currentItem, read: false }
@@ -227,7 +228,7 @@ function MailboxPage() {
     setItems((current) => current.map((item) => ({ ...item, read: true })));
 
     try {
-      await markAllMailboxItemsAsRead(userId);
+      await markAllMailboxItemsAsRead();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "우편 전체 읽음 처리에 실패했습니다.");
       void loadMailbox();

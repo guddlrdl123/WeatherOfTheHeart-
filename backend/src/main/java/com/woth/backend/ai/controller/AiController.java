@@ -3,6 +3,8 @@ package com.woth.backend.ai.controller;
 import com.woth.backend.ai.dto.AnalyzeEmotionRequest;
 import com.woth.backend.ai.dto.EmotionAnalysisResponse;
 import com.woth.backend.ai.service.AiService;
+import com.woth.backend.auth.AuthenticatedUser;
+import com.woth.backend.auth.CurrentUser;
 import com.woth.backend.global.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -19,10 +21,11 @@ public class AiController {
 
 	@PostMapping("/analyze")
 	public ApiResponse<EmotionAnalysisResponse> analyze(
+			@CurrentUser AuthenticatedUser currentUser,
 			@RequestBody AnalyzeEmotionRequest request
 	) {
 		EmotionAnalysisResponse response = aiService.analyze(
-				request.userId(),
+				currentUser.id(),
 				request.content()
 		);
 

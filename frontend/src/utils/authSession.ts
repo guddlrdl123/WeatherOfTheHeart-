@@ -1,5 +1,7 @@
 // 백엔드 인증 연동 전까지 로그인 상태는 브라우저 저장소에 임시로 보관합니다.
 const AUTH_STORAGE_KEY = "mw-authenticated";
+const ACCESS_TOKEN_STORAGE_KEY = "mw-access-token";
+const ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY = "mw-access-token-expires-at";
 const PROFILE_NICKNAME_STORAGE_KEY = "mw-profile-nickname";
 const PROFILE_EMAIL_STORAGE_KEY = "mw-profile-email";
 const USER_ID_STORAGE_KEY = "mw-user-id";
@@ -28,10 +30,30 @@ function notifyAuthSessionChanged() {
 }
 
 export function isAuthenticated() {
-    return getSessionValue(AUTH_STORAGE_KEY) === "true" && Boolean(getSessionValue(USER_ID_STORAGE_KEY));
+    const token = getAccessToken();
+    const expiresAt = getSessionValue(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
+
+    if (!token || getSessionValue(AUTH_STORAGE_KEY) !== "true" || !Boolean(getSessionValue(USER_ID_STORAGE_KEY))) {
+        return false;
+    }
+
+    if (expiresAt && Date.parse(expiresAt) <= Date.now()) {
+        clearAuthenticated();
+        return false;
+    }
+
+    return true;
 }
 
-export function setAuthenticated() {
+export function setAuthenticated(accessToken?: string, accessTokenExpiresAt?: string) {
+    if (accessToken) {
+        setSessionValue(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+    }
+
+    if (accessTokenExpiresAt) {
+        setSessionValue(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY, accessTokenExpiresAt);
+    }
+
     setSessionValue(AUTH_STORAGE_KEY, "true");
     notifyAuthSessionChanged();
 }
@@ -41,7 +63,19 @@ export function clearAuthenticated() {
     removeSessionValue(PROFILE_NICKNAME_STORAGE_KEY);
     removeSessionValue(PROFILE_EMAIL_STORAGE_KEY);
     removeSessionValue(USER_ID_STORAGE_KEY);
+    removeSessionValue(ACCESS_TOKEN_STORAGE_KEY);
+    removeSessionValue(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
     notifyAuthSessionChanged();
+}
+
+export function getAccessToken() {
+    return getSessionValue(ACCESS_TOKEN_STORAGE_KEY) ?? "";
+}
+
+export function getAuthHeader() {
+    const accessToken = getAccessToken();
+
+    return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
 }
 
 // 마이페이지 닉네임도 프로필 API가 붙기 전까지 같은 로컬 저장소를 사용합니다.

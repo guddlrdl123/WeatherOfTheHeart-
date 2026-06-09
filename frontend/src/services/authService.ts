@@ -3,7 +3,10 @@ import { readApiData, readJsonResponse, toApiUrl } from "./apiClient";
 export type AuthResponse = {
   id?: number | string;
   userId?: number | string;
+  email?: string;
   nickname?: string;
+  accessToken?: string;
+  accessTokenExpiresAt?: string;
 };
 
 type LoginRequest = {

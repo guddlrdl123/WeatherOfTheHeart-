@@ -1,4 +1,4 @@
-import { readApiData, readApiError, toApiUrl } from "./apiClient";
+import { authFetch, readApiData, readApiError, toApiUrl } from "./apiClient";
 
 export type UserProfile = {
   id: number | string;
@@ -15,8 +15,8 @@ type UserProfileUpdateRequest = {
   newPassword?: string;
 };
 
-export async function fetchUserProfile(userId: string) {
-  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}`));
+export async function fetchUserProfile() {
+  const response = await authFetch(toApiUrl("/api/users/me"));
 
   if (!response.ok) {
     throw await readApiError(response, "프로필 정보를 불러오지 못했습니다.");
@@ -25,8 +25,8 @@ export async function fetchUserProfile(userId: string) {
   return readApiData<UserProfile>(response);
 }
 
-export async function updateUserProfile(userId: string, value: UserProfileUpdateRequest) {
-  const response = await fetch(toApiUrl(`/api/users/${encodeURIComponent(userId)}`), {
+export async function updateUserProfile(value: UserProfileUpdateRequest) {
+  const response = await authFetch(toApiUrl("/api/users/me"), {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",

@@ -2,7 +2,7 @@ import { House, Home, Inbox, LogOut, UserRound, CastleIcon } from "lucide-react"
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { fetchMailboxUnreadCount, MAILBOX_CHANGED_EVENT } from "../../services/mailboxService";
-import { clearAuthenticated, getCurrentUserId } from "../../utils/authSession";
+import { clearAuthenticated } from "../../utils/authSession";
 
 export function AppHeader() {
     const navigate = useNavigate();
@@ -16,7 +16,7 @@ export function AppHeader() {
 
     const loadUnreadMailboxCount = useCallback(async () => {
         try {
-            const count = await fetchMailboxUnreadCount(getCurrentUserId());
+            const count = await fetchMailboxUnreadCount();
             setUnreadMailboxCount(count);
         } catch {
             setUnreadMailboxCount(0);

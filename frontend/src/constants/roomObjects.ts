@@ -1,4 +1,5 @@
 import type { RoomObjectKey } from "../types/roomObject";
+import { authFetch, readApiData, S3_ASSET_BASE_URL, toApiUrl } from "../services/apiClient";
 
 type RoomObjectImageModule = {
     default: string;
@@ -12,10 +13,19 @@ export type RoomObjectOption = {
     roomWidth: number;
 };
 
+type ObjectCatalogResponse = {
+    objectKey: string;
+    name: string;
+    imageUrl?: string | null;
+    imageScale?: number | null;
+    allowPrivate?: boolean | null;
+    allowPlaza?: boolean | null;
+};
+
 const MISSING_ROOM_OBJECT_IMAGE = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2080%2080'%3E%3Crect%20x='10'%20y='10'%20width='60'%20height='60'%20rx='10'%20fill='%23f8f1e8'%20stroke='%239b6b54'%20stroke-opacity='.35'%20stroke-width='4'/%3E%3Cpath%20d='M25%2028h30M25%2040h30M25%2052h18'%20stroke='%239b6b54'%20stroke-opacity='.5'%20stroke-width='5'%20stroke-linecap='round'/%3E%3C/svg%3E";
 
 const ROOM_OBJECT_IMAGE_MODULES = import.meta.glob<RoomObjectImageModule>(
-    "../assets/{animal,bedding,decor-objects,furniture-clean,furniture-modular,pets,plaza-objects}/*.png",
+    "../assets/{animal,bedding,decor-objects,furniture-clean,furniture-modular,pets,plaza-objects,room}/*.png",
     { eager: true },
 );
 
@@ -26,6 +36,13 @@ const LEGACY_KEY_BY_FILE_NAME: Record<string, RoomObjectKey> = {
     "furniture-dresser.png": "dresser",
 };
 
+const LOCAL_KEY_BY_CATALOG_KEY: Record<string, RoomObjectKey> = {
+    "furniture-plant": "plant",
+    "furniture-books": "books",
+    "furniture-frame": "frame",
+    "furniture-dresser": "dresser",
+};
+
 const LABEL_BY_KEY: Record<RoomObjectKey, string> = {
     plant: "화분",
     books: "책",
@@ -33,7 +50,6 @@ const LABEL_BY_KEY: Record<RoomObjectKey, string> = {
     dresser: "서랍장",
     "furniture-wood-chair": "나무 의자",
     "furniture-side-table": "사이드 테이블",
-    "furniture-low-shelf": "낮은 선반",
     "furniture-floor-lamp": "스탠드 조명",
     "furniture-fireplace": "벽난로",
     "plaza-bench": "벤치",
@@ -84,6 +100,7 @@ const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     "plaza-bush": 120,
     "벚꽃_": 160,
     "벚꽃_작은나무": 220,
+    "10-front-storage-box": 90,
 };
 
 const FOLDER_ORDER: Record<string, number> = {
@@ -151,8 +168,8 @@ function getRoomWidth(key: RoomObjectKey) {
     return 92;
 }
 
-// 오브젝트 선택 모달과 방 렌더링에서 사용하는 목록
-export const ROOM_OBJECT_OPTIONS: RoomObjectOption[] = Object.entries(ROOM_OBJECT_IMAGE_MODULES)
+function createLocalRoomObjectOptions() {
+    return Object.entries(ROOM_OBJECT_IMAGE_MODULES)
     .map(([path, module]) => {
         const key = getObjectKey(path);
 
@@ -179,6 +196,7 @@ export const ROOM_OBJECT_OPTIONS: RoomObjectOption[] = Object.entries(ROOM_OBJEC
         image: object.image,
         roomWidth: object.roomWidth,
     }));
+}
 
 function createMissingRoomObjectOption(key: RoomObjectKey): RoomObjectOption {
     return {
@@ -189,21 +207,103 @@ function createMissingRoomObjectOption(key: RoomObjectKey): RoomObjectOption {
     };
 }
 
-// 저장된 오브젝트를 그릴 때 key로 빠르게 찾기 위한 맵
-const ROOM_OBJECT_BY_KEY_BASE = ROOM_OBJECT_OPTIONS.reduce<Record<RoomObjectKey, RoomObjectOption>>(
-    (acc, object) => {
+function createRoomObjectMap(objects: RoomObjectOption[]) {
+    return objects.reduce<Record<RoomObjectKey, RoomObjectOption>>((acc, object) => {
         acc[object.key] = object;
         return acc;
-    },
-    {},
-);
+    }, {});
+}
 
-export const ROOM_OBJECT_BY_KEY = new Proxy(ROOM_OBJECT_BY_KEY_BASE, {
+function findLocalObjectOption(key: string) {
+    return localRoomObjectByKey[key] ?? localRoomObjectByKey[LOCAL_KEY_BY_CATALOG_KEY[key] ?? ""];
+}
+
+function resolveCatalogImage(catalog: ObjectCatalogResponse, localObject?: RoomObjectOption) {
+    const imageUrl = catalog.imageUrl?.trim();
+
+    if (!imageUrl) {
+        return localObject?.image ?? MISSING_ROOM_OBJECT_IMAGE;
+    }
+
+    if (/^(https?:|data:|blob:)/.test(imageUrl)) {
+        return imageUrl;
+    }
+
+    if (S3_ASSET_BASE_URL) {
+        return `${S3_ASSET_BASE_URL.replace(/\/+$/, "")}/${imageUrl.replace(/^\/+/, "")}`;
+    }
+
+    return localObject?.image ?? MISSING_ROOM_OBJECT_IMAGE;
+}
+
+function toCatalogRoomObjectOption(catalog: ObjectCatalogResponse): RoomObjectOption {
+    const key = catalog.objectKey;
+    const localObject = findLocalObjectOption(key);
+    const catalogLabel = catalog.name?.trim();
+
+    return {
+        key,
+        label: catalogLabel && catalogLabel !== key ? catalogLabel : localObject?.label || getObjectLabel(key),
+        image: resolveCatalogImage(catalog, localObject),
+        roomWidth: localObject?.roomWidth ?? getRoomWidth(key),
+    };
+}
+
+function applyRoomObjectCatalog(objects: RoomObjectOption[]) {
+    ROOM_OBJECT_OPTIONS.splice(0, ROOM_OBJECT_OPTIONS.length, ...objects);
+    roomObjectByKey = createRoomObjectMap(objects);
+}
+
+function mergeCatalogObjects(catalogObjects: ObjectCatalogResponse[]) {
+    const catalogOptions = catalogObjects
+        .filter((catalog) => catalog.allowPrivate !== false || catalog.allowPlaza !== false)
+        .map(toCatalogRoomObjectOption);
+
+    return catalogOptions.length > 0
+        ? catalogOptions
+        : localRoomObjectOptions;
+}
+
+const localRoomObjectOptions = createLocalRoomObjectOptions();
+const localRoomObjectByKey = createRoomObjectMap(localRoomObjectOptions);
+
+// 오브젝트 선택 모달과 방 렌더링에서 사용하는 목록입니다. 앱 시작 시 로컬 fallback을 먼저 쓰고,
+// /api/objects 응답을 받으면 DB 카탈로그 기준 목록으로 교체합니다.
+export const ROOM_OBJECT_OPTIONS: RoomObjectOption[] = [...localRoomObjectOptions];
+let roomObjectByKey = createRoomObjectMap(ROOM_OBJECT_OPTIONS);
+let roomObjectCatalogPromise: Promise<RoomObjectOption[]> | null = null;
+
+export async function loadRoomObjectCatalog() {
+    if (roomObjectCatalogPromise) {
+        return roomObjectCatalogPromise;
+    }
+
+    roomObjectCatalogPromise = authFetch(toApiUrl("/api/objects"))
+        .then(async (response) => {
+            if (!response.ok) {
+                throw new Error("오브젝트 목록을 불러오지 못했습니다.");
+            }
+
+            const data = await readApiData<ObjectCatalogResponse[]>(response);
+            const nextObjects = mergeCatalogObjects(data);
+            applyRoomObjectCatalog(nextObjects);
+
+            return ROOM_OBJECT_OPTIONS;
+        })
+        .catch((error) => {
+            roomObjectCatalogPromise = null;
+            throw error;
+        });
+
+    return roomObjectCatalogPromise;
+}
+
+export const ROOM_OBJECT_BY_KEY = new Proxy({} as Record<RoomObjectKey, RoomObjectOption>, {
     get(target, property) {
         if (typeof property !== "string") {
             return Reflect.get(target, property);
         }
 
-        return target[property] ?? createMissingRoomObjectOption(property);
+        return roomObjectByKey[property] ?? createMissingRoomObjectOption(property);
     },
 }) as Record<RoomObjectKey, RoomObjectOption>;

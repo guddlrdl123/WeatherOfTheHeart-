@@ -21,10 +21,16 @@ public class AuthController {
 
     private final AuthService authService;
     private final EmailVerificationService emailVerificationService;
+    private final AuthTokenService authTokenService;
 
-    public AuthController(AuthService authService, EmailVerificationService emailVerificationService) {
+    public AuthController(
+            AuthService authService,
+            EmailVerificationService emailVerificationService,
+            AuthTokenService authTokenService
+    ) {
         this.authService = authService;
         this.emailVerificationService = emailVerificationService;
+        this.authTokenService = authTokenService;
     }
 
     @PostMapping("/login")
@@ -52,12 +58,16 @@ public class AuthController {
     }
 
     private AuthResponse toResponse(com.woth.backend.user.User user) {
+        AuthTokenService.IssuedToken token = authTokenService.issue(user);
+
         return new AuthResponse(
                 user.getId(),
                 user.getEmail(),
                 user.getNickname(),
                 user.getIsAdmin(),
-                user.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                user.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                token.accessToken(),
+                token.expiresAt()
         );
     }
 
@@ -80,6 +90,14 @@ public class AuthController {
     ) {
     }
 
-    public record AuthResponse(Long id, String email, String nickname, Boolean isAdmin, String joinedAt) {
+    public record AuthResponse(
+            Long id,
+            String email,
+            String nickname,
+            Boolean isAdmin,
+            String joinedAt,
+            String accessToken,
+            String accessTokenExpiresAt
+    ) {
     }
 }

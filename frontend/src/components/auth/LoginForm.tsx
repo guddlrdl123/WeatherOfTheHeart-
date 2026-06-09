@@ -44,8 +44,8 @@ export function LoginForm() {
         setProfileNickname(auth.nickname);
       }
 
-      setProfileEmail(email.trim());
-      setAuthenticated();
+      setProfileEmail(auth.email ?? email.trim());
+      setAuthenticated(auth.accessToken, auth.accessTokenExpiresAt);
       navigate("/room", { replace: true });
     } catch {
       setError("이메일 또는 비밀번호가 올바르지 않습니다.");

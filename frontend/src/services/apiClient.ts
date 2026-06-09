@@ -1,4 +1,4 @@
-import { clearAuthenticated } from "../utils/authSession";
+import { clearAuthenticated, getAuthHeader } from "../utils/authSession";
 
 export const API_BASE_URL = import.meta.env.NEXT_PUBLIC_API_BASE_URL ?? import.meta.env.VITE_API_BASE_URL ?? "";
 export const APP_NAME = import.meta.env.NEXT_PUBLIC_APP_NAME ?? "마음의 날씨";
@@ -39,7 +39,7 @@ function getApiErrorMessage(body: ApiErrorBody | null, fallbackMessage: string) 
 }
 
 function handleApiErrorCode(code?: string) {
-  if (code === "USER_001") {
+  if (code === "USER_001" || code === "AUTH_001" || code === "AUTH_002" || code === "AUTH_003") {
     clearAuthenticated();
   }
 }
@@ -73,4 +73,18 @@ export async function readApiData<T>(response: Response): Promise<T> {
   const body = await readJsonResponse<ApiResponse<T>>(response);
 
   return body.data;
+}
+
+export function authFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  const headers = new Headers(init.headers);
+  const authHeader = getAuthHeader();
+
+  Object.entries(authHeader).forEach(([key, value]) => {
+    headers.set(key, value);
+  });
+
+  return fetch(input, {
+    ...init,
+    headers,
+  });
 }

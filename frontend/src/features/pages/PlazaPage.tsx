@@ -121,7 +121,6 @@ function PlazaPage() {
       isFinalizingDraftRef.current = true;
       setMessage("");
       const completedPlaza = normalizePlaza(await createBackendPlazaWithFirstEntry(
-        currentUserId,
         draftPlaza,
         value,
         position,
@@ -145,13 +144,13 @@ function PlazaPage() {
   }
 
   async function handleDeletePlaza(plazaId: string) {
-    await deleteBackendPlaza(plazaId, currentUserId);
+    await deleteBackendPlaza(plazaId);
     persistPlazas((current) => current.filter((plaza) => plaza.id !== plazaId));
     navigate("/plaza", { replace: true });
   }
 
   async function handleCompletePlaza(plazaId: string) {
-    await completeBackendPlaza(plazaId, currentUserId);
+    await completeBackendPlaza(plazaId);
   }
 
   return (
@@ -179,27 +178,27 @@ function PlazaPage() {
           onCreateEntry={
             isDraftPlaza
               ? undefined
-              : (value, position, layer) => createBackendPlazaEntry(selectedPlaza.id, currentUserId, value, position, layer)
+              : (value, position, layer) => createBackendPlazaEntry(selectedPlaza.id, value, position, layer)
           }
           onToggleEntryLike={
             isDraftPlaza
               ? undefined
-              : (entryId) => toggleBackendPlazaEntryLike(entryId, currentUserId)
+              : (entryId) => toggleBackendPlazaEntryLike(entryId)
           }
           onUpdateEntry={
             isDraftPlaza
               ? undefined
-              : (entryId, value) => updateBackendPlazaEntry(entryId, currentUserId, value)
+              : (entryId, value) => updateBackendPlazaEntry(entryId, value)
           }
           onUpdateEntryPosition={
             isDraftPlaza
               ? undefined
-              : (entryId, position, layer) => updateBackendPlazaEntryPosition(entryId, currentUserId, position, layer)
+              : (entryId, position, layer) => updateBackendPlazaEntryPosition(entryId, position, layer)
           }
           onDeleteEntry={
             isDraftPlaza
               ? undefined
-              : (entryId) => deleteBackendPlazaEntry(entryId, currentUserId)
+              : (entryId) => deleteBackendPlazaEntry(entryId)
           }
         />
       ) : plazaId ? (
