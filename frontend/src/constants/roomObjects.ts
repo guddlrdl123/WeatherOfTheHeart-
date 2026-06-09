@@ -22,6 +22,8 @@ type ObjectCatalogResponse = {
     allowPlaza?: boolean | null;
 };
 
+type ObjectCatalogMode = "api" | "local" | "merge";
+
 const MISSING_ROOM_OBJECT_IMAGE = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2080%2080'%3E%3Crect%20x='10'%20y='10'%20width='60'%20height='60'%20rx='10'%20fill='%23f8f1e8'%20stroke='%239b6b54'%20stroke-opacity='.35'%20stroke-width='4'/%3E%3Cpath%20d='M25%2028h30M25%2040h30M25%2052h18'%20stroke='%239b6b54'%20stroke-opacity='.5'%20stroke-width='5'%20stroke-linecap='round'/%3E%3C/svg%3E";
 
 const ROOM_OBJECT_IMAGE_MODULES = import.meta.glob<RoomObjectImageModule>(
@@ -81,7 +83,7 @@ const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     "plaza-trash": 86,
     "plaza-tree": 320,
     "plaza-rainbow": 170,
-    "plaza-flower": 70,
+    "plaza-flower": 60,
     "plaza-sea-floor": 1080,
     "decor-coffee-cup": 50,
     "decor-mini-lamp": 70,
@@ -98,9 +100,24 @@ const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     "plaza-tea-stand": 180,
     "plaza-wooden-fence": 200,
     "plaza-bush": 120,
-    "벚꽃_": 160,
-    "벚꽃_작은나무": 220,
+    "01-empty-single-bed": 230,
+    "09-shelf-plant": 50,
     "10-front-storage-box": 90,
+    "12-small-vase": 50,
+    "13-study-desk": 260,
+    "17-small-dresser": 140,
+    "19-table-lamp": 60,
+    "20-empty-wall-shelf": 200,
+    "22-standing-mirror": 140,
+    "23-storage-basket": 130,
+    "24-alarm-clock": 40,
+    "26-ceramic-mug": 45,
+    "30-pencil-cup": 30,
+    "31-back-facing-chair": 110,
+    "33-laptop": 80,
+    "34-low-coffee-table": 220,
+    "36-plush-doll": 80,
+    "37-rectangular-carpet": 300,
 };
 
 const FOLDER_ORDER: Record<string, number> = {
@@ -170,32 +187,32 @@ function getRoomWidth(key: RoomObjectKey) {
 
 function createLocalRoomObjectOptions() {
     return Object.entries(ROOM_OBJECT_IMAGE_MODULES)
-    .map(([path, module]) => {
-        const key = getObjectKey(path);
+        .map(([path, module]) => {
+            const key = getObjectKey(path);
 
-        return {
-            key,
-            label: getObjectLabel(key),
-            image: module.default,
-            roomWidth: getRoomWidth(key),
-            folder: getFolderName(path),
-        };
-    })
-    .sort((a, b) => {
-        const folderOrder = (FOLDER_ORDER[a.folder] ?? 99) - (FOLDER_ORDER[b.folder] ?? 99);
+            return {
+                key,
+                label: getObjectLabel(key),
+                image: module.default,
+                roomWidth: getRoomWidth(key),
+                folder: getFolderName(path),
+            };
+        })
+        .sort((a, b) => {
+            const folderOrder = (FOLDER_ORDER[a.folder] ?? 99) - (FOLDER_ORDER[b.folder] ?? 99);
 
-        if (folderOrder !== 0) {
-            return folderOrder;
-        }
+            if (folderOrder !== 0) {
+                return folderOrder;
+            }
 
-        return a.label.localeCompare(b.label);
-    })
-    .map((object) => ({
-        key: object.key,
-        label: object.label,
-        image: object.image,
-        roomWidth: object.roomWidth,
-    }));
+            return a.label.localeCompare(b.label);
+        })
+        .map((object) => ({
+            key: object.key,
+            label: object.label,
+            image: object.image,
+            roomWidth: object.roomWidth,
+        }));
 }
 
 function createMissingRoomObjectOption(key: RoomObjectKey): RoomObjectOption {
@@ -254,10 +271,33 @@ function applyRoomObjectCatalog(objects: RoomObjectOption[]) {
     roomObjectByKey = createRoomObjectMap(objects);
 }
 
-function mergeCatalogObjects(catalogObjects: ObjectCatalogResponse[]) {
+function getObjectCatalogMode(): ObjectCatalogMode {
+    const mode = import.meta.env.VITE_OBJECT_CATALOG_MODE?.toLowerCase();
+
+    if (mode === "api" || mode === "local" || mode === "merge") {
+        return mode;
+    }
+
+    return import.meta.env.DEV ? "local" : "api";
+}
+
+function appendLocalOnlyObjects(catalogOptions: RoomObjectOption[]) {
+    const catalogKeys = new Set(catalogOptions.map((object) => object.key));
+
+    return [
+        ...catalogOptions,
+        ...localRoomObjectOptions.filter((object) => !catalogKeys.has(object.key)),
+    ];
+}
+
+function mergeCatalogObjects(catalogObjects: ObjectCatalogResponse[], mode: ObjectCatalogMode) {
     const catalogOptions = catalogObjects
         .filter((catalog) => catalog.allowPrivate !== false || catalog.allowPlaza !== false)
         .map(toCatalogRoomObjectOption);
+
+    if (mode === "merge") {
+        return appendLocalOnlyObjects(catalogOptions);
+    }
 
     return catalogOptions.length > 0
         ? catalogOptions
@@ -278,6 +318,13 @@ export async function loadRoomObjectCatalog() {
         return roomObjectCatalogPromise;
     }
 
+    const catalogMode = getObjectCatalogMode();
+
+    if (catalogMode === "local") {
+        applyRoomObjectCatalog(localRoomObjectOptions);
+        return ROOM_OBJECT_OPTIONS;
+    }
+
     roomObjectCatalogPromise = authFetch(toApiUrl("/api/objects"))
         .then(async (response) => {
             if (!response.ok) {
@@ -285,7 +332,7 @@ export async function loadRoomObjectCatalog() {
             }
 
             const data = await readApiData<ObjectCatalogResponse[]>(response);
-            const nextObjects = mergeCatalogObjects(data);
+            const nextObjects = mergeCatalogObjects(data, catalogMode);
             applyRoomObjectCatalog(nextObjects);
 
             return ROOM_OBJECT_OPTIONS;
