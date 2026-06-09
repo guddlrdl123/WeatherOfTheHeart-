@@ -165,6 +165,29 @@
     opacity: 0.5;
 }
 
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(90, 70, 50, 0.34) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: rgba(90, 70, 50, 0.34);
+    border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: rgba(90, 70, 50, 0.5);
+}
+
 html,
 body,
 #root {

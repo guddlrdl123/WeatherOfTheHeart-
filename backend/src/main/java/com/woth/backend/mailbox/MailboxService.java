@@ -87,11 +87,14 @@ public class MailboxService {
     public void sendPlazaCompletionLetters(
             Long plazaId,
             String plazaTitle,
+            LocalDateTime plazaCreatedAt,
             LocalDateTime completedAt,
-            List<User> receivers,
+            Long participantCount,
+            List<CompletionLetterReceiver> receivers,
             String generatedImageData
     ) {
-        for(User receiver: receivers) {
+        for(CompletionLetterReceiver receiverSnapshot: receivers) {
+            User receiver = receiverSnapshot.receiver();
             if(letterRepository.existsByReceiverIdAndPlazaId(receiver.getId(), plazaId)) {
                 continue;
                 // 광장이 완성되면 참여자 전원에게 같은 AI완성 이미지를 담은 우편을 보냅니다.
@@ -107,6 +110,11 @@ public class MailboxService {
                     .plazaId(plazaId)
                     .generatedImageData(generatedImageData)
                     .completedAt(completedAt)
+                    .plazaCreatedAt(plazaCreatedAt)
+                    .participantCount(participantCount)
+                    .myObjectKey(receiverSnapshot.myObjectKey())
+                    .myObjectTitle(receiverSnapshot.myObjectTitle())
+                    .myObjectContent(receiverSnapshot.myObjectContent())
                     .build();
             letterRepository.save(letter);
         }
@@ -114,26 +122,48 @@ public class MailboxService {
 
     private MailboxItemView toMailboxItemView(Long receiverId, Letter letter) {
         Long plazaId = letter.getPlazaId();
+        LocalDateTime plazaCreatedAt = letter.getPlazaCreatedAt();
+        Long participantCount = letter.getParticipantCount();
+        String myObjectKey = letter.getMyObjectKey();
+        String myObjectTitle = letter.getMyObjectTitle();
+        String myObjectContent = letter.getMyObjectContent();
 
-        if(plazaId == null) {
-            return new MailboxItemView(letter, null, 0L, null, null, null);
+        if(plazaId != null) {
+            if (plazaCreatedAt == null) {
+                plazaCreatedAt = plazaRepository.findById(plazaId)
+                        .map(Plaza::getCreatedAt)
+                        .orElse(null);
+            }
+
+            if (participantCount == null) {
+                participantCount = plazaEntryRepository.countByPlazaId(plazaId);
+            }
+
+            if (myObjectKey == null && myObjectTitle == null && myObjectContent == null) {
+                PlazaEntry myEntry = plazaEntryRepository.findByPlazaIdAndOwnerId(plazaId, receiverId)
+                        .orElse(null);
+                myObjectKey = myEntry == null ? null : myEntry.getObjectKey();
+                myObjectTitle = myEntry == null ? null : myEntry.getTitle();
+                myObjectContent = myEntry == null ? null : myEntry.getContent();
+            }
         }
-
-        LocalDateTime plazaCreatedAt = plazaRepository.findById(plazaId)
-                .map(Plaza::getCreatedAt)
-                .orElse(null);
-        long participantCount = plazaEntryRepository.countByPlazaId(plazaId);
-        PlazaEntry myEntry = plazaEntryRepository.findByPlazaIdAndOwnerId(plazaId, receiverId)
-                .orElse(null);
 
         return new MailboxItemView(
                 letter,
                 plazaCreatedAt,
-                participantCount,
-                myEntry == null ? null : myEntry.getObjectKey(),
-                myEntry == null ? null : myEntry.getTitle(),
-                myEntry == null ? null : myEntry.getContent()
+                participantCount == null ? 0L : participantCount,
+                myObjectKey,
+                myObjectTitle,
+                myObjectContent
         );
+    }
+
+    public record CompletionLetterReceiver(
+            User receiver,
+            String myObjectKey,
+            String myObjectTitle,
+            String myObjectContent
+    ) {
     }
 
     public record MailboxItemView(

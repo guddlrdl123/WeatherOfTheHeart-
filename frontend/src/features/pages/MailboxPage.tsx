@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { MailboxCard } from "../../components/mailbox/MailboxCard";
 import { AppHeader } from "../../components/layout/AppHeader";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
+import { useBodyScrollLock } from "../../hooks/useBodyScrollLock";
 import { useRoomObjectCatalog } from "../../hooks/useRoomObjectCatalog";
 import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
 import { fetchMailbox, markAllMailboxItemsAsRead, markMailboxItemAsRead } from "../../services/mailboxService";
@@ -63,12 +64,14 @@ function MailboxDetailModal({
   onClose: () => void;
   onGoToPlaza: (plazaId: string) => void;
 }) {
+  useBodyScrollLock();
+
   const myObject = item.myObjectKey ? ROOM_OBJECT_BY_KEY[item.myObjectKey] : null;
   const myObjectContent = item.myObjectContent.trim();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
-      <section className="mw-surface grid max-h-[calc(100vh-64px)] w-full max-w-[980px] grid-cols-1 overflow-y-auto rounded-xl bg-[#fffbf6f2] shadow-xl lg:grid-cols-[minmax(0,640px)_340px] lg:overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overscroll-contain bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
+      <section className="mw-surface grid max-h-[calc(100vh-64px)] w-full max-w-[980px] grid-cols-1 overflow-y-auto overscroll-contain rounded-xl bg-[#fffbf6f2] shadow-xl lg:grid-cols-[minmax(0,640px)_340px] lg:overflow-hidden">
         <div className="aspect-square w-full bg-[#5a4632]/[0.07]">
           {/* 우편의 핵심 데이터인 generatedImageData를 크게 보여주는 영역입니다. */}
           {item.generatedImageData ? (
@@ -84,7 +87,7 @@ function MailboxDetailModal({
           )}
         </div>
 
-        <div className="flex min-h-0 flex-col p-6">
+        <div className="mw-scrollbar-floating flex min-h-0 flex-col p-6 lg:overflow-y-auto lg:overscroll-contain">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <p className="text-xs tracking-[0.18em] text-[#5a4632]/40">MAILBOX</p>
@@ -134,8 +137,8 @@ function MailboxDetailModal({
             </div>
             {myObjectContent && (
               <div className="rounded-lg border border-[#5a4632]/12 bg-white/30 px-4 py-4">
-                <p className="text-[11px] text-[#5a4632]/42">작성한 내용</p>
-                <p className="mt-2 max-h-28 overflow-y-auto whitespace-pre-wrap text-sm leading-6 text-[#5a4632]/62">
+                {/* <p className="text-[11px] text-[#5a4632]/42">작성한 내용</p> */}
+                <p className="mw-scrollbar-floating max-h-28 overflow-y-auto whitespace-pre-wrap pr-2 text-sm leading-6 text-[#5a4632]/62">
                   {myObjectContent}
                 </p>
               </div>

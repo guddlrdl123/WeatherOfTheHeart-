@@ -50,6 +50,21 @@ public class Letter {
     @Column(name = "completed_at", nullable = false)
     private LocalDateTime completedAt; // 광장 완료 시각
 
+    @Column(name = "plaza_created_at")
+    private LocalDateTime plazaCreatedAt;
+
+    @Column(name = "participant_count")
+    private Long participantCount;
+
+    @Column(name = "my_object_key", length = 100)
+    private String myObjectKey;
+
+    @Column(name = "my_object_title", length = 100)
+    private String myObjectTitle;
+
+    @Column(name = "my_object_content", columnDefinition = "TEXT")
+    private String myObjectContent;
+
     @Column(name = "is_read", nullable = false)
     @Builder.Default
     private Boolean isRead =false; // 수신자의 편지 읽음 여부

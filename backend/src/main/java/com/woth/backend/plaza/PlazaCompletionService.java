@@ -63,7 +63,7 @@ public class PlazaCompletionService {
 
         log.info("[plaza-completion-test] completion condition met. plazaId={}, receivers={}",
                 snapshot.plazaId(),
-                snapshot.receivers().stream().map(User::getId).toList()
+                snapshot.receivers().stream().map(receiver -> receiver.receiver().getId()).toList()
         );
 
         int marked = markCompleted(snapshot.plazaId(), snapshot.completedAt());
@@ -90,7 +90,9 @@ public class PlazaCompletionService {
         mailboxService.sendPlazaCompletionLetters(
                 snapshot.plazaId(),
                 snapshot.plazaTitle(),
+                snapshot.plazaCreatedAt(),
                 snapshot.completedAt(),
+                snapshot.participantCount(),
                 snapshot.receivers(),
                 imageForMailbox
         );
@@ -123,16 +125,19 @@ public class PlazaCompletionService {
             // 프롬프트와 수신자를 트랜잭션 안에서 확정해 lazy loading 영향을 받지 않도록 합니다.
             String prompt = promptBuilder.build(plaza, entries);
 
-            List<User> receivers = entries.stream()
-                    .map(PlazaEntry::getOwner)
-                    .filter(user -> user != null)
-                    .filter(user -> plaza.getOwner() == null || !user.getId().equals(plaza.getOwner().getId()))
-                    .distinct()
+            List<MailboxService.CompletionLetterReceiver> receivers = entries.stream()
+                    .filter(entry -> entry.getOwner() != null)
+                    .filter(entry -> plaza.getOwner() == null || !entry.getOwner().getId().equals(plaza.getOwner().getId()))
+                    .map(entry -> toCompletionLetterReceiver(entry.getOwner(), entry))
                     .toList();
 
             if (plaza.getOwner() != null) {
                 receivers = new java.util.ArrayList<>(receivers);
-                receivers.add(0, plaza.getOwner());
+                PlazaEntry ownerEntry = entries.stream()
+                        .filter(entry -> entry.getOwner() != null && entry.getOwner().getId().equals(plaza.getOwner().getId()))
+                        .findFirst()
+                        .orElse(null);
+                receivers.add(0, toCompletionLetterReceiver(plaza.getOwner(), ownerEntry));
             }
 
             LocalDateTime completedAt = plaza.getCompletedAt() == null
@@ -142,7 +147,9 @@ public class PlazaCompletionService {
             return new CompletionSnapshot(
                     plaza.getId(),
                     plaza.getTitle(),
+                    plaza.getCreatedAt(),
                     completedAt,
+                    (long) entries.size(),
                     prompt,
                     receivers
             );
@@ -199,12 +206,23 @@ public class PlazaCompletionService {
         }
     }
 
+    private MailboxService.CompletionLetterReceiver toCompletionLetterReceiver(User receiver, PlazaEntry entry) {
+        return new MailboxService.CompletionLetterReceiver(
+                receiver,
+                entry == null ? null : entry.getObjectKey(),
+                entry == null ? null : entry.getTitle(),
+                entry == null ? null : entry.getContent()
+        );
+    }
+
     private record CompletionSnapshot(
             Long plazaId,
             String plazaTitle,
+            LocalDateTime plazaCreatedAt,
             LocalDateTime completedAt,
+            Long participantCount,
             String prompt,
-            List<User> receivers
+            List<MailboxService.CompletionLetterReceiver> receivers
     ) {
     }
 }
