@@ -64,6 +64,7 @@ function MailboxDetailModal({
   onGoToPlaza: (plazaId: string) => void;
 }) {
   const myObject = item.myObjectKey ? ROOM_OBJECT_BY_KEY[item.myObjectKey] : null;
+  const myObjectContent = item.myObjectContent.trim();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
@@ -87,7 +88,7 @@ function MailboxDetailModal({
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <p className="text-xs tracking-[0.18em] text-[#5a4632]/40">MAILBOX</p>
-              <h2 className="mt-3 text-2xl font-normal leading-9 text-[#5a4632]">{item.title}</h2>
+              <h2 className="mt-3 text-xl font-normal leading-9 text-[#5a4632]">{item.title}</h2>
             </div>
 
             <button
@@ -101,7 +102,7 @@ function MailboxDetailModal({
             </button>
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 text-sm text-[#5a4632]/65">
+          <div className="mt-4 flex flex-col gap-3 text-sm text-[#5a4632]/65">
             <div className="flex items-center gap-3 rounded-lg border border-[#5a4632]/12 bg-white/30 px-4 py-3">
               <MapPinned size={16} className="shrink-0 text-[#9b6b54]" />
               <span className="min-w-0 truncate">{item.plazaTitle}</span>
@@ -131,6 +132,14 @@ function MailboxDetailModal({
                 <p className="mt-3 text-sm text-[#5a4632]/48">작성한 오브젝트 기록이 없어요.</p>
               )}
             </div>
+            {myObjectContent && (
+              <div className="rounded-lg border border-[#5a4632]/12 bg-white/30 px-4 py-4">
+                <p className="text-[11px] text-[#5a4632]/42">작성한 내용</p>
+                <p className="mt-2 max-h-28 overflow-y-auto whitespace-pre-wrap text-sm leading-6 text-[#5a4632]/62">
+                  {myObjectContent}
+                </p>
+              </div>
+            )}
             <div className="flex items-center gap-3 rounded-lg border border-[#5a4632]/12 bg-white/30 px-4 py-3">
               <Users size={16} className="shrink-0 text-[#9b6b54]" />
               <span>총 {item.participantCount}명이 오브젝트를 남겼어요.</span>
@@ -248,64 +257,64 @@ function MailboxPage() {
               transformOrigin: "top left",
             }}
           >
-          <section className="flex h-[60px] items-end justify-between gap-5">
-            <div>
-              <h1 className="text-2xl font-normal text-[#5a4632]">도착한 우편</h1>
-              <p className="mt-2 text-sm text-[#5a4632]/58">
-                완성된 광장 사진 {items.length}개, 읽지 않은 우편 {unreadCount}개
-              </p>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => void loadMailbox()}
-                disabled={isLoading}
-                className="mw-button inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm disabled:opacity-50"
-              >
-                <RefreshCw size={15} className={isLoading ? "animate-spin" : ""} />
-                새로고침
-              </button>
-
-              <button
-                type="button"
-                onClick={() => void handleMarkAllAsRead()}
-                disabled={!hasUnread || isLoading}
-                className="mw-button inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm disabled:opacity-50"
-              >
-                <MailCheck size={15} />
-                모두 읽음
-              </button>
-            </div>
-          </section>
-
-          {error && (
-            <div className="rounded-xl border border-[#a76c5d]/25 bg-[#a76c5d]/10 px-4 py-3 text-sm text-[#8a564a]">
-              {error}
-            </div>
-          )}
-
-          {isLoading ? (
-            <section className="mw-surface grid min-h-[460px] place-items-center rounded-xl p-8 text-sm text-[#5a4632]/55">
-              우편함을 불러오는 중입니다.
-            </section>
-          ) : items.length === 0 ? (
-            <section className="mw-surface grid min-h-[460px] place-items-center rounded-xl p-8 text-center">
+            <section className="flex h-[60px] items-end justify-between gap-5">
               <div>
-                <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full border border-[#5a4632]/15 bg-white/35 text-[#5a4632]/65">
-                  <Inbox size={20} />
-                </div>
-                <h2 className="text-lg font-normal text-[#5a4632]">아직 도착한 우편이 없어요.</h2>
-                <p className="mt-2 text-sm text-[#5a4632]/55">광장이 완성되면 생성된 이미지가 이곳으로 도착합니다.</p>
+                <h1 className="text-2xl font-normal text-[#5a4632]">도착한 우편</h1>
+                <p className="mt-2 text-sm text-[#5a4632]/58">
+                  완성된 광장 사진 {items.length}개, 읽지 않은 우편 {unreadCount}개
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => void loadMailbox()}
+                  disabled={isLoading}
+                  className="mw-button inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm disabled:opacity-50"
+                >
+                  <RefreshCw size={15} className={isLoading ? "animate-spin" : ""} />
+                  새로고침
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void handleMarkAllAsRead()}
+                  disabled={!hasUnread || isLoading}
+                  className="mw-button inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm disabled:opacity-50"
+                >
+                  <MailCheck size={15} />
+                  모두 읽음
+                </button>
               </div>
             </section>
-          ) : (
-            <section className="grid grid-cols-3 gap-4">
-              {items.map((item) => (
-                <MailboxCard key={item.id} item={item} onOpen={(nextItem) => void handleOpenItem(nextItem)} />
-              ))}
-            </section>
-          )}
+
+            {error && (
+              <div className="rounded-xl border border-[#a76c5d]/25 bg-[#a76c5d]/10 px-4 py-3 text-sm text-[#8a564a]">
+                {error}
+              </div>
+            )}
+
+            {isLoading ? (
+              <section className="mw-surface grid min-h-[460px] place-items-center rounded-xl p-8 text-sm text-[#5a4632]/55">
+                우편함을 불러오는 중입니다.
+              </section>
+            ) : items.length === 0 ? (
+              <section className="mw-surface grid min-h-[460px] place-items-center rounded-xl p-8 text-center">
+                <div>
+                  <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full border border-[#5a4632]/15 bg-white/35 text-[#5a4632]/65">
+                    <Inbox size={20} />
+                  </div>
+                  <h2 className="text-lg font-normal text-[#5a4632]">아직 도착한 우편이 없어요.</h2>
+                  <p className="mt-2 text-sm text-[#5a4632]/55">광장이 완성되면 생성된 이미지가 이곳으로 도착합니다.</p>
+                </div>
+              </section>
+            ) : (
+              <section className="grid grid-cols-3 gap-4">
+                {items.map((item) => (
+                  <MailboxCard key={item.id} item={item} onOpen={(nextItem) => void handleOpenItem(nextItem)} />
+                ))}
+              </section>
+            )}
           </div>
         </div>
       </main>

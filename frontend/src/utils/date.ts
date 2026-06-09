@@ -20,6 +20,10 @@ export function formatDotDate(date: DateString): string {
     return `${year}.${month}.${day}`;
 }
 
+export function trimTrailingDatePeriod(value: string): string {
+    return value.replace(/\.\s*$/, "");
+}
+
 // 캘린더 데이터 생성
 export function getMonthDays(year: number, month: number): (DateString | null)[] {
     const firstDay = new Date(year, month - 1, 1).getDay();

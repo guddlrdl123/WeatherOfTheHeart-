@@ -31,6 +31,7 @@ import {
   setProfileEmail,
   setProfileNickname,
 } from "../../utils/authSession";
+import { trimTrailingDatePeriod } from "../../utils/date";
 
 type ArchiveRecord = {
   id: string;
@@ -73,13 +74,11 @@ function formatCreatedAt(value: string) {
     return "작성 시간 없음";
   }
 
-  return new Intl.DateTimeFormat("ko-KR", {
+  return trimTrailingDatePeriod(new Intl.DateTimeFormat("ko-KR", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+  }).format(date));
 }
 
 function formatJoinedAt(value: string) {
@@ -89,11 +88,11 @@ function formatJoinedAt(value: string) {
     return "정보 없음";
   }
 
-  return new Intl.DateTimeFormat("ko-KR", {
+  return trimTrailingDatePeriod(new Intl.DateTimeFormat("ko-KR", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(date);
+  }).format(date));
 }
 
 function getPlazaStatusLabel(plaza: Plaza) {
@@ -636,7 +635,7 @@ function MyPage() {
                   <section className="mw-surface flex h-[620px] min-h-0 flex-col rounded-xl p-5">
                     <div className="mb-4 flex items-center justify-between border-b border-[#5a4632]/12 px-1 pb-4 text-sm text-[#5a4632]">
                       <span>내가 만든 광장</span>
-                      <span className="text-xs text-[#5a4632]/45">{createdPlazas.length}</span>
+                      <span className="text-sm text-[#5a4632]/45">{createdPlazas.length}</span>
                     </div>
 
                     <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
@@ -700,7 +699,7 @@ function MyPage() {
                   <aside className="mw-surface flex min-h-0 flex-col rounded-xl p-4">
                     <div className="mb-4 flex items-center justify-between px-1 text-sm text-[#5a4632]">
                       <span>기록 목록</span>
-                      <span className="text-xs text-[#5a4632]/45">{archiveRecords.length}</span>
+                      <span className="text-sm text-[#5a4632]/45">{archiveRecords.length}</span>
                     </div>
 
                     <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">

@@ -13,6 +13,7 @@ export type MailboxItemResponse = {
   participantCount?: number | null;
   myObjectKey?: string | null;
   myObjectTitle?: string | null;
+  myObjectContent?: string | null;
   read: boolean;
 };
 
@@ -43,6 +44,7 @@ function toMailboxItem(response: MailboxItemResponse): MailboxItem {
     participantCount: response.participantCount ?? 0,
     myObjectKey: response.myObjectKey ?? "",
     myObjectTitle: response.myObjectTitle ?? "",
+    myObjectContent: response.myObjectContent ?? "",
     read: response.read,
   };
 }

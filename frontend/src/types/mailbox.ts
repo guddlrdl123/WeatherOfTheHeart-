@@ -11,5 +11,6 @@ export type MailboxItem = {
   participantCount: number;
   myObjectKey: string;
   myObjectTitle: string;
+  myObjectContent: string;
   read: boolean;
 };

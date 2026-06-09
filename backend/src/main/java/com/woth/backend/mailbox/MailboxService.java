@@ -116,7 +116,7 @@ public class MailboxService {
         Long plazaId = letter.getPlazaId();
 
         if(plazaId == null) {
-            return new MailboxItemView(letter, null, 0L, null, null);
+            return new MailboxItemView(letter, null, 0L, null, null, null);
         }
 
         LocalDateTime plazaCreatedAt = plazaRepository.findById(plazaId)
@@ -131,7 +131,8 @@ public class MailboxService {
                 plazaCreatedAt,
                 participantCount,
                 myEntry == null ? null : myEntry.getObjectKey(),
-                myEntry == null ? null : myEntry.getTitle()
+                myEntry == null ? null : myEntry.getTitle(),
+                myEntry == null ? null : myEntry.getContent()
         );
     }
 
@@ -140,7 +141,8 @@ public class MailboxService {
             LocalDateTime plazaCreatedAt,
             Long participantCount,
             String myObjectKey,
-            String myObjectTitle
+            String myObjectTitle,
+            String myObjectContent
     ) {
     }
 }

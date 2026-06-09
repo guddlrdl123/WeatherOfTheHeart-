@@ -27,7 +27,7 @@ type ObjectCatalogMode = "api" | "local" | "merge";
 const MISSING_ROOM_OBJECT_IMAGE = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2080%2080'%3E%3Crect%20x='10'%20y='10'%20width='60'%20height='60'%20rx='10'%20fill='%23f8f1e8'%20stroke='%239b6b54'%20stroke-opacity='.35'%20stroke-width='4'/%3E%3Cpath%20d='M25%2028h30M25%2040h30M25%2052h18'%20stroke='%239b6b54'%20stroke-opacity='.5'%20stroke-width='5'%20stroke-linecap='round'/%3E%3C/svg%3E";
 
 const ROOM_OBJECT_IMAGE_MODULES = import.meta.glob<RoomObjectImageModule>(
-    "../assets/{animal,bedding,decor-objects,furniture-clean,furniture-modular,pets,plaza-objects,room}/*.png",
+    "../assets/{animal,furniture-clean,furniture-modular,plaza-objects,room,room-2}/*.png",
     { eager: true },
 );
 
@@ -50,7 +50,6 @@ const LABEL_BY_KEY: Record<RoomObjectKey, string> = {
     books: "책",
     frame: "액자",
     dresser: "서랍장",
-    "furniture-wood-chair": "나무 의자",
     "furniture-side-table": "사이드 테이블",
     "furniture-floor-lamp": "스탠드 조명",
     "furniture-fireplace": "벽난로",
@@ -59,14 +58,12 @@ const LABEL_BY_KEY: Record<RoomObjectKey, string> = {
     "plaza-trash": "쓰레기",
     "plaza-tree": "나무",
     "plaza-flower": "꽃",
-    "plaza-sea-floor": "바다",
     "decor-coffee-cup": "커피 컵",
-    "furniture-front-side-table": "테이블",
 };
 
 const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     plant: 86,
-    books: 88,
+    books: 55,
     frame: 86,
     dresser: 188,
     "pet-sitting-cat": 85,
@@ -101,10 +98,14 @@ const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     "plaza-wooden-fence": 200,
     "plaza-bush": 120,
     "01-empty-single-bed": 230,
+    "01-empty-single-bed-2": 260,
+    "04-folded-blanket-2": 110,
     "09-shelf-plant": 50,
+    "09-shelf-plant-2": 50,
     "10-front-storage-box": 90,
     "12-small-vase": 50,
     "13-study-desk": 260,
+    "13-study-desk-2": 260,
     "17-small-dresser": 140,
     "19-table-lamp": 60,
     "20-empty-wall-shelf": 200,
@@ -116,6 +117,7 @@ const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     "31-back-facing-chair": 110,
     "33-laptop": 80,
     "34-low-coffee-table": 220,
+    "34-low-coffee-table-2": 240,
     "36-plush-doll": 80,
     "37-rectangular-carpet": 300,
 };

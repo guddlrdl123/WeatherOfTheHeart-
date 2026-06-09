@@ -1,5 +1,6 @@
 import { CalendarDays, ImageIcon, Mail, MailOpen } from "lucide-react";
 import type { MailboxItem } from "../../types/mailbox";
+import { trimTrailingDatePeriod } from "../../utils/date";
 
 type Props = {
   item: MailboxItem;
@@ -14,11 +15,11 @@ function formatCompletedAt(value: string) {
     return value;
   }
 
-  return new Intl.DateTimeFormat("ko-KR", {
+  return trimTrailingDatePeriod(new Intl.DateTimeFormat("ko-KR", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(date);
+  }).format(date));
 }
 
 export function MailboxCard({ item, onOpen }: Props) {

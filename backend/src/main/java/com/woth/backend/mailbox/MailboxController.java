@@ -64,6 +64,7 @@ public class MailboxController {
                 item.participantCount(),
                 item.myObjectKey(),
                 item.myObjectTitle(),
+                item.myObjectContent(),
                 letter.getIsRead()
         );
     }
@@ -80,6 +81,7 @@ public class MailboxController {
             Long participantCount,
             String myObjectKey,
             String myObjectTitle,
+            String myObjectContent,
             Boolean read
     ){
     }
