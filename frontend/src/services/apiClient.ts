@@ -2,7 +2,16 @@ import { clearAuthenticated, getAuthHeader } from "../utils/authSession";
 
 export const API_BASE_URL = import.meta.env.NEXT_PUBLIC_API_BASE_URL ?? import.meta.env.VITE_API_BASE_URL ?? "";
 export const APP_NAME = import.meta.env.NEXT_PUBLIC_APP_NAME ?? "마음의 날씨";
-export const S3_ASSET_BASE_URL = import.meta.env.NEXT_PUBLIC_S3_ASSET_BASE_URL ?? "";
+export const S3_ASSET_BASE_URL = (
+  import.meta.env.NEXT_PUBLIC_S3_ASSET_BASE_URL
+  ?? import.meta.env.VITE_S3_ASSET_BASE_URL
+  ?? "https://weather-heart-image-bucket.s3.ap-northeast-2.amazonaws.com"
+);
+export const S3_OBJECT_IMAGE_PREFIX = (
+  import.meta.env.NEXT_PUBLIC_S3_OBJECT_IMAGE_PREFIX
+  ?? import.meta.env.VITE_S3_OBJECT_IMAGE_PREFIX
+  ?? "image"
+);
 // API 응답의 공통 구조를 정의, 실제 데이터는 data 필드에 있다.
 export type ApiResponse<T> = {
   status: string;

@@ -1,9 +1,5 @@
 import type { RoomObjectKey } from "../types/roomObject";
-import { authFetch, readApiData, S3_ASSET_BASE_URL, toApiUrl } from "../services/apiClient";
-
-type RoomObjectImageModule = {
-    default: string;
-};
+import { authFetch, readApiData, S3_ASSET_BASE_URL, S3_OBJECT_IMAGE_PREFIX, toApiUrl } from "../services/apiClient";
 
 export type RoomObjectOption = {
     key: RoomObjectKey;
@@ -26,18 +22,6 @@ type ObjectCatalogMode = "api" | "local" | "merge";
 
 const MISSING_ROOM_OBJECT_IMAGE = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2080%2080'%3E%3Crect%20x='10'%20y='10'%20width='60'%20height='60'%20rx='10'%20fill='%23f8f1e8'%20stroke='%239b6b54'%20stroke-opacity='.35'%20stroke-width='4'/%3E%3Cpath%20d='M25%2028h30M25%2040h30M25%2052h18'%20stroke='%239b6b54'%20stroke-opacity='.5'%20stroke-width='5'%20stroke-linecap='round'/%3E%3C/svg%3E";
 
-const ROOM_OBJECT_IMAGE_MODULES = import.meta.glob<RoomObjectImageModule>(
-    "../assets/{animal,furniture-clean,furniture-modular,plaza-objects,room-objects}/*.png",
-    { eager: true },
-);
-
-const LEGACY_KEY_BY_FILE_NAME: Record<string, RoomObjectKey> = {
-    "furniture-plant.png": "plant",
-    "furniture-books.png": "books",
-    "furniture-frame.png": "frame",
-    "furniture-dresser.png": "dresser",
-};
-
 const LOCAL_KEY_BY_CATALOG_KEY: Record<string, RoomObjectKey> = {
     "furniture-plant": "plant",
     "furniture-books": "books",
@@ -58,6 +42,85 @@ const LABEL_BY_KEY: Record<RoomObjectKey, string> = {
     "plaza-trash": "쓰레기",
     "plaza-tree": "나무",
     "plaza-flower": "꽃",
+    "plaza-aurora-crystal-arch": "오로라 수정 아치",
+    "plaza-aurora-lantern": "오로라 랜턴",
+    "plaza-aurora-pine": "오로라 전나무",
+    "plaza-aurora-telescope": "오로라 망원경",
+    "plaza-aurora-moon-bench": "달빛 벤치",
+    "plaza-aurora-signpost": "별빛 표지판",
+    "plaza-aurora-fountain": "오로라 분수",
+    "plaza-aurora-campfire": "오로라 모닥불",
+    "plaza-rain-umbrella-stand": "비 우산꽂이",
+    "plaza-rain-boots-planter": "장화 화분",
+    "plaza-rain-barrel": "빗물통",
+    "plaza-rain-lantern": "비 랜턴",
+    "plaza-rain-puddle-stones": "물웅덩이 디딤돌",
+    "plaza-rain-cloud-stand": "비구름 장식",
+    "plaza-raincoat-rack": "레인코트 걸이",
+    "plaza-rain-drain-grate": "빗물 배수구",
+    "plaza-cherry-blossom-arch": "벚꽃 아치",
+    "plaza-cherry-picnic-bench": "벚꽃 피크닉 벤치",
+    "plaza-cherry-lantern-stand": "벚꽃 등불",
+    "plaza-cherry-tea-cart": "벚꽃 찻수레",
+    "plaza-cherry-mailbox": "벚꽃 우체통",
+    "plaza-cherry-planter-box": "벚꽃 화분 상자",
+    "plaza-cherry-pinwheel": "벚꽃 바람개비",
+    "plaza-cherry-stepping-stone": "벚꽃 디딤돌",
+    "plaza-front-sunny-tea-cart": "정면 맑음 찻수레",
+    "plaza-front-sunny-picnic-bench": "정면 맑음 피크닉 벤치",
+    "plaza-front-sunny-fruit-crate": "정면 맑음 과일 상자",
+    "plaza-front-sunny-small-fountain": "정면 맑음 작은 분수",
+    "plaza-front-sunny-wooden-signpost": "정면 맑음 나무 표지판",
+    "plaza-front-sunny-flower-arch": "정면 맑음 꽃 아치",
+    "plaza-front-rain-umbrella-stand": "정면 비 우산꽂이",
+    "plaza-front-rain-rain-barrel": "정면 비 빗물통",
+    "plaza-front-rain-puddle-stones": "정면 비 물웅덩이 돌",
+    "plaza-front-rain-rain-lantern": "정면 비 랜턴",
+    "plaza-front-rain-raincoat-rack": "정면 비 우비 걸이",
+    "plaza-front-rain-drain-grate": "정면 비 배수구",
+    "plaza-front-night-moon-bench": "정면 밤 달 벤치",
+    "plaza-front-night-star-lantern": "정면 밤 별 랜턴",
+    "plaza-front-night-telescope": "정면 밤 망원경",
+    "plaza-front-night-midnight-fountain": "정면 밤 분수",
+    "plaza-front-night-constellation-signpost": "정면 밤 별자리 표지판",
+    "plaza-front-night-candle-pedestal": "정면 밤 촛불 받침대",
+    "plaza-front-cloud-cloud-bench": "정면 흐림 구름 벤치",
+    "plaza-front-cloud-mist-lantern": "정면 흐림 안개 랜턴",
+    "plaza-front-cloud-gray-planter": "정면 흐림 회색 화분",
+    "plaza-front-cloud-fabric-notice-board": "정면 흐림 천 게시판",
+    "plaza-front-cloud-low-shelf": "정면 흐림 낮은 선반",
+    "plaza-front-cloud-round-table": "정면 흐림 원형 탁자",
+    "plaza-front-snow-stone-lantern": "정면 눈 석등",
+    "plaza-front-snow-cocoa-stall": "정면 눈 코코아 가판대",
+    "plaza-front-snow-pine-planter": "정면 눈 소나무 화분",
+    "plaza-front-snow-mitten-signpost": "정면 눈 장갑 표지판",
+    "plaza-front-snow-icy-stones": "정면 눈 얼음 디딤돌",
+    "plaza-front-snow-winter-bench": "정면 눈 겨울 벤치",
+    "plaza-front-dawn-dawn-lantern": "정면 새벽 랜턴",
+    "plaza-front-dawn-dew-fountain": "정면 새벽 이슬 분수",
+    "plaza-front-dawn-morning-bench": "정면 새벽 아침 벤치",
+    "plaza-front-dawn-glass-greenhouse": "정면 새벽 유리 온실",
+    "plaza-front-dawn-dawn-signpost": "정면 새벽 표지판",
+    "plaza-front-dawn-misty-planter": "정면 새벽 안개 화분",
+    "plaza-front-sunset-street-lamp": "정면 노을 가로등",
+    "plaza-front-sunset-terracotta-planter": "정면 노을 테라코타 화분",
+    "plaza-front-sunset-copper-fountain": "정면 노을 구리 분수",
+    "plaza-front-sunset-sunset-bench": "정면 노을 벤치",
+    "plaza-front-sunset-lantern-gate": "정면 노을 랜턴 문",
+    "plaza-front-sunset-tea-stall": "정면 노을 차 가판대",
+    "plaza-front-cherry-branch-planter": "정면 벚꽃 가지 화분",
+    "plaza-front-cherry-picnic-bench": "정면 벚꽃 피크닉 벤치",
+    "plaza-front-cherry-lantern-stand": "정면 벚꽃 등불",
+    "plaza-front-cherry-tea-cart": "정면 벚꽃 찻수레",
+    "plaza-front-cherry-ribbon-mailbox": "정면 벚꽃 우체통",
+    "plaza-front-cherry-stepping-stones": "정면 벚꽃 디딤돌",
+    "plaza-front-ocean-lifebuoy-stand": "정면 바다 구명튜브",
+    "plaza-front-ocean-lighthouse": "정면 바다 등대",
+    "plaza-front-ocean-driftwood-bench": "정면 바다 유목 벤치",
+    "plaza-front-ocean-shell-planter": "정면 바다 조개 화분",
+    "plaza-front-ocean-anchor-signpost": "정면 바다 닻 표지판",
+    "plaza-front-ocean-coral-fountain": "정면 바다 산호 분수",
+    "plaza-sea-floor": "바다",
     "decor-coffee-cup": "커피 컵",
 };
 
@@ -118,34 +181,85 @@ const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     "34-low-coffee-table": 240,
     "36-plush-doll": 80,
     "37-rectangular-carpet": 300,
+    "plaza-aurora-crystal-arch": 210,
+    "plaza-aurora-lantern": 90,
+    "plaza-aurora-pine": 170,
+    "plaza-aurora-telescope": 130,
+    "plaza-aurora-moon-bench": 190,
+    "plaza-aurora-signpost": 120,
+    "plaza-aurora-fountain": 180,
+    "plaza-aurora-campfire": 130,
+    "plaza-rain-umbrella-stand": 125,
+    "plaza-rain-boots-planter": 125,
+    "plaza-rain-barrel": 130,
+    "plaza-rain-lantern": 90,
+    "plaza-rain-puddle-stones": 170,
+    "plaza-rain-cloud-stand": 120,
+    "plaza-raincoat-rack": 115,
+    "plaza-rain-drain-grate": 150,
+    "plaza-cherry-blossom-arch": 210,
+    "plaza-cherry-picnic-bench": 180,
+    "plaza-cherry-lantern-stand": 110,
+    "plaza-cherry-tea-cart": 160,
+    "plaza-cherry-mailbox": 105,
+    "plaza-cherry-planter-box": 165,
+    "plaza-cherry-pinwheel": 85,
+    "plaza-cherry-stepping-stone": 145,
+    "plaza-front-sunny-tea-cart": 165,
+    "plaza-front-sunny-picnic-bench": 185,
+    "plaza-front-sunny-fruit-crate": 155,
+    "plaza-front-sunny-small-fountain": 165,
+    "plaza-front-sunny-wooden-signpost": 115,
+    "plaza-front-sunny-flower-arch": 210,
+    "plaza-front-rain-umbrella-stand": 120,
+    "plaza-front-rain-rain-barrel": 125,
+    "plaza-front-rain-puddle-stones": 170,
+    "plaza-front-rain-rain-lantern": 100,
+    "plaza-front-rain-raincoat-rack": 120,
+    "plaza-front-rain-drain-grate": 150,
+    "plaza-front-night-moon-bench": 175,
+    "plaza-front-night-star-lantern": 95,
+    "plaza-front-night-telescope": 120,
+    "plaza-front-night-midnight-fountain": 165,
+    "plaza-front-night-constellation-signpost": 120,
+    "plaza-front-night-candle-pedestal": 115,
+    "plaza-front-cloud-cloud-bench": 180,
+    "plaza-front-cloud-mist-lantern": 105,
+    "plaza-front-cloud-gray-planter": 130,
+    "plaza-front-cloud-fabric-notice-board": 165,
+    "plaza-front-cloud-low-shelf": 170,
+    "plaza-front-cloud-round-table": 165,
+    "plaza-front-snow-stone-lantern": 105,
+    "plaza-front-snow-cocoa-stall": 170,
+    "plaza-front-snow-pine-planter": 130,
+    "plaza-front-snow-mitten-signpost": 115,
+    "plaza-front-snow-icy-stones": 165,
+    "plaza-front-snow-winter-bench": 180,
+    "plaza-front-dawn-dawn-lantern": 95,
+    "plaza-front-dawn-dew-fountain": 160,
+    "plaza-front-dawn-morning-bench": 180,
+    "plaza-front-dawn-glass-greenhouse": 165,
+    "plaza-front-dawn-dawn-signpost": 115,
+    "plaza-front-dawn-misty-planter": 135,
+    "plaza-front-sunset-street-lamp": 85,
+    "plaza-front-sunset-terracotta-planter": 135,
+    "plaza-front-sunset-copper-fountain": 165,
+    "plaza-front-sunset-sunset-bench": 180,
+    "plaza-front-sunset-lantern-gate": 190,
+    "plaza-front-sunset-tea-stall": 170,
+    "plaza-front-cherry-branch-planter": 130,
+    "plaza-front-cherry-picnic-bench": 180,
+    "plaza-front-cherry-lantern-stand": 100,
+    "plaza-front-cherry-tea-cart": 160,
+    "plaza-front-cherry-ribbon-mailbox": 110,
+    "plaza-front-cherry-stepping-stones": 155,
+    "plaza-front-ocean-lifebuoy-stand": 115,
+    "plaza-front-ocean-lighthouse": 125,
+    "plaza-front-ocean-driftwood-bench": 180,
+    "plaza-front-ocean-shell-planter": 150,
+    "plaza-front-ocean-anchor-signpost": 125,
+    "plaza-front-ocean-coral-fountain": 170,
 };
-
-const FOLDER_ORDER: Record<string, number> = {
-    "furniture-modular": 0,
-    "furniture-clean": 1,
-    bedding: 2,
-    "decor-objects": 3,
-    animal: 4,
-    pets: 5,
-    "plaza-objects": 6,
-};
-
-function getFileName(path: string) {
-    return path.split("/").pop() ?? path;
-}
-
-function getFolderName(path: string) {
-    const parts = path.split("/");
-    return parts.at(-2) ?? "";
-}
-
-function getObjectKey(path: string): RoomObjectKey {
-    const fileName = getFileName(path);
-
-    return LEGACY_KEY_BY_FILE_NAME[fileName] ?? fileName
-        .replace(/\.png$/, "")
-        .replace(/-clean$/, "");
-}
 
 function getObjectLabel(key: RoomObjectKey) {
     const label = LABEL_BY_KEY[key];
@@ -185,34 +299,36 @@ function getRoomWidth(key: RoomObjectKey) {
     return 92;
 }
 
+function normalizeS3Path(path: string) {
+    return path.replace(/^\/+/, "");
+}
+
+function joinS3AssetUrl(path: string) {
+    return `${S3_ASSET_BASE_URL.replace(/\/+$/, "")}/${normalizeS3Path(path)}`;
+}
+
+function getBucketObjectImage(key: string) {
+    const normalizedPrefix = S3_OBJECT_IMAGE_PREFIX.replace(/^\/+/, "").replace(/\/+$/, "");
+    const normalizedKey = LOCAL_KEY_BY_CATALOG_KEY[key] ?? key;
+
+    return joinS3AssetUrl(`${normalizedPrefix}/${normalizedKey}.png`);
+}
+
+const FALLBACK_BUCKET_OBJECT_KEYS = Array.from(new Set([
+    ...Object.keys(LABEL_BY_KEY),
+    ...Object.keys(WIDTH_BY_KEY),
+    ...Object.values(LOCAL_KEY_BY_CATALOG_KEY),
+])) as RoomObjectKey[];
+
 function createLocalRoomObjectOptions() {
-    return Object.entries(ROOM_OBJECT_IMAGE_MODULES)
-        .map(([path, module]) => {
-            const key = getObjectKey(path);
-
-            return {
-                key,
-                label: getObjectLabel(key),
-                image: module.default,
-                roomWidth: getRoomWidth(key),
-                folder: getFolderName(path),
-            };
-        })
-        .sort((a, b) => {
-            const folderOrder = (FOLDER_ORDER[a.folder] ?? 99) - (FOLDER_ORDER[b.folder] ?? 99);
-
-            if (folderOrder !== 0) {
-                return folderOrder;
-            }
-
-            return a.label.localeCompare(b.label);
-        })
-        .map((object) => ({
-            key: object.key,
-            label: object.label,
-            image: object.image,
-            roomWidth: object.roomWidth,
-        }));
+    return FALLBACK_BUCKET_OBJECT_KEYS
+        .map((key) => ({
+            key,
+            label: getObjectLabel(key),
+            image: getBucketObjectImage(key),
+            roomWidth: getRoomWidth(key),
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
 }
 
 function createMissingRoomObjectOption(key: RoomObjectKey): RoomObjectOption {
@@ -235,11 +351,15 @@ function findLocalObjectOption(key: string) {
     return localRoomObjectByKey[key] ?? localRoomObjectByKey[LOCAL_KEY_BY_CATALOG_KEY[key] ?? ""];
 }
 
-function resolveCatalogImage(catalog: ObjectCatalogResponse, localObject?: RoomObjectOption) {
+function isLegacyObjectImagePath(imageUrl: string) {
+    return /^\/?objects\//.test(imageUrl);
+}
+
+function resolveCatalogImage(catalog: ObjectCatalogResponse) {
     const imageUrl = catalog.imageUrl?.trim();
 
-    if (!imageUrl) {
-        return localObject?.image ?? MISSING_ROOM_OBJECT_IMAGE;
+    if (!imageUrl || isLegacyObjectImagePath(imageUrl)) {
+        return getBucketObjectImage(catalog.objectKey);
     }
 
     if (/^(https?:|data:|blob:)/.test(imageUrl)) {
@@ -247,10 +367,10 @@ function resolveCatalogImage(catalog: ObjectCatalogResponse, localObject?: RoomO
     }
 
     if (S3_ASSET_BASE_URL) {
-        return `${S3_ASSET_BASE_URL.replace(/\/+$/, "")}/${imageUrl.replace(/^\/+/, "")}`;
+        return joinS3AssetUrl(imageUrl);
     }
 
-    return localObject?.image ?? MISSING_ROOM_OBJECT_IMAGE;
+    return MISSING_ROOM_OBJECT_IMAGE;
 }
 
 function toCatalogRoomObjectOption(catalog: ObjectCatalogResponse): RoomObjectOption {
@@ -261,7 +381,7 @@ function toCatalogRoomObjectOption(catalog: ObjectCatalogResponse): RoomObjectOp
     return {
         key,
         label: catalogLabel && catalogLabel !== key ? catalogLabel : localObject?.label || getObjectLabel(key),
-        image: resolveCatalogImage(catalog, localObject),
+        image: resolveCatalogImage(catalog),
         roomWidth: localObject?.roomWidth ?? getRoomWidth(key),
     };
 }
@@ -278,7 +398,7 @@ function getObjectCatalogMode(): ObjectCatalogMode {
         return mode;
     }
 
-    return import.meta.env.DEV ? "local" : "api";
+    return "merge";
 }
 
 function appendLocalOnlyObjects(catalogOptions: RoomObjectOption[]) {
