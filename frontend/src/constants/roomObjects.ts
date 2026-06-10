@@ -1,5 +1,5 @@
 import type { RoomObjectKey } from "../types/roomObject";
-import { authFetch, readApiData, S3_ASSET_BASE_URL, toApiUrl } from "../services/apiClient";
+import { authFetch, readApiData, S3_ASSET_BASE_URL, S3_OBJECT_IMAGE_PREFIX, toApiUrl } from "../services/apiClient";
 
 type RoomObjectImageModule = {
     default: string;
@@ -18,17 +18,18 @@ type ObjectCatalogResponse = {
     name: string;
     imageUrl?: string | null;
     imageScale?: number | null;
+    roomWidth?: number | null;
     allowPrivate?: boolean | null;
     allowPlaza?: boolean | null;
 };
 
-type ObjectCatalogMode = "api" | "local" | "merge";
+type ObjectCatalogMode = "api" | "local";
 
 const MISSING_ROOM_OBJECT_IMAGE = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2080%2080'%3E%3Crect%20x='10'%20y='10'%20width='60'%20height='60'%20rx='10'%20fill='%23f8f1e8'%20stroke='%239b6b54'%20stroke-opacity='.35'%20stroke-width='4'/%3E%3Cpath%20d='M25%2028h30M25%2040h30M25%2052h18'%20stroke='%239b6b54'%20stroke-opacity='.5'%20stroke-width='5'%20stroke-linecap='round'/%3E%3C/svg%3E";
+const DEFAULT_CATALOG_ROOM_WIDTH = 92;
 
 const ROOM_OBJECT_IMAGE_MODULES = import.meta.glob<RoomObjectImageModule>(
     "../assets/{animal,furniture-clean,furniture-modular,plaza-objects,room-objects}/*.png",
-    { eager: true },
 );
 
 const LEGACY_KEY_BY_FILE_NAME: Record<string, RoomObjectKey> = {
@@ -36,13 +37,6 @@ const LEGACY_KEY_BY_FILE_NAME: Record<string, RoomObjectKey> = {
     "furniture-books.png": "books",
     "furniture-frame.png": "frame",
     "furniture-dresser.png": "dresser",
-};
-
-const LOCAL_KEY_BY_CATALOG_KEY: Record<string, RoomObjectKey> = {
-    "furniture-plant": "plant",
-    "furniture-books": "books",
-    "furniture-frame": "frame",
-    "furniture-dresser": "dresser",
 };
 
 const LABEL_BY_KEY: Record<RoomObjectKey, string> = {
@@ -185,19 +179,38 @@ function getRoomWidth(key: RoomObjectKey) {
     return 92;
 }
 
-function createLocalRoomObjectOptions() {
-    return Object.entries(ROOM_OBJECT_IMAGE_MODULES)
-        .map(([path, module]) => {
-            const key = getObjectKey(path);
+function normalizeS3Path(path: string) {
+    return path.replace(/^\/+/, "");
+}
 
-            return {
-                key,
-                label: getObjectLabel(key),
-                image: module.default,
-                roomWidth: getRoomWidth(key),
-                folder: getFolderName(path),
-            };
-        })
+function joinS3AssetUrl(path: string) {
+    return `${S3_ASSET_BASE_URL.replace(/\/+$/, "")}/${normalizeS3Path(path)}`;
+}
+
+function getBucketObjectImage(key: string) {
+    const normalizedPrefix = S3_OBJECT_IMAGE_PREFIX.replace(/^\/+/, "").replace(/\/+$/, "");
+
+    return joinS3AssetUrl(`${normalizedPrefix}/${key}.png`);
+}
+
+async function createLocalRoomObjectOptions() {
+    const objects = await Promise.all(
+        Object.entries(ROOM_OBJECT_IMAGE_MODULES)
+            .map(async ([path, loadModule]) => {
+                const module = await loadModule();
+                const key = getObjectKey(path);
+
+                return {
+                    key,
+                    label: getObjectLabel(key),
+                    image: module.default,
+                    roomWidth: getRoomWidth(key),
+                    folder: getFolderName(path),
+                };
+            }),
+    );
+
+    return objects
         .sort((a, b) => {
             const folderOrder = (FOLDER_ORDER[a.folder] ?? 99) - (FOLDER_ORDER[b.folder] ?? 99);
 
@@ -231,38 +244,38 @@ function createRoomObjectMap(objects: RoomObjectOption[]) {
     }, {});
 }
 
-function findLocalObjectOption(key: string) {
-    return localRoomObjectByKey[key] ?? localRoomObjectByKey[LOCAL_KEY_BY_CATALOG_KEY[key] ?? ""];
+function isLegacyObjectImagePath(imageUrl: string) {
+    return /^\/?objects\//.test(imageUrl);
 }
 
-function resolveCatalogImage(catalog: ObjectCatalogResponse, localObject?: RoomObjectOption) {
+function resolveCatalogImage(catalog: ObjectCatalogResponse) {
     const imageUrl = catalog.imageUrl?.trim();
 
-    if (!imageUrl) {
-        return localObject?.image ?? MISSING_ROOM_OBJECT_IMAGE;
-    }
-
-    if (/^(https?:|data:|blob:)/.test(imageUrl)) {
+    if (imageUrl && /^(https?:|data:|blob:)/.test(imageUrl)) {
         return imageUrl;
     }
 
-    if (S3_ASSET_BASE_URL) {
-        return `${S3_ASSET_BASE_URL.replace(/\/+$/, "")}/${imageUrl.replace(/^\/+/, "")}`;
+    if (!imageUrl || isLegacyObjectImagePath(imageUrl)) {
+        return getBucketObjectImage(catalog.objectKey);
     }
 
-    return localObject?.image ?? MISSING_ROOM_OBJECT_IMAGE;
+    return S3_ASSET_BASE_URL
+        ? joinS3AssetUrl(imageUrl)
+        : MISSING_ROOM_OBJECT_IMAGE;
 }
 
 function toCatalogRoomObjectOption(catalog: ObjectCatalogResponse): RoomObjectOption {
     const key = catalog.objectKey;
-    const localObject = findLocalObjectOption(key);
     const catalogLabel = catalog.name?.trim();
+    const catalogRoomWidth = catalog.roomWidth && catalog.roomWidth > 0
+        ? catalog.roomWidth
+        : DEFAULT_CATALOG_ROOM_WIDTH;
 
     return {
         key,
-        label: catalogLabel && catalogLabel !== key ? catalogLabel : localObject?.label || getObjectLabel(key),
-        image: resolveCatalogImage(catalog, localObject),
-        roomWidth: localObject?.roomWidth ?? getRoomWidth(key),
+        label: catalogLabel || key,
+        image: resolveCatalogImage(catalog),
+        roomWidth: catalogRoomWidth,
     };
 }
 
@@ -274,42 +287,41 @@ function applyRoomObjectCatalog(objects: RoomObjectOption[]) {
 function getObjectCatalogMode(): ObjectCatalogMode {
     const mode = import.meta.env.VITE_OBJECT_CATALOG_MODE?.toLowerCase();
 
-    if (mode === "api" || mode === "local" || mode === "merge") {
+    if (mode === "api" || mode === "local") {
         return mode;
     }
 
     return import.meta.env.DEV ? "local" : "api";
 }
 
-function appendLocalOnlyObjects(catalogOptions: RoomObjectOption[]) {
-    const catalogKeys = new Set(catalogOptions.map((object) => object.key));
+let localRoomObjectOptions: RoomObjectOption[] | null = null;
+let localRoomObjectOptionsPromise: Promise<RoomObjectOption[]> | null = null;
 
-    return [
-        ...catalogOptions,
-        ...localRoomObjectOptions.filter((object) => !catalogKeys.has(object.key)),
-    ];
-}
-
-function mergeCatalogObjects(catalogObjects: ObjectCatalogResponse[], mode: ObjectCatalogMode) {
-    const catalogOptions = catalogObjects
-        .filter((catalog) => catalog.allowPrivate !== false || catalog.allowPlaza !== false)
-        .map(toCatalogRoomObjectOption);
-
-    if (mode === "merge") {
-        return appendLocalOnlyObjects(catalogOptions);
+async function getLocalRoomObjectOptions() {
+    if (localRoomObjectOptions) {
+        return localRoomObjectOptions;
     }
 
-    return catalogOptions.length > 0
-        ? catalogOptions
-        : localRoomObjectOptions;
+    if (!localRoomObjectOptionsPromise) {
+        localRoomObjectOptionsPromise = createLocalRoomObjectOptions()
+            .then((objects) => {
+                localRoomObjectOptions = objects;
+                return objects;
+            });
+    }
+
+    return localRoomObjectOptionsPromise;
 }
 
-const localRoomObjectOptions = createLocalRoomObjectOptions();
-const localRoomObjectByKey = createRoomObjectMap(localRoomObjectOptions);
+function toCatalogRoomObjectOptions(catalogObjects: ObjectCatalogResponse[]) {
+    return catalogObjects
+        .filter((catalog) => catalog.allowPrivate !== false || catalog.allowPlaza !== false)
+        .map(toCatalogRoomObjectOption);
+}
 
-// 오브젝트 선택 모달과 방 렌더링에서 사용하는 목록입니다. 앱 시작 시 로컬 fallback을 먼저 쓰고,
-// /api/objects 응답을 받으면 DB 카탈로그 기준 목록으로 교체합니다.
-export const ROOM_OBJECT_OPTIONS: RoomObjectOption[] = [...localRoomObjectOptions];
+// 오브젝트 선택 모달과 방 렌더링에서 사용하는 목록입니다.
+// api 모드는 API 응답만, local 모드는 프론트 로컬 이미지만 사용하도록 초기 목록부터 분리합니다.
+export const ROOM_OBJECT_OPTIONS: RoomObjectOption[] = [];
 let roomObjectByKey = createRoomObjectMap(ROOM_OBJECT_OPTIONS);
 let roomObjectCatalogPromise: Promise<RoomObjectOption[]> | null = null;
 
@@ -321,7 +333,9 @@ export async function loadRoomObjectCatalog() {
     const catalogMode = getObjectCatalogMode();
 
     if (catalogMode === "local") {
-        applyRoomObjectCatalog(localRoomObjectOptions);
+        const localObjects = await getLocalRoomObjectOptions();
+
+        applyRoomObjectCatalog(localObjects);
         return ROOM_OBJECT_OPTIONS;
     }
 
@@ -332,7 +346,7 @@ export async function loadRoomObjectCatalog() {
             }
 
             const data = await readApiData<ObjectCatalogResponse[]>(response);
-            const nextObjects = mergeCatalogObjects(data, catalogMode);
+            const nextObjects = toCatalogRoomObjectOptions(data);
             applyRoomObjectCatalog(nextObjects);
 
             return ROOM_OBJECT_OPTIONS;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { ROOM_OBJECT_OPTIONS } from "../../constants/roomObjects";
 import type { RoomObjectKey } from "../../types/roomObject";
@@ -26,10 +26,18 @@ export function MemoryObjectSelectModal({
         (object) => allowDuplicateObjects || !unavailableObjectKeys.includes(object.key),
     );
     const [selectedObjectKey, setSelectedObjectKey] = useState<RoomObjectKey>(
-        firstSelectableObject?.key ?? ROOM_OBJECT_OPTIONS[0].key,
+        firstSelectableObject?.key ?? "",
     );
     const selectedUnavailable = !allowDuplicateObjects && unavailableObjectKeys.includes(selectedObjectKey);
     const canSave = Boolean(firstSelectableObject) && !selectedUnavailable;
+
+    useEffect(() => {
+        const selectedExists = ROOM_OBJECT_OPTIONS.some((object) => object.key === selectedObjectKey);
+
+        if (!selectedExists || selectedUnavailable) {
+            setSelectedObjectKey(firstSelectableObject?.key ?? "");
+        }
+    }, [firstSelectableObject?.key, selectedObjectKey, selectedUnavailable]);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-8 backdrop-blur-sm select-none">

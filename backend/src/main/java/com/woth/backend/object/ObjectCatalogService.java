@@ -52,6 +52,7 @@ public class ObjectCatalogService {
                             .slotKey(seed.slotKey())
                             .imageUrl(seed.imageUrl())
                             .imageScale(seed.imageScale())
+                            .roomWidth(seed.roomWidth())
                             .flipX(seed.flipX())
                             .tiltDeg(seed.tiltDeg())
                             .description(seed.description())
@@ -66,6 +67,7 @@ public class ObjectCatalogService {
                     seed.slotKey(),
                     seed.imageUrl() == null ? catalog.getImageUrl() : seed.imageUrl(),
                     seed.imageScale(),
+                    seed.roomWidth(),
                     seed.flipX(),
                     seed.tiltDeg(),
                     seed.description(),
@@ -77,7 +79,7 @@ public class ObjectCatalogService {
         });
     }
 
-    // 기본 카탈로그 시딩에 사용할 오브젝트 메타데이터 리스트 (objectKey, objectName, mood, slotKey, imageUrl, imageScale, flipX, tiltDeg, description, allowPrivate, allowPlaza, isActive)
+    // 기본 카탈로그 시딩에 사용할 오브젝트 메타데이터 리스트 (objectKey, objectName, mood, slotKey, imageUrl, imageScale, roomWidth, flipX, tiltDeg, description, allowPrivate, allowPlaza, isActive)
     private List<DefaultObjectSeed> defaultObjects() {
         return List.of(
                 object("carpet", "Carpet", "carpet", "/objects/object-01.png", 3.9, false, 0),
@@ -196,7 +198,87 @@ public class ObjectCatalogService {
     }
 
     private DefaultObjectSeed object(String key, String name, String slotKey, String imageUrl, Double imageScale, Boolean flipX, Integer tiltDeg) {
-        return new DefaultObjectSeed(key, name, "neutral", slotKey, imageUrl, imageScale, flipX, tiltDeg, DEFAULT_DESCRIPTION, true, true, true);
+        return new DefaultObjectSeed(
+                key,
+                name,
+                "neutral",
+                slotKey,
+                defaultImageUrl(key, imageUrl),
+                imageScale,
+                defaultRoomWidth(key, imageScale),
+                flipX,
+                tiltDeg,
+                DEFAULT_DESCRIPTION,
+                true,
+                true,
+                true
+        );
+    }
+
+    private String defaultImageUrl(String key, String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank() || imageUrl.startsWith("/objects/") || imageUrl.startsWith("objects/")) {
+            return "image/" + key + ".png";
+        }
+
+        return imageUrl;
+    }
+
+    private Integer defaultRoomWidth(String key, Double imageScale) {
+        return switch (key) {
+            case "plant" -> 86;
+            case "books" -> 55;
+            case "frame" -> 86;
+            case "dresser" -> 160;
+            case "pet-sitting-cat", "pet-sitting-dog" -> 85;
+            case "pet-sleeping-cat" -> 105;
+            case "pet-lying-dog" -> 125;
+            case "furniture-wood-chair" -> 120;
+            case "furniture-side-table" -> 125;
+            case "furniture-low-shelf" -> 180;
+            case "furniture-floor-lamp" -> 100;
+            case "furniture-fireplace" -> 210;
+            case "plaza-bench" -> 260;
+            case "plaza-puddle" -> 180;
+            case "plaza-trash" -> 86;
+            case "plaza-tree" -> 320;
+            case "plaza-rainbow" -> 170;
+            case "plaza-flower" -> 60;
+            case "plaza-sea-floor" -> 1080;
+            case "decor-coffee-cup" -> 50;
+            case "decor-mini-lamp" -> 70;
+            case "decor-square-cushion" -> 80;
+            case "furniture-front-side-table" -> 210;
+            case "furniture-front-sofa" -> 320;
+            case "furniture-single-daybed" -> 280;
+            case "furniture-teacup", "furniture-bowl" -> 58;
+            case "plaza-clay-pot" -> 70;
+            case "plaza-garden-arch" -> 170;
+            case "plaza-planter-box", "plaza-tea-stand" -> 180;
+            case "plaza-shade-umbrella", "plaza-wooden-fence" -> 200;
+            case "plaza-bush" -> 120;
+            case "01-empty-single-bed" -> 260;
+            case "04-folded-blanket" -> 110;
+            case "09-shelf-plant" -> 50;
+            case "10-front-storage-box" -> 90;
+            case "12-small-vase" -> 50;
+            case "13-study-desk" -> 260;
+            case "15-nightstand" -> 160;
+            case "17-small-dresser" -> 140;
+            case "19-table-lamp" -> 60;
+            case "20-empty-wall-shelf" -> 200;
+            case "22-standing-mirror" -> 140;
+            case "23-storage-basket" -> 130;
+            case "24-alarm-clock" -> 40;
+            case "25-small-side-table" -> 100;
+            case "26-ceramic-mug" -> 45;
+            case "30-pencil-cup" -> 30;
+            case "31-back-facing-chair" -> 110;
+            case "33-laptop" -> 80;
+            case "34-low-coffee-table" -> 240;
+            case "36-plush-doll" -> 80;
+            case "37-rectangular-carpet" -> 300;
+            default -> imageScale == null ? 92 : Math.max(40, (int) Math.round(imageScale * 80));
+        };
     }
 
     private record DefaultObjectSeed(
@@ -206,6 +288,7 @@ public class ObjectCatalogService {
             String slotKey,
             String imageUrl,
             Double imageScale,
+            Integer roomWidth,
             Boolean flipX,
             Integer tiltDeg,
             String description,
