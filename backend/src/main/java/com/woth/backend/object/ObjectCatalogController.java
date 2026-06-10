@@ -54,8 +54,8 @@ public class ObjectCatalogController {
     private String resolveImageUrl(ObjectCatalog catalog) {
         String imageUrl = catalog.getImageUrl();
 
-        if (imageUrl == null || imageUrl.isBlank() || imageUrl.startsWith("/objects/") || imageUrl.startsWith("objects/")) {
-            imageUrl = "image/" + catalog.getObjectKey() + ".png";
+        if (imageUrl == null || imageUrl.isBlank() || imageUrl.startsWith("/objects/")) {
+            imageUrl = "objects/" + catalog.getObjectKey() + ".png";
         }
 
         return s3ImageStorageService.createReadUrl(imageUrl);

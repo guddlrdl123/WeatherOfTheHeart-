@@ -245,7 +245,7 @@ function createRoomObjectMap(objects: RoomObjectOption[]) {
 }
 
 function isLegacyObjectImagePath(imageUrl: string) {
-    return /^\/?objects\//.test(imageUrl);
+    return /^\/objects\//.test(imageUrl);
 }
 
 function resolveCatalogImage(catalog: ObjectCatalogResponse) {

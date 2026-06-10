@@ -216,8 +216,8 @@ public class ObjectCatalogService {
     }
 
     private String defaultImageUrl(String key, String imageUrl) {
-        if (imageUrl == null || imageUrl.isBlank() || imageUrl.startsWith("/objects/") || imageUrl.startsWith("objects/")) {
-            return "image/" + key + ".png";
+        if (imageUrl == null || imageUrl.isBlank() || imageUrl.startsWith("/objects/")) {
+            return "objects/" + key + ".png";
         }
 
         return imageUrl;

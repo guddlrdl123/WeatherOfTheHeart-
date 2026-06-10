@@ -14,7 +14,7 @@ export const S3_ASSET_BASE_URL = firstNonEmptyEnv(
 export const S3_OBJECT_IMAGE_PREFIX = firstNonEmptyEnv(
   import.meta.env.NEXT_PUBLIC_S3_OBJECT_IMAGE_PREFIX
   ?? import.meta.env.VITE_S3_OBJECT_IMAGE_PREFIX,
-  "image",
+  "objects",
 );
 // API 응답의 공통 구조를 정의, 실제 데이터는 data 필드에 있다.
 export type ApiResponse<T> = {
