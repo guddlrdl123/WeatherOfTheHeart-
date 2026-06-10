@@ -21,6 +21,9 @@ import java.util.UUID;
 @Service
 public class S3ImageStorageService {
 
+    private static final String LEGACY_OBJECT_IMAGE_PREFIX = "image/";
+    private static final String OBJECT_IMAGE_PREFIX = "objects/";
+
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
 
@@ -115,9 +118,17 @@ public class S3ImageStorageService {
             key = key.substring(0, queryIndex);
         }
 
-        return key.isBlank()
-                ? null
-                : URLDecoder.decode(key, StandardCharsets.UTF_8);
+        if (key.isBlank()) {
+            return null;
+        }
+
+        key = URLDecoder.decode(key, StandardCharsets.UTF_8);
+
+        if (key.startsWith(LEGACY_OBJECT_IMAGE_PREFIX)) {
+            return OBJECT_IMAGE_PREFIX + key.substring(LEGACY_OBJECT_IMAGE_PREFIX.length());
+        }
+
+        return key;
     }
 
     private String normalizeDirectory(String directory) {

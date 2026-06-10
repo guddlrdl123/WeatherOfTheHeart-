@@ -248,6 +248,16 @@ function isLegacyObjectImagePath(imageUrl: string) {
     return /^\/objects\//.test(imageUrl);
 }
 
+function normalizeCatalogS3ImagePath(imageUrl: string) {
+    const normalizedPath = normalizeS3Path(imageUrl);
+
+    if (normalizedPath.startsWith("image/")) {
+        return `objects/${normalizedPath.slice("image/".length)}`;
+    }
+
+    return normalizedPath;
+}
+
 function resolveCatalogImage(catalog: ObjectCatalogResponse) {
     const imageUrl = catalog.imageUrl?.trim();
 
@@ -260,7 +270,7 @@ function resolveCatalogImage(catalog: ObjectCatalogResponse) {
     }
 
     return S3_ASSET_BASE_URL
-        ? joinS3AssetUrl(imageUrl)
+        ? joinS3AssetUrl(normalizeCatalogS3ImagePath(imageUrl))
         : MISSING_ROOM_OBJECT_IMAGE;
 }
 
