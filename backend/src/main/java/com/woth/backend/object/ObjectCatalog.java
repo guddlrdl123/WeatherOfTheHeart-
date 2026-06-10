@@ -40,9 +40,6 @@ public class ObjectCatalog {
     @Column(name = "image_scale")
     private Double imageScale; // 프론트가 DB 카탈로그를 받아 오브젝트 크기를 복원할 때 사용하는 배율
 
-    @Column(name = "room_width")
-    private Integer roomWidth; // 프론트 렌더링에서 사용할 오브젝트 너비(px)
-
     @Column(name = "flip_x", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
     @Builder.Default
     private Boolean flipX = false; // 기본 좌우 반전 여부
@@ -91,7 +88,6 @@ public class ObjectCatalog {
             String slotKey,
             String imageUrl,
             Double imageScale,
-            Integer roomWidth,
             Boolean flipX,
             Integer tiltDeg,
             String description,
@@ -106,7 +102,6 @@ public class ObjectCatalog {
         this.slotKey = slotKey;
         this.imageUrl = imageUrl;
         this.imageScale = imageScale;
-        this.roomWidth = roomWidth;
         this.flipX = flipX;
         this.tiltDeg = tiltDeg;
         this.description = description;
