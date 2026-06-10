@@ -1,6 +1,7 @@
 package com.woth.backend.object;
 
 import com.woth.backend.global.dto.ApiResponse;
+import com.woth.backend.storage.S3ImageStorageService;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,9 +19,11 @@ import java.util.List;
 public class ObjectCatalogController {
 
     private final ObjectCatalogService objectCatalogService;
+    private final S3ImageStorageService s3ImageStorageService;
 
-    public ObjectCatalogController(ObjectCatalogService objectCatalogService) {
+    public ObjectCatalogController(ObjectCatalogService objectCatalogService, S3ImageStorageService s3ImageStorageService) {
         this.objectCatalogService = objectCatalogService;
+        this.s3ImageStorageService = s3ImageStorageService;
     }
 
     @GetMapping
@@ -37,7 +40,7 @@ public class ObjectCatalogController {
                 catalog.getObjectKey(),
                 catalog.getObjectName(),
                 catalog.getSlotKey(),
-                catalog.getImageUrl(),
+                resolveImageUrl(catalog),
                 catalog.getImageScale(),
                 catalog.getRoomWidth(),
                 catalog.getFlipX(),
@@ -46,6 +49,16 @@ public class ObjectCatalogController {
                 catalog.getAllowPrivate(),
                 catalog.getAllowPlaza()
         );
+    }
+
+    private String resolveImageUrl(ObjectCatalog catalog) {
+        String imageUrl = catalog.getImageUrl();
+
+        if (imageUrl == null || imageUrl.isBlank() || imageUrl.startsWith("/objects/") || imageUrl.startsWith("objects/")) {
+            imageUrl = "image/" + catalog.getObjectKey() + ".png";
+        }
+
+        return s3ImageStorageService.createReadUrl(imageUrl);
     }
 
     public record ObjectCatalogResponse(
