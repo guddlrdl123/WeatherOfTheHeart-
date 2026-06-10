@@ -54,7 +54,7 @@ public class ObjectCatalogController {
     private String resolveImageUrl(ObjectCatalog catalog) {
         String imageUrl = catalog.getImageUrl();
 
-        if (imageUrl == null || imageUrl.isBlank() || imageUrl.startsWith("/objects/")) {
+        if (imageUrl == null || imageUrl.isBlank()) {
             imageUrl = "objects/" + catalog.getObjectKey() + ".png";
         }
 

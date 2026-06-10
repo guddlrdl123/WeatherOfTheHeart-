@@ -244,10 +244,6 @@ function createRoomObjectMap(objects: RoomObjectOption[]) {
     }, {});
 }
 
-function isLegacyObjectImagePath(imageUrl: string) {
-    return /^\/objects\//.test(imageUrl);
-}
-
 function normalizeCatalogS3ImagePath(imageUrl: string) {
     const normalizedPath = normalizeS3Path(imageUrl);
 
@@ -265,7 +261,7 @@ function resolveCatalogImage(catalog: ObjectCatalogResponse) {
         return imageUrl;
     }
 
-    if (!imageUrl || isLegacyObjectImagePath(imageUrl)) {
+    if (!imageUrl) {
         return getBucketObjectImage(catalog.objectKey);
     }
 

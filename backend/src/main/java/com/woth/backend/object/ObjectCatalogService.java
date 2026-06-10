@@ -16,6 +16,8 @@ import java.util.stream.Collectors;
 public class ObjectCatalogService {
 
     private static final String DEFAULT_DESCRIPTION = "Imported from the objects folder.";
+    private static final String LEGACY_OBJECT_IMAGE_PREFIX = "image/";
+    private static final String OBJECT_IMAGE_PREFIX = "objects/";
 
     private final ObjectCatalogRepository objectCatalogRepository;
 
@@ -216,11 +218,17 @@ public class ObjectCatalogService {
     }
 
     private String defaultImageUrl(String key, String imageUrl) {
-        if (imageUrl == null || imageUrl.isBlank() || imageUrl.startsWith("/objects/")) {
-            return "objects/" + key + ".png";
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return OBJECT_IMAGE_PREFIX + key + ".png";
         }
 
-        return imageUrl;
+        String normalizedImageUrl = imageUrl.trim().replaceAll("^/+", "");
+
+        if (normalizedImageUrl.startsWith(LEGACY_OBJECT_IMAGE_PREFIX)) {
+            return OBJECT_IMAGE_PREFIX + normalizedImageUrl.substring(LEGACY_OBJECT_IMAGE_PREFIX.length());
+        }
+
+        return normalizedImageUrl;
     }
 
     private Integer defaultRoomWidth(String key, Double imageScale) {
