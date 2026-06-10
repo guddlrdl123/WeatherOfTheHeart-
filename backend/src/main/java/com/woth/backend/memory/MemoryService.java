@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -82,7 +83,10 @@ public class MemoryService {
                 .layerIndex(request.layer())
                 .build();
 
-        return privateMemoryRepository.save(memory);
+        PrivateMemory savedMemory = privateMemoryRepository.save(memory);
+        normalizeRoomMemoryLayers(privateRoom.getId());
+
+        return savedMemory;
     }
 
     @Transactional
@@ -98,6 +102,8 @@ public class MemoryService {
                 request.tiltDeg(),
                 request.layer()
         );
+
+        normalizeRoomMemoryLayers(memory.getPrivateRoom().getId());
 
         return memory;
     }
@@ -147,6 +153,32 @@ public class MemoryService {
             case "cherry blossom" -> "cherry";
             default -> aiWeatherKey;
         };
+    }
+
+    private void normalizeRoomMemoryLayers(Long privateRoomId) {
+        List<PrivateMemory> memories = privateMemoryRepository.findByPrivateRoomId(privateRoomId);
+
+        memories.sort(Comparator
+                .comparingInt(this::getMemoryLayerIndex)
+                .thenComparing(memory -> memory.getId() == null ? Long.MAX_VALUE : memory.getId()));
+
+        for (int layer = 0; layer < memories.size(); layer++) {
+            PrivateMemory memory = memories.get(layer);
+
+            if (getMemoryLayerIndex(memory) != layer) {
+                memory.updatePosition(
+                        memory.getPositionX(),
+                        memory.getPositionY(),
+                        memory.getFlipX(),
+                        memory.getTiltDeg(),
+                        layer
+                );
+            }
+        }
+    }
+
+    private int getMemoryLayerIndex(PrivateMemory memory) {
+        return memory.getLayerIndex() == null ? 0 : memory.getLayerIndex();
     }
 
     public record CreateMemoryRequest(

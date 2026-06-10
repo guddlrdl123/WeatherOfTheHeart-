@@ -12,6 +12,7 @@ import java.util.Optional;
 
 public interface PrivateMemoryRepository extends JpaRepository<PrivateMemory, Long> {
     List<PrivateMemory> findByPrivateRoomUserId(Long userId);
+    List<PrivateMemory> findByPrivateRoomId(Long privateRoomId);
     boolean existsByPrivateRoomUserIdAndMemoryDate(Long userId, LocalDate memoryDate);
     // 위치 수정 시 요청 사용자의 기억인지 함께 검증하기 위한 조회
     Optional<PrivateMemory> findByIdAndPrivateRoomUserId(Long id, Long userId);
