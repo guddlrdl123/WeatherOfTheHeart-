@@ -17,9 +17,7 @@ type ObjectCatalogResponse = {
     objectKey: string;
     name: string;
     imageUrl?: string | null;
-    imageScale?: number | null;
-    allowPrivate?: boolean | null;
-    allowPlaza?: boolean | null;
+    width?: number | null;
 };
 
 type ObjectCatalogMode = "api" | "local" | "merge";
@@ -40,15 +38,11 @@ const LEGACY_KEY_BY_FILE_NAME: Record<string, RoomObjectKey> = {
 
 const LOCAL_KEY_BY_CATALOG_KEY: Record<string, RoomObjectKey> = {
     "furniture-plant": "plant",
-    "furniture-books": "books",
-    "furniture-frame": "frame",
     "furniture-dresser": "dresser",
 };
 
 const LABEL_BY_KEY: Record<RoomObjectKey, string> = {
     plant: "화분",
-    books: "책",
-    frame: "액자",
     dresser: "서랍장",
     "furniture-side-table": "사이드 테이블",
     "furniture-floor-lamp": "스탠드 조명",
@@ -63,13 +57,11 @@ const LABEL_BY_KEY: Record<RoomObjectKey, string> = {
 
 const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     plant: 86,
-    books: 55,
-    frame: 86,
     dresser: 160,
-    "pet-sitting-cat": 85,
-    "pet-sitting-dog": 85,
-    "pet-sleeping-cat": 105,
-    "pet-lying-dog": 125,
+    "pet-sitting-cat": 75,
+    "pet-sitting-dog": 75,
+    "pet-sleeping-cat": 95,
+    "pet-lying-dog": 115,
     "furniture-wood-chair": 120,
     "furniture-side-table": 125,
     "furniture-low-shelf": 180,
@@ -77,7 +69,7 @@ const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     "furniture-fireplace": 210,
     "plaza-bench": 260,
     "plaza-puddle": 180,
-    "plaza-trash": 86,
+    "plaza-trash": 66,
     "plaza-tree": 320,
     "plaza-rainbow": 170,
     "plaza-flower": 60,
@@ -116,8 +108,29 @@ const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     "31-back-facing-chair": 110,
     "33-laptop": 80,
     "34-low-coffee-table": 240,
-    "36-plush-doll": 80,
+    "36-plush-doll": 60,
     "37-rectangular-carpet": 300,
+    "38-oval-braided-carpet": 300,
+    "39-patchwork-carpet": 300,
+    "40-blue-runner-carpet": 400,
+    "41-solid-sage-carpet": 300,
+    "42-solid-rose-carpet": 300,
+    "43-solid-blue-runner-carpet": 400,
+    "44-broad-leaf-plant": 50,
+    "47-cactus-pot": 60,
+    "50-sitting-calico-cat": 75,
+    "51-sitting-brown-puppy": 75,
+    "55-long-floor-planter": 250,
+    "57-wall-wooden-ivy-planter": 150,
+    "59-wall-propagation-bottles": 150,
+    "63-retro-mini-fridge": 120,
+    "65-plaza-grass-tufts": 120,
+    "66-plaza-wildflower-patch": 220,
+    "67-plaza-ornamental-grass": 220,
+    "68-plaza-clover-flower-patch": 220,
+    "71-crumpled-trash-pile": 150,
+    "73-floating-otter-water": 120,
+    "84-outdoor-public-trash-bin": 100,
 };
 
 const FOLDER_ORDER: Record<string, number> = {
@@ -235,14 +248,28 @@ function findLocalObjectOption(key: string) {
     return localRoomObjectByKey[key] ?? localRoomObjectByKey[LOCAL_KEY_BY_CATALOG_KEY[key] ?? ""];
 }
 
-function resolveCatalogImage(catalog: ObjectCatalogResponse, localObject?: RoomObjectOption) {
-    const imageUrl = catalog.imageUrl?.trim();
+function getCatalogImageUrl(catalog: ObjectCatalogResponse) {
+    return catalog.imageUrl?.trim() ?? "";
+}
+
+function isAbsoluteImageUrl(imageUrl: string) {
+    return /^(https?:|data:|blob:)/.test(imageUrl);
+}
+
+function canResolveCatalogImage(catalog: ObjectCatalogResponse) {
+    const imageUrl = getCatalogImageUrl(catalog);
+
+    return Boolean(imageUrl) && (isAbsoluteImageUrl(imageUrl) || Boolean(S3_ASSET_BASE_URL));
+}
+
+function resolveCatalogImage(catalog: ObjectCatalogResponse, mode: ObjectCatalogMode, localObject?: RoomObjectOption) {
+    const imageUrl = getCatalogImageUrl(catalog);
 
     if (!imageUrl) {
-        return localObject?.image ?? MISSING_ROOM_OBJECT_IMAGE;
+        return mode === "api" ? MISSING_ROOM_OBJECT_IMAGE : localObject?.image ?? MISSING_ROOM_OBJECT_IMAGE;
     }
 
-    if (/^(https?:|data:|blob:)/.test(imageUrl)) {
+    if (isAbsoluteImageUrl(imageUrl)) {
         return imageUrl;
     }
 
@@ -250,10 +277,10 @@ function resolveCatalogImage(catalog: ObjectCatalogResponse, localObject?: RoomO
         return `${S3_ASSET_BASE_URL.replace(/\/+$/, "")}/${imageUrl.replace(/^\/+/, "")}`;
     }
 
-    return localObject?.image ?? MISSING_ROOM_OBJECT_IMAGE;
+    return mode === "api" ? MISSING_ROOM_OBJECT_IMAGE : localObject?.image ?? MISSING_ROOM_OBJECT_IMAGE;
 }
 
-function toCatalogRoomObjectOption(catalog: ObjectCatalogResponse): RoomObjectOption {
+function toCatalogRoomObjectOption(catalog: ObjectCatalogResponse, mode: ObjectCatalogMode): RoomObjectOption {
     const key = catalog.objectKey;
     const localObject = findLocalObjectOption(key);
     const catalogLabel = catalog.name?.trim();
@@ -261,8 +288,8 @@ function toCatalogRoomObjectOption(catalog: ObjectCatalogResponse): RoomObjectOp
     return {
         key,
         label: catalogLabel && catalogLabel !== key ? catalogLabel : localObject?.label || getObjectLabel(key),
-        image: resolveCatalogImage(catalog, localObject),
-        roomWidth: localObject?.roomWidth ?? getRoomWidth(key),
+        image: resolveCatalogImage(catalog, mode, localObject),
+        roomWidth: catalog.width ?? localObject?.roomWidth ?? getRoomWidth(key),
     };
 }
 
@@ -292,24 +319,23 @@ function appendLocalOnlyObjects(catalogOptions: RoomObjectOption[]) {
 
 function mergeCatalogObjects(catalogObjects: ObjectCatalogResponse[], mode: ObjectCatalogMode) {
     const catalogOptions = catalogObjects
-        .filter((catalog) => catalog.allowPrivate !== false || catalog.allowPlaza !== false)
-        .map(toCatalogRoomObjectOption);
+        .filter((catalog) => mode !== "api" || canResolveCatalogImage(catalog))
+        .map((catalog) => toCatalogRoomObjectOption(catalog, mode));
 
     if (mode === "merge") {
         return appendLocalOnlyObjects(catalogOptions);
     }
 
-    return catalogOptions.length > 0
-        ? catalogOptions
-        : localRoomObjectOptions;
+    return catalogOptions;
 }
 
 const localRoomObjectOptions = createLocalRoomObjectOptions();
 const localRoomObjectByKey = createRoomObjectMap(localRoomObjectOptions);
+const initialCatalogMode = getObjectCatalogMode();
 
 // 오브젝트 선택 모달과 방 렌더링에서 사용하는 목록입니다. 앱 시작 시 로컬 fallback을 먼저 쓰고,
 // /api/objects 응답을 받으면 DB 카탈로그 기준 목록으로 교체합니다.
-export const ROOM_OBJECT_OPTIONS: RoomObjectOption[] = [...localRoomObjectOptions];
+export const ROOM_OBJECT_OPTIONS: RoomObjectOption[] = initialCatalogMode === "api" ? [] : [...localRoomObjectOptions];
 let roomObjectByKey = createRoomObjectMap(ROOM_OBJECT_OPTIONS);
 let roomObjectCatalogPromise: Promise<RoomObjectOption[]> | null = null;
 
@@ -337,9 +363,15 @@ export async function loadRoomObjectCatalog() {
 
             return ROOM_OBJECT_OPTIONS;
         })
-        .catch((error) => {
+        .catch(() => {
             roomObjectCatalogPromise = null;
-            throw error;
+
+            if (catalogMode === "api") {
+                applyRoomObjectCatalog([]);
+                return ROOM_OBJECT_OPTIONS;
+            }
+
+            throw new Error("?ㅻ툕?앺듃 紐⑸줉??遺덈윭?ㅼ? 紐삵뻽?듬땲??");
         });
 
     return roomObjectCatalogPromise;
