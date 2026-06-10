@@ -45,6 +45,39 @@ const formatRoomMonthLabel = (monthKey: string) => {
 
 const getMemoryObjectLayer = (memory: Memory) => memory.objectLayer ?? OBJECT_LAYER_MIN;
 
+function normalizeMemoryObjectLayers(memories: Memory[]) {
+    const memoriesByMonth = new Map<string, Array<{ memory: Memory; index: number }>>();
+    const layerById = new Map<string, number>();
+
+    memories.forEach((memory, index) => {
+        if (!memory.objectKey || !memory.objectPosition) {
+            return;
+        }
+
+        const monthKey = getMonthKey(memory.memoryDate);
+        const monthMemories = memoriesByMonth.get(monthKey) ?? [];
+
+        monthMemories.push({ memory, index });
+        memoriesByMonth.set(monthKey, monthMemories);
+    });
+
+    memoriesByMonth.forEach((monthMemories) => {
+        monthMemories
+            .sort((a, b) => getMemoryObjectLayer(a.memory) - getMemoryObjectLayer(b.memory) || a.index - b.index)
+            .forEach(({ memory }, layer) => {
+                layerById.set(memory.id, layer);
+            });
+    });
+
+    return memories.map((memory) => {
+        const layer = layerById.get(memory.id);
+
+        return layer === undefined || memory.objectLayer === layer
+            ? memory
+            : { ...memory, objectLayer: layer };
+    });
+}
+
 function RoomPage() {
     useRoomObjectCatalog();
 
@@ -103,7 +136,7 @@ function RoomPage() {
                     return;
                 }
 
-                setMemories(loadedMemories);
+                setMemories(normalizeMemoryObjectLayers(loadedMemories));
             } catch (error) {
                 if (!isMounted) {
                     return;
@@ -282,7 +315,7 @@ function RoomPage() {
                             : memory,
                     );
 
-                    return nextMemories;
+                    return normalizeMemoryObjectLayers(nextMemories);
                 });
 
                 setPreviewMemory((prev) =>
@@ -329,10 +362,10 @@ function RoomPage() {
                 objectPosition: savedMemory.objectPosition ?? position,
             };
 
-            setMemories((prev) => [
+            setMemories((prev) => normalizeMemoryObjectLayers([
                 ...prev,
                 memoryWithPlacement,
-            ]);
+            ]));
 
             setPendingPlacement(null);
             setSelectedDate(savedMemory.memoryDate);
@@ -404,7 +437,7 @@ function RoomPage() {
             const savedMemory = await updateMemory(memoryId, value);
 
             setMemories((prev) =>
-                prev.map((memory) =>
+                normalizeMemoryObjectLayers(prev.map((memory) =>
                     memory.id === memoryId
                         ? {
                             ...savedMemory,
@@ -412,7 +445,7 @@ function RoomPage() {
                             objectPosition: savedMemory.objectPosition ?? memory.objectPosition,
                         }
                         : memory,
-                ),
+                )),
             );
 
             setPreviewMemory((prev) =>
@@ -438,7 +471,7 @@ function RoomPage() {
             return;
         }
 
-        setMemories((prev) => prev.filter((memory) => memory.id !== memoryId));
+        setMemories((prev) => normalizeMemoryObjectLayers(prev.filter((memory) => memory.id !== memoryId)));
         setPreviewMemory(null);
         setEditingPlacement((prev) => prev?.memoryId === memoryId ? null : prev);
         setActiveObjectId(null);

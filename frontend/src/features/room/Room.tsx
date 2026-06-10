@@ -87,8 +87,11 @@ const clamp = (value: number, min: number, max: number) => {
   return Math.min(Math.max(value, min), max);
 };
 
+const ROOM_IMAGE_Z_INDEX = 10;
+const ROOM_OBJECT_BASE_Z_INDEX = 12;
+
 const getObjectZIndex = (layer = 0) => {
-  return 12 + layer;
+  return Math.max(ROOM_IMAGE_Z_INDEX + 1, ROOM_OBJECT_BASE_Z_INDEX + layer);
 };
 
 const ROOM_STAGE_BASE_WIDTH = 1120;
