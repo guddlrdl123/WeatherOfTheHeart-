@@ -17,6 +17,7 @@ public interface PlazaEntryRepository extends JpaRepository<PlazaEntry, Long> {
     List<PlazaEntry> findByPlazaId(Long plazaId);
     List<PlazaEntry> findByOwnerId(Long ownerId);
     Optional<PlazaEntry> findByPlazaIdAndOwnerId(Long plazaId, Long ownerId);
+    Optional<PlazaEntry> findFirstByPlazaIdAndOwnerIdOrderByIdAsc(Long plazaId, Long ownerId);
     long countByPlazaId(Long plazaId);
     boolean existsByPlazaIdAndOwnerId(Long plazaId, Long ownerId);
     boolean existsByPlazaIdAndObjectKey(Long plazaId, String objectKey);

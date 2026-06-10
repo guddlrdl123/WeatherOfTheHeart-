@@ -155,12 +155,13 @@ public class PlazaService {
 
         User owner = userRepository.findById(request.ownerId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        boolean adminEntryOwner = Boolean.TRUE.equals(owner.getIsAdmin());
 
-        if (plazaEntryRepository.existsByPlazaIdAndOwnerId(plazaId, owner.getId())) {
+        if (!adminEntryOwner && plazaEntryRepository.existsByPlazaIdAndOwnerId(plazaId, owner.getId())) {
             throw new CustomException(ErrorCode.PLAZA_ALREADY_JOINED);
         }
 
-        if (!plaza.getAllowDuplicateObjects() && plazaEntryRepository.existsByPlazaIdAndObjectKey(plazaId, request.objectKey())) {
+        if (!adminEntryOwner && !plaza.getAllowDuplicateObjects() && plazaEntryRepository.existsByPlazaIdAndObjectKey(plazaId, request.objectKey())) {
             throw new CustomException(ErrorCode.PLAZA_DUPLICATE_OBJECT);
         }
 

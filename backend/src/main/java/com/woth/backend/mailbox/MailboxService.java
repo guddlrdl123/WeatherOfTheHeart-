@@ -140,7 +140,7 @@ public class MailboxService {
             }
 
             if (myObjectKey == null && myObjectTitle == null && myObjectContent == null) {
-                PlazaEntry myEntry = plazaEntryRepository.findByPlazaIdAndOwnerId(plazaId, receiverId)
+                PlazaEntry myEntry = plazaEntryRepository.findFirstByPlazaIdAndOwnerIdOrderByIdAsc(plazaId, receiverId)
                         .orElse(null);
                 myObjectKey = myEntry == null ? null : myEntry.getObjectKey();
                 myObjectTitle = myEntry == null ? null : myEntry.getTitle();

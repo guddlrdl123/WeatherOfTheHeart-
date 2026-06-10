@@ -4,7 +4,7 @@ import { AppHeader } from "../../components/layout/AppHeader";
 import { completeBackendPlaza, createBackendPlazaEntry, createBackendPlazaWithFirstEntry, deleteBackendPlaza, deleteBackendPlazaEntry, fetchPlazas, toggleBackendPlazaEntryLike, updateBackendPlazaEntry, updateBackendPlazaEntryPosition } from "../../services/plazaService";
 import type { Plaza } from "../../types/plaza";
 import type { RoomObjectPosition } from "../../types/roomObject";
-import { getCurrentUserId } from "../../utils/authSession";
+import { getCurrentUserId, getCurrentUserIsAdmin } from "../../utils/authSession";
 import { PlazaListPage } from "../plaza/PlazaListPage";
 import { PlazaRoomPage } from "../plaza/PlazaRoomPage";
 import type { PlazaWriteValue } from "../plaza/PlazaWriteModal";
@@ -17,6 +17,7 @@ function PlazaPage() {
   const { plazaId } = useParams();
   const navigate = useNavigate();
   const currentUserId = useMemo(() => getCurrentUserId(), []);
+  const currentUserIsAdmin = useMemo(() => getCurrentUserIsAdmin(), []);
   const [plazas, setPlazas] = useState<Plaza[]>([]);
   const [draftPlaza, setDraftPlaza] = useState<Plaza | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -162,6 +163,7 @@ function PlazaPage() {
           key={selectedPlaza.id}
           plaza={selectedPlaza}
           currentGuestId={currentUserId}
+          currentGuestIsAdmin={currentUserIsAdmin}
           isDraftPlaza={isDraftPlaza}
           onUpdatePlaza={(updater) => {
             if (isDraftPlaza) {

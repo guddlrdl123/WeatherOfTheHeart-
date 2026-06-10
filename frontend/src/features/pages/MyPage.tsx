@@ -28,6 +28,7 @@ import {
   clearAuthenticated,
   normalizeProfileNickname,
   PROFILE_NICKNAME_MAX_LENGTH,
+  setCurrentUserIsAdmin,
   setProfileEmail,
   setProfileNickname,
 } from "../../utils/authSession";
@@ -366,6 +367,7 @@ function MyPage() {
         setJoinedAt(profile.joinedAt);
         setProfileNickname(profile.nickname);
         setProfileEmail(profile.email);
+        setCurrentUserIsAdmin(profile.isAdmin);
       } catch (caughtError) {
         if (!ignore) {
           showProfileNotice(caughtError instanceof Error ? caughtError.message : "프로필 정보를 불러오지 못했습니다.", "error");
@@ -481,6 +483,7 @@ function MyPage() {
       setJoinedAt(profile.joinedAt);
       setProfileNickname(profile.nickname);
       setProfileEmail(profile.email);
+      setCurrentUserIsAdmin(profile.isAdmin);
       setIsEditingNickname(false);
       showProfileNotice(isChangingPassword ? "프로필과 비밀번호가 변경되었습니다." : "닉네임이 변경되었습니다.");
     } catch (caughtError) {

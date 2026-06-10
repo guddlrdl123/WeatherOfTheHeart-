@@ -45,6 +45,7 @@ type PendingPlacement =
 type Props = {
   plaza: Plaza;
   currentGuestId: string;
+  currentGuestIsAdmin?: boolean;
   isDraftPlaza?: boolean;
   onUpdatePlaza: (updater: (plaza: Plaza) => Plaza) => void;
   onFinalizeDraftPlaza?: (value: PlazaWriteValue, position: RoomObjectPosition, layer: number) => Promise<void>;
@@ -140,6 +141,7 @@ function normalizeEntryLayers(entries: PlazaEntry[]) {
 export function PlazaRoomPage({
   plaza,
   currentGuestId,
+  currentGuestIsAdmin = false,
   isDraftPlaza = false,
   onUpdatePlaza,
   onFinalizeDraftPlaza,
@@ -184,7 +186,9 @@ export function PlazaRoomPage({
   const canMoveEntry = (entry: PlazaEntry) => !plazaEnded && entry.ownerId === currentGuestId;
   const canDeleteEntry = (entry: PlazaEntry) => !plazaEnded && entry.ownerId === currentGuestId && entry.ownerId !== plaza.ownerId;
   const enterable = canEnterPlaza(plaza);
-  const unavailableObjectKeys = plaza.entries.map((entry) => entry.objectKey);
+  const canBypassEntryLimits = currentGuestIsAdmin;
+  const unavailableObjectKeys = canBypassEntryLimits ? [] : plaza.entries.map((entry) => entry.objectKey);
+  const allowDuplicateObjectSelection = canBypassEntryLimits || plaza.allowDuplicateObjects;
   const description = getPlazaDescription(plaza);
   const visiblePlazaEntries = pendingPlacement?.kind === "move"
     ? plaza.entries.filter((entry) => entry.id !== pendingPlacement.entryId)
@@ -716,7 +720,7 @@ export function PlazaRoomPage({
               <div className="mt-4 flex flex-col gap-2">
                 <button
                   type="button"
-                  disabled={requiresFirstEntry || !enterable || Boolean(ownEntry) || Boolean(pendingPlacement) || isPlacementSaving}
+                  disabled={requiresFirstEntry || !enterable || (!canBypassEntryLimits && Boolean(ownEntry)) || Boolean(pendingPlacement) || isPlacementSaving}
                   onClick={() => setIsWriteOpen(true)}
                   className="mw-button-solid inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm disabled:opacity-45"
                 >
@@ -865,7 +869,7 @@ export function PlazaRoomPage({
       {isWriteOpen && (
         <PlazaWriteModal
           unavailableObjectKeys={unavailableObjectKeys}
-          allowDuplicateObjects={plaza.allowDuplicateObjects}
+          allowDuplicateObjects={allowDuplicateObjectSelection}
           modalTitle={requiresFirstEntry ? "글을 남겨 방을 생성해주세요." : undefined}
           guideMessage={requiresFirstEntry ? "첫 글과 오브젝트 배치가 완료되어야 광장이 최종 생성됩니다." : undefined}
           onClose={handleWriteClose}

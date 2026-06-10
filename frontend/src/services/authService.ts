@@ -5,6 +5,7 @@ export type AuthResponse = {
   userId?: number | string;
   email?: string;
   nickname?: string;
+  isAdmin?: boolean;
   accessToken?: string;
   accessTokenExpiresAt?: string;
 };

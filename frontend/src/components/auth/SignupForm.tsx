@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { AuthApiError, sendEmailVerification, signup, verifyEmail } from "../../services/authService";
 import { Link, useNavigate } from "react-router-dom";
-import { normalizeProfileNickname, PROFILE_NICKNAME_MAX_LENGTH, setAuthenticated, setCurrentUserId, setProfileEmail, setProfileNickname } from "../../utils/authSession";
+import { normalizeProfileNickname, PROFILE_NICKNAME_MAX_LENGTH, setAuthenticated, setCurrentUserId, setCurrentUserIsAdmin, setProfileEmail, setProfileNickname } from "../../utils/authSession";
 // import { useAppStore } from "../../stores/AppStore";
 
 const VERIFICATION_CODE_TTL_SECONDS = 10 * 60;
@@ -170,6 +170,7 @@ export function SignupForm() {
             }
 
             setAuthenticated(auth.accessToken, auth.accessTokenExpiresAt);
+            setCurrentUserIsAdmin(auth.isAdmin);
             // 회원가입 직후 마이페이지에서 입력한 닉네임이 바로 보이도록 임시 프로필 저장소에 동기화합니다.
             setProfileEmail(auth.email ?? email.trim());
             setProfileNickname(auth.nickname ?? signupNickname);

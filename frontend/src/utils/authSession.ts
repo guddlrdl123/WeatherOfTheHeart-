@@ -5,6 +5,7 @@ const ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY = "mw-access-token-expires-at";
 const PROFILE_NICKNAME_STORAGE_KEY = "mw-profile-nickname";
 const PROFILE_EMAIL_STORAGE_KEY = "mw-profile-email";
 const USER_ID_STORAGE_KEY = "mw-user-id";
+const USER_IS_ADMIN_STORAGE_KEY = "mw-user-is-admin";
 export const AUTH_SESSION_CHANGED_EVENT = "mw-auth-session-changed";
 export const DEFAULT_PROFILE_NICKNAME = "나그네";
 export const PROFILE_NICKNAME_MAX_LENGTH = 10;
@@ -63,6 +64,7 @@ export function clearAuthenticated() {
     removeSessionValue(PROFILE_NICKNAME_STORAGE_KEY);
     removeSessionValue(PROFILE_EMAIL_STORAGE_KEY);
     removeSessionValue(USER_ID_STORAGE_KEY);
+    removeSessionValue(USER_IS_ADMIN_STORAGE_KEY);
     removeSessionValue(ACCESS_TOKEN_STORAGE_KEY);
     removeSessionValue(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
     notifyAuthSessionChanged();
@@ -108,5 +110,32 @@ export function getCurrentUserId() {
 export function setCurrentUserId(userId: string | number) {
     // 백엔드 로그인 연동 시 응답의 사용자 ID를 저장하면 우편함 API가 같은 값을 사용합니다.
     setSessionValue(USER_ID_STORAGE_KEY, String(userId));
+    notifyAuthSessionChanged();
+}
+
+function getTokenAdminClaim() {
+    const payload = getAccessToken().split(".")[1];
+
+    if (!payload) {
+        return false;
+    }
+
+    try {
+        const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+        const paddedPayload = normalizedPayload.padEnd(Math.ceil(normalizedPayload.length / 4) * 4, "=");
+        const data = JSON.parse(atob(paddedPayload)) as { admin?: boolean };
+
+        return data.admin === true;
+    } catch {
+        return false;
+    }
+}
+
+export function getCurrentUserIsAdmin() {
+    return getSessionValue(USER_IS_ADMIN_STORAGE_KEY) === "true" || getTokenAdminClaim();
+}
+
+export function setCurrentUserIsAdmin(isAdmin?: boolean | null) {
+    setSessionValue(USER_IS_ADMIN_STORAGE_KEY, isAdmin ? "true" : "false");
     notifyAuthSessionChanged();
 }
