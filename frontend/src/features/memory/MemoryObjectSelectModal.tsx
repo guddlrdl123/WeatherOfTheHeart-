@@ -25,11 +25,27 @@ export function MemoryObjectSelectModal({
     const firstSelectableObject = ROOM_OBJECT_OPTIONS.find(
         (object) => allowDuplicateObjects || !unavailableObjectKeys.includes(object.key),
     );
-    const [selectedObjectKey, setSelectedObjectKey] = useState<RoomObjectKey>(
-        firstSelectableObject?.key ?? ROOM_OBJECT_OPTIONS[0].key,
+    const [selectedObjectKey, setSelectedObjectKey] = useState<RoomObjectKey | null>(
+        firstSelectableObject?.key ?? null,
     );
-    const selectedUnavailable = !allowDuplicateObjects && unavailableObjectKeys.includes(selectedObjectKey);
-    const canSave = Boolean(firstSelectableObject) && !selectedUnavailable;
+    const hasObjects = ROOM_OBJECT_OPTIONS.length > 0;
+    const selectedObjectExists = selectedObjectKey !== null
+        && ROOM_OBJECT_OPTIONS.some((object) => object.key === selectedObjectKey);
+    const selectedUnavailable = selectedObjectKey !== null
+        && !allowDuplicateObjects
+        && unavailableObjectKeys.includes(selectedObjectKey);
+    const effectiveSelectedObjectKey = selectedObjectExists && !selectedUnavailable
+        ? selectedObjectKey
+        : firstSelectableObject?.key ?? null;
+    const canSave = effectiveSelectedObjectKey !== null;
+
+    function handleSave() {
+        if (effectiveSelectedObjectKey === null) {
+            return;
+        }
+
+        onSave(effectiveSelectedObjectKey);
+    }
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
@@ -48,34 +64,40 @@ export function MemoryObjectSelectModal({
                     </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    {ROOM_OBJECT_OPTIONS.map((object) => {
-                        const selected = selectedObjectKey === object.key;
-                        const unavailable = !allowDuplicateObjects && unavailableObjectKeys.includes(object.key);
+                {hasObjects ? (
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        {ROOM_OBJECT_OPTIONS.map((object) => {
+                            const selected = effectiveSelectedObjectKey === object.key;
+                            const unavailable = !allowDuplicateObjects && unavailableObjectKeys.includes(object.key);
 
-                        return (
-                            <button
-                                key={object.key}
-                                type="button"
-                                disabled={unavailable}
-                                onClick={() => setSelectedObjectKey(object.key)}
-                                className="flex h-[150px] flex-col items-center justify-center gap-3 rounded-md border p-3 text-sm text-[#5a4632] transition hover:bg-white/85 disabled:opacity-35"
-                                style={{
-                                    borderColor: selected ? "rgba(200,150,106,0.68)" : "rgba(73, 63, 61, 0.13)",
-                                    background: selected ? "rgba(200,150,106,0.14)" : "rgba(73, 63, 61, 0.07)",
-                                }}
-                            >
-                                <img
-                                    src={object.image}
-                                    alt=""
-                                    className="h-24 w-full object-contain"
-                                />
-                                <span>{object.label}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-                {!firstSelectableObject && (
+                            return (
+                                <button
+                                    key={object.key}
+                                    type="button"
+                                    disabled={unavailable}
+                                    onClick={() => setSelectedObjectKey(object.key)}
+                                    className="flex h-[150px] flex-col items-center justify-center gap-3 rounded-md border p-3 text-sm text-[#5a4632] transition hover:bg-white/85 disabled:opacity-35"
+                                    style={{
+                                        borderColor: selected ? "rgba(200,150,106,0.68)" : "rgba(73, 63, 61, 0.13)",
+                                        background: selected ? "rgba(200,150,106,0.14)" : "rgba(73, 63, 61, 0.07)",
+                                    }}
+                                >
+                                    <img
+                                        src={object.image}
+                                        alt=""
+                                        className="h-24 w-full object-contain"
+                                    />
+                                    <span>{object.label}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="rounded-md border border-[#5a4632]/12 bg-white/35 px-4 py-10 text-center text-sm leading-6 text-[#5a4632]/60">
+                        등록된 오브젝트가 없습니다.
+                    </div>
+                )}
+                {hasObjects && !firstSelectableObject && (
                     <p className="mt-4 rounded-md border border-[#5a4632]/12 bg-white/35 px-3 py-2 text-sm text-[#5a4632]/60">
                         선택 가능한 오브젝트가 없습니다.
                     </p>
@@ -93,7 +115,7 @@ export function MemoryObjectSelectModal({
                         type="button"
                         // 여기서는 오브젝트 키만 넘기고 실제 위치 배치는 RoomPage에서 처리
                         disabled={!canSave}
-                        onClick={() => onSave(selectedObjectKey)}
+                        onClick={handleSave}
                         className="mw-button-solid rounded-md px-4 py-2 text-sm disabled:opacity-50"
                     >
                         {saveLabel}
