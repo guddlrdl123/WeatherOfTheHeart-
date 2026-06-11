@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Copy, Footprints, Heart, MapPinned, MoreHorizontal, Power, Trash2, X } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Copy, Footprints, Heart, MapPinned, MoreHorizontal, Power, Trash2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
 import { useRoomObjectCatalog } from "../../hooks/useRoomObjectCatalog";
@@ -13,7 +13,6 @@ import { PlazaPreviewModal, type PlazaPreviewUpdate } from "./PlazaPreviewModal"
 import {
   DEFAULT_PLAZA_OBJECT_POSITION,
   OBJECT_LAYER_MIN,
-  PLAZA_PAGE_SIZE,
   canEnterPlaza,
   getBackgroundLabel,
   getPlazaDescription,
@@ -173,7 +172,6 @@ export function PlazaRoomPage({
   const [isWriteOpen, setIsWriteOpen] = useState(requiresFirstEntry);
   const [pendingPlacement, setPendingPlacement] = useState<PendingPlacement | null>(null);
   const [previewEntry, setPreviewEntry] = useState<PlazaEntry | null>(null);
-  const [entryPage, setEntryPage] = useState(1);
   const [isPlacementSaving, setIsPlacementSaving] = useState(false);
   const [likingEntryIds, setLikingEntryIds] = useState<Set<string>>(() => new Set());
   const [isManagementMenuOpen, setIsManagementMenuOpen] = useState(false);
@@ -194,12 +192,6 @@ export function PlazaRoomPage({
     ? plaza.entries.filter((entry) => entry.id !== pendingPlacement.entryId)
     : plaza.entries;
   const popularEntries = getPopularPlazaEntries(plaza.entries);
-  const entryTotalPages = Math.max(1, Math.ceil(popularEntries.length / PLAZA_PAGE_SIZE));
-  const safeEntryPage = Math.min(entryPage, entryTotalPages);
-  const pagedEntries = popularEntries.slice(
-    (safeEntryPage - 1) * PLAZA_PAGE_SIZE,
-    safeEntryPage * PLAZA_PAGE_SIZE,
-  );
   const willCompleteAfterNewEntry = () => {
     const currentEntryCount = plaza.entryCount ?? plaza.entries.length;
 
@@ -746,10 +738,10 @@ export function PlazaRoomPage({
                 <span className="text-xs text-[#5a4632]/45">{plaza.entries.length}</span>
               </div>
               <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
-                {pagedEntries.length > 0 ? (
-                  pagedEntries.map((entry, index) => {
+                {popularEntries.length > 0 ? (
+                  popularEntries.map((entry, index) => {
                     const object = ROOM_OBJECT_BY_KEY[entry.objectKey];
-                    const rank = (safeEntryPage - 1) * PLAZA_PAGE_SIZE + index + 1;
+                    const rank = index + 1;
                     const likeCount = getPlazaEntryLikeCount(entry);
 
                     return (
@@ -779,31 +771,6 @@ export function PlazaRoomPage({
                   </p>
                 )}
               </div>
-              {popularEntries.length > PLAZA_PAGE_SIZE && (
-                <div className="mt-3 flex items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    disabled={safeEntryPage === 1}
-                    onClick={() => setEntryPage((page) => Math.max(1, page - 1))}
-                    className="grid h-8 w-8 place-items-center rounded-md border border-[#5a4632]/15 bg-white/35 text-[#5a4632]/70 transition hover:bg-white/60 disabled:opacity-35"
-                    aria-label="Previous page"
-                  >
-                    <ChevronLeft size={15} />
-                  </button>
-                  <span className="min-w-[64px] text-center text-xs text-[#5a4632]/60">
-                    {safeEntryPage} / {entryTotalPages}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={safeEntryPage === entryTotalPages}
-                    onClick={() => setEntryPage((page) => Math.min(entryTotalPages, page + 1))}
-                    className="grid h-8 w-8 place-items-center rounded-md border border-[#5a4632]/15 bg-white/35 text-[#5a4632]/70 transition hover:bg-white/60 disabled:opacity-35"
-                    aria-label="Next page"
-                  >
-                    <ChevronRight size={15} />
-                  </button>
-                </div>
-              )}
             </section>
             <button
               type="button"
