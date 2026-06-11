@@ -96,7 +96,7 @@ function PlazaConfirmModal({ action, onCancel, onConfirm }: PlazaConfirmModalPro
             <p className="mt-1 text-xs leading-6 text-[#5a4632]/65">
               {isDelete
                 ? "삭제한 광장은 되돌릴 수 없어요."
-                : "종료된 광장은 새 글을 받을 수 없고 구경만 할 수 있어요."}
+                : "종료된 광장은 더 이상 발자취를 남길 수 없고 구경만 할 수 있어요."}
             </p>
           </div>
         </div>

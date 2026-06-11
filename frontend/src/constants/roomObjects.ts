@@ -25,7 +25,7 @@ type ObjectCatalogMode = "api" | "local" | "merge";
 const MISSING_ROOM_OBJECT_IMAGE = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2080%2080'%3E%3Crect%20x='10'%20y='10'%20width='60'%20height='60'%20rx='10'%20fill='%23f8f1e8'%20stroke='%239b6b54'%20stroke-opacity='.35'%20stroke-width='4'/%3E%3Cpath%20d='M25%2028h30M25%2040h30M25%2052h18'%20stroke='%239b6b54'%20stroke-opacity='.5'%20stroke-width='5'%20stroke-linecap='round'/%3E%3C/svg%3E";
 
 const ROOM_OBJECT_IMAGE_MODULES = import.meta.glob<RoomObjectImageModule>(
-    "../assets/{animal,furniture-clean,furniture-modular,plaza-objects,room-objects}/*.png",
+    "../assets/{furniture-clean,room-objects}/*.png",
     { eager: true },
 );
 
@@ -46,12 +46,11 @@ const LABEL_BY_KEY: Record<RoomObjectKey, string> = {
     dresser: "서랍장",
     "furniture-side-table": "사이드 테이블",
     "furniture-floor-lamp": "스탠드 조명",
-    "furniture-fireplace": "벽난로",
-    "plaza-bench": "벤치",
-    "plaza-puddle": "물 웅덩이",
-    "plaza-trash": "쓰레기",
-    "plaza-tree": "나무",
-    "plaza-flower": "꽃",
+    bench: "벤치",
+    puddle: "물 웅덩이",
+    trash: "쓰레기",
+    tree: "나무",
+    flower: "꽃",
     "decor-coffee-cup": "커피 컵",
 };
 
@@ -62,75 +61,67 @@ const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     "pet-sitting-dog": 75,
     "pet-sleeping-cat": 95,
     "pet-lying-dog": 115,
-    "furniture-wood-chair": 120,
     "furniture-side-table": 125,
-    "furniture-low-shelf": 180,
     "furniture-floor-lamp": 100,
-    "furniture-fireplace": 210,
-    "plaza-bench": 260,
-    "plaza-puddle": 180,
-    "plaza-trash": 66,
-    "plaza-tree": 320,
-    "plaza-rainbow": 170,
-    "plaza-flower": 60,
-    "plaza-sea-floor": 1080,
+    bench: 260,
+    puddle: 180,
+    trash: 66,
+    tree: 320,
+    flower: 60,
     "decor-coffee-cup": 50,
-    "decor-mini-lamp": 70,
-    "decor-square-cushion": 80,
-    "furniture-front-side-table": 210,
-    "furniture-front-sofa": 320,
-    "furniture-single-daybed": 280,
-    "furniture-teacup": 58,
-    "furniture-bowl": 58,
-    "plaza-clay-pot": 70,
-    "plaza-garden-arch": 170,
-    "plaza-planter-box": 180,
-    "plaza-shade-umbrella": 200,
-    "plaza-tea-stand": 180,
-    "plaza-wooden-fence": 200,
-    "plaza-bush": 120,
-    "01-empty-single-bed": 260,
-    "04-folded-blanket": 110,
-    "09-shelf-plant": 50,
-    "10-front-storage-box": 90,
-    "12-small-vase": 50,
-    "13-study-desk": 260,
-    "15-nightstand": 160,
-    "17-small-dresser": 140,
-    "19-table-lamp": 60,
-    "20-empty-wall-shelf": 200,
-    "22-standing-mirror": 140,
-    "23-storage-basket": 130,
-    "24-alarm-clock": 40,
-    "25-small-side-table": 100,
-    "26-ceramic-mug": 45,
-    "30-pencil-cup": 30,
-    "31-back-facing-chair": 110,
-    "33-laptop": 80,
-    "34-low-coffee-table": 240,
-    "36-plush-doll": 60,
-    "37-rectangular-carpet": 300,
-    "38-oval-braided-carpet": 300,
-    "39-patchwork-carpet": 300,
-    "40-blue-runner-carpet": 400,
-    "41-solid-sage-carpet": 300,
-    "42-solid-rose-carpet": 300,
-    "43-solid-blue-runner-carpet": 400,
-    "44-broad-leaf-plant": 50,
-    "47-cactus-pot": 60,
-    "50-sitting-calico-cat": 75,
-    "51-sitting-brown-puppy": 75,
-    "55-long-floor-planter": 250,
-    "57-wall-wooden-ivy-planter": 150,
-    "59-wall-propagation-bottles": 150,
-    "63-retro-mini-fridge": 120,
-    "65-plaza-grass-tufts": 120,
-    "66-plaza-wildflower-patch": 220,
-    "67-plaza-ornamental-grass": 220,
-    "68-plaza-clover-flower-patch": 220,
-    "71-crumpled-trash-pile": 150,
-    "73-floating-otter-water": 120,
-    "84-outdoor-public-trash-bin": 100,
+    "clay-pot": 70,
+    "garden-arch": 170,
+    "planter-box": 180,
+    "shade-umbrella": 200,
+    "tea-stand": 180,
+    "wooden-fence": 200,
+    bush: 120,
+    "empty-single-bed": 260,
+    "folded-blanket": 110,
+    "shelf-plant": 50,
+    "front-storage-box": 90,
+    "small-vase": 50,
+    "study-desk": 260,
+    nightstand: 160,
+    "small-dresser": 140,
+    "table-lamp": 60,
+    "empty-wall-shelf": 200,
+    "standing-mirror": 140,
+    "storage-basket": 130,
+    "alarm-clock": 40,
+    "small-side-table": 100,
+    "ceramic-mug": 45,
+    "pencil-cup": 30,
+    "back-facing-chair": 110,
+    laptop: 80,
+    "low-coffee-table": 240,
+    "plush-doll": 60,
+    "rectangular-carpet": 300,
+    "oval-braided-carpet": 300,
+    "patchwork-carpet": 300,
+    "blue-runner-carpet": 400,
+    "solid-sage-carpet": 300,
+    "solid-rose-carpet": 300,
+    "solid-blue-runner-carpet": 400,
+    "broad-leaf-plant": 50,
+    "cactus-pot": 60,
+    "sitting-calico-cat": 75,
+    "sitting-brown-puppy": 75,
+    "long-floor-planter": 250,
+    "wall-wooden-ivy-planter": 150,
+    "wall-propagation-bottles": 150,
+    "retro-mini-fridge": 120,
+    "grass-tufts": 120,
+    "wildflower-patch": 220,
+    "ornamental-grass": 220,
+    "clover-flower-patch": 220,
+    "crumpled-trash-pile": 150,
+    "floating-otter-water": 120,
+    "outdoor-public-trash-bin": 100,
+    "fluttering-butterfly": 60,
+    "small-crumpled-trash-pile": 120,
+    "crumpled-can": 90,
+    "red-crumpled-can": 90,
 };
 
 const FOLDER_ORDER: Record<string, number> = {
@@ -244,8 +235,19 @@ function createRoomObjectMap(objects: RoomObjectOption[]) {
     }, {});
 }
 
+function normalizeRenamedObjectKey(key: string) {
+    return key
+        .replace(/^\d+-/, "")
+        .replace(/^plaza-/, "");
+}
+
 function findLocalObjectOption(key: string) {
-    return localRoomObjectByKey[key] ?? localRoomObjectByKey[LOCAL_KEY_BY_CATALOG_KEY[key] ?? ""];
+    const normalizedKey = normalizeRenamedObjectKey(key);
+
+    return localRoomObjectByKey[key]
+        ?? localRoomObjectByKey[normalizedKey]
+        ?? localRoomObjectByKey[LOCAL_KEY_BY_CATALOG_KEY[key] ?? ""]
+        ?? localRoomObjectByKey[LOCAL_KEY_BY_CATALOG_KEY[normalizedKey] ?? ""];
 }
 
 function getCatalogImageUrl(catalog: ObjectCatalogResponse) {
@@ -309,7 +311,10 @@ function getObjectCatalogMode(): ObjectCatalogMode {
 }
 
 function appendLocalOnlyObjects(catalogOptions: RoomObjectOption[]) {
-    const catalogKeys = new Set(catalogOptions.map((object) => object.key));
+    const catalogKeys = new Set(catalogOptions.flatMap((object) => [
+        object.key,
+        normalizeRenamedObjectKey(object.key),
+    ]));
 
     return [
         ...catalogOptions,
@@ -383,6 +388,10 @@ export const ROOM_OBJECT_BY_KEY = new Proxy({} as Record<RoomObjectKey, RoomObje
             return Reflect.get(target, property);
         }
 
-        return roomObjectByKey[property] ?? createMissingRoomObjectOption(property);
+        const normalizedKey = normalizeRenamedObjectKey(property);
+
+        return roomObjectByKey[property]
+            ?? roomObjectByKey[normalizedKey]
+            ?? createMissingRoomObjectOption(normalizedKey);
     },
 }) as Record<RoomObjectKey, RoomObjectOption>;
