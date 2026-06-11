@@ -15,14 +15,19 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.util.retry.Retry;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.CodeSource;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeoutException;
 
 /*  
     OpenAI API 클라이언트 클래스
@@ -35,6 +40,9 @@ public class OpenAiClient {
 
 	private static final Logger log = LoggerFactory.getLogger(OpenAiClient.class);
 	private static final String API_KEY_NAME = "OPENAI_API_KEY";
+	private static final Duration OPENAI_REQUEST_TIMEOUT = Duration.ofSeconds(90);
+	private static final Duration OPENAI_RETRY_DELAY = Duration.ofMillis(500);
+	private static final int OPENAI_MAX_RETRY_ATTEMPTS = 2;
 
 	@Value("${openai.api-key:}")
 	private String apiKey;
@@ -78,13 +86,7 @@ public class OpenAiClient {
 				))
 				.build();
 
-		return webClient.post()
-				.uri("/chat/completions")
-				.header(HttpHeaders.AUTHORIZATION, "Bearer " + resolvedApiKey.value())
-				.contentType(MediaType.APPLICATION_JSON)
-				.bodyValue(requestBody)
-				.retrieve()
-				.bodyToMono(String.class)
+		return postOpenAi("/chat/completions", resolvedApiKey.value(), requestBody)
 				.map(this::parseResponseBody)
 				.map(this::extractMessageContent)
 				.block();
@@ -106,16 +108,56 @@ public class OpenAiClient {
 				.quality("medium")
 				.build();
 
+		return postOpenAi("/images/generations", resolvedApiKey.value(), requestBody)
+				.map(this::parseResponseBody)
+				.map(this::extractImageDataUrl)
+				.block();
+	}
+
+	private reactor.core.publisher.Mono<String> postOpenAi(String uri, String apiKey, Object requestBody) {
 		return webClient.post()
-				.uri("/images/generations")
-				.header(HttpHeaders.AUTHORIZATION, "Bearer " + resolvedApiKey.value())
+				.uri(uri)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
 				.contentType(MediaType.APPLICATION_JSON)
 				.bodyValue(requestBody)
 				.retrieve()
 				.bodyToMono(String.class)
-				.map(this::parseResponseBody)
-				.map(this::extractImageDataUrl)
-				.block();
+				.timeout(OPENAI_REQUEST_TIMEOUT)
+				.retryWhen(Retry.backoff(OPENAI_MAX_RETRY_ATTEMPTS, OPENAI_RETRY_DELAY)
+						.filter(this::isRetryableOpenAiError)
+						.onRetryExhaustedThrow((retrySpec, signal) -> signal.failure()))
+				.onErrorMap(this::toOpenAiApiException);
+	}
+
+	private boolean isRetryableOpenAiError(Throwable error) {
+		if (error instanceof WebClientRequestException || error instanceof TimeoutException) {
+			return true;
+		}
+
+		if (error instanceof WebClientResponseException responseException) {
+			int statusCode = responseException.getStatusCode().value();
+			return statusCode == 429 || statusCode >= 500;
+		}
+
+		return false;
+	}
+
+	private Throwable toOpenAiApiException(Throwable error) {
+		if (error instanceof CustomException) {
+			return error;
+		}
+
+		if (error instanceof WebClientResponseException responseException) {
+			log.warn(
+					"OpenAI API responded with status {}. body={}",
+					responseException.getStatusCode(),
+					responseException.getResponseBodyAsString()
+			);
+		} else {
+			log.warn("OpenAI API request failed. reason={}", error.toString());
+		}
+
+		return new CustomException(ErrorCode.AI_API_ERROR);
 	}
 
 	private JsonNode parseResponseBody(String responseBody) {
