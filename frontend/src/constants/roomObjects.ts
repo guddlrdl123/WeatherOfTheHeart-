@@ -5,10 +5,35 @@ type RoomObjectImageModule = {
     default: string;
 };
 
+export type RoomObjectCategoryKey =
+    | "furniture"
+    | "lighting"
+    | "plant"
+    | "fabric"
+    | "decor"
+    | "animal"
+    | "food"
+    | "outdoor";
+
+export type RoomObjectCategoryFilterKey = "all" | RoomObjectCategoryKey;
+
+export const ROOM_OBJECT_CATEGORIES: Array<{ key: RoomObjectCategoryFilterKey; label: string }> = [
+    { key: "all", label: "전체" },
+    { key: "furniture", label: "가구" },
+    { key: "lighting", label: "조명" },
+    { key: "plant", label: "식물" },
+    { key: "fabric", label: "패브릭" },
+    { key: "decor", label: "소품" },
+    { key: "animal", label: "동물" },
+    { key: "food", label: "음식" },
+    { key: "outdoor", label: "야외" },
+];
+
 export type RoomObjectOption = {
     key: RoomObjectKey;
     label: string;
     image: string;
+    category: RoomObjectCategoryKey;
     // 오브젝트가 방 안에 배치될 때 사용할 렌더링 너비 (높이는 가로세로 비율에 맞춰 자동 조정)
     roomWidth: number;
 };
@@ -17,6 +42,7 @@ type ObjectCatalogResponse = {
     objectKey: string;
     name: string;
     imageUrl?: string | null;
+    category?: string | null;
     width?: number | null;
 };
 
@@ -64,17 +90,17 @@ const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     "furniture-side-table": 125,
     "furniture-floor-lamp": 100,
     bench: 260,
-    puddle: 180,
+    puddle: 160,
     trash: 66,
     tree: 320,
     flower: 60,
     "decor-coffee-cup": 50,
-    "clay-pot": 70,
+    "clay-pot": 60,
     "garden-arch": 170,
     "planter-box": 180,
-    "shade-umbrella": 200,
+    "shade-umbrella": 230,
     "tea-stand": 180,
-    "wooden-fence": 200,
+    "wooden-fence": 160,
     bush: 120,
     "empty-single-bed": 260,
     "folded-blanket": 110,
@@ -104,8 +130,8 @@ const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     "solid-rose-carpet": 300,
     "solid-blue-runner-carpet": 400,
     "broad-leaf-plant": 50,
-    "cactus-pot": 60,
-    "sitting-calico-cat": 75,
+    "cactus-pot": 50,
+    "sitting-calico-cat": 55,
     "sitting-brown-puppy": 75,
     "long-floor-planter": 250,
     "wall-wooden-ivy-planter": 150,
@@ -122,7 +148,237 @@ const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     "small-crumpled-trash-pile": 120,
     "crumpled-can": 90,
     "red-crumpled-can": 90,
+    "wire-mesh-trash-bin": 70,
+    "danger-zone-sign": 140,
+    "no-entry-sign": 140,
+    "market-sign": 120,
+    "no-littering-sign": 140,
+    "notice-board": 130,
+    "keep-off-grass-sign": 140,
+    "small-trash-can": 50,
+    "small-well": 180,
+    "standing-penguin": 60,
+    "wall-star-garland": 260,
+    "paper-airplane": 60,
+    "stone-lantern": 70,
+    "wooden-stool": 75,
+    "sitting-fox": 80,
+    "watermelon": 140,
+    "bingsu": 95,
+    "green-tea-bingsu": 95,
+    "mango-bingsu": 95,
 };
+
+const CATEGORY_BY_KEY: Record<string, RoomObjectCategoryKey> = {
+    "decor-coffee-cup": "food",
+    "ceramic-mug": "food",
+    "bread-snack": "food",
+    "crumpled-snack-bag": "food",
+    "watermelon": "food",
+    "bingsu": "food",
+    "green-tea-bingsu": "food",
+    "mango-bingsu": "food",
+    "토스트": "food",
+    "접시 트레이": "food",
+    "꽃모양 사탕병": "food",
+    "젬 바구니": "food",
+    "picnic-basket": "food",
+    "fruit-stand": "food",
+    "tea-cart-cherry": "food",
+    "tea-cart-sunny": "food",
+    "tea-stall": "food",
+    "cocoa-stand": "food",
+    "keep-off-grass-sign": "outdoor",
+    "꽃잎 수거함": "outdoor",
+    "나무 데크 조각": "outdoor",
+    "lighthouse": "outdoor",
+    "moon-wall-poster": "decor",
+    "moon-bench": "furniture",
+    "moon-fountain": "outdoor",
+    "wall-star-garland": "decor",
+    "constellation-sign": "outdoor",
+    "starfish": "outdoor",
+    "star-lantern": "lighting",
+    "message-bottle": "outdoor",
+    "sand-castle": "outdoor",
+    "seashells": "outdoor",
+    "seaweed": "outdoor",
+    "coral": "outdoor",
+    "driftwood": "outdoor",
+    "life-ring": "outdoor",
+    "소라게 껍질": "outdoor",
+    "파도조각 오브제": "decor",
+    "하늘 퍼즐 조각": "decor",
+    "sitting-brown-puppy": "animal",
+    "nightstand": "furniture",
+    "tea-stand": "furniture",
+    "wall-propagation-bottles": "plant",
+    "greenhouse": "plant",
+};
+
+function hasAnyKeyword(value: string, keywords: string[]) {
+    return keywords.some((keyword) => value.includes(keyword));
+}
+
+function getRoomObjectCategory(key: RoomObjectKey): RoomObjectCategoryKey {
+    const explicitCategory = CATEGORY_BY_KEY[key];
+
+    if (explicitCategory) {
+        return explicitCategory;
+    }
+
+    if (hasAnyKeyword(key, [
+        "cat",
+        "dog",
+        "puppy",
+        "fox",
+        "penguin",
+        "bird",
+        "butterfly",
+        "otter",
+        "고양이",
+        "강아지",
+        "여우",
+        "펭귄",
+        "나비",
+        "수달",
+    ])) {
+        return "animal";
+    }
+
+    if (hasAnyKeyword(key, [
+        "lamp",
+        "lantern",
+        "candle",
+        "light",
+        "조명",
+        "랜턴",
+        "가로등",
+        "촛대",
+    ])) {
+        return "lighting";
+    }
+
+    if (hasAnyKeyword(key, [
+        "plant",
+        "flower",
+        "tree",
+        "bush",
+        "grass",
+        "clover",
+        "cactus",
+        "planter",
+        "fern",
+        "ivy",
+        "pothos",
+        "monstera",
+        "vase",
+        "watering-can",
+        "화분",
+        "꽃",
+        "나무",
+        "잔디",
+        "씨앗",
+    ])) {
+        return "plant";
+    }
+
+    if (hasAnyKeyword(key, [
+        "carpet",
+        "rug",
+        "cushion",
+        "pillow",
+        "blanket",
+        "runner",
+        "카펫",
+        "러그",
+        "쿠션",
+        "베개",
+        "담요",
+    ])) {
+        return "fabric";
+    }
+
+    if (hasAnyKeyword(key, [
+        "table",
+        "desk",
+        "chair",
+        "bench",
+        "bed",
+        "dresser",
+        "shelf",
+        "wardrobe",
+        "stool",
+        "sofa",
+        "fridge",
+        "storage",
+        "basket-stand",
+        "공용 테이블",
+        "원형 테이블",
+        "책상",
+        "의자",
+        "벤치",
+        "침대",
+        "서랍장",
+        "선반",
+        "옷장",
+        "스툴",
+        "소파",
+        "냉장고",
+    ])) {
+        return "furniture";
+    }
+
+    if (hasAnyKeyword(key, [
+        "sign",
+        "board",
+        "fence",
+        "well",
+        "arch",
+        "umbrella",
+        "fountain",
+        "gate",
+        "mailbox",
+        "marker",
+        "stone",
+        "trash-bin",
+        "public-trash",
+        "crate",
+        "deck",
+        "표지판",
+        "간판",
+        "게시판",
+        "울타리",
+        "우물",
+        "우산",
+        "분수",
+        "대문",
+        "우체통",
+        "나무 데크",
+        "꽃잎 수거함",
+    ])) {
+        return "outdoor";
+    }
+
+    return "decor";
+}
+
+function normalizeRoomObjectCategory(category: string | null | undefined): RoomObjectCategoryKey | null {
+    if (
+        category === "furniture"
+        || category === "lighting"
+        || category === "plant"
+        || category === "fabric"
+        || category === "decor"
+        || category === "animal"
+        || category === "food"
+        || category === "outdoor"
+    ) {
+        return category;
+    }
+
+    return null;
+}
 
 const FOLDER_ORDER: Record<string, number> = {
     "furniture-modular": 0,
@@ -198,6 +454,7 @@ function createLocalRoomObjectOptions() {
                 key,
                 label: getObjectLabel(key),
                 image: module.default,
+                category: getRoomObjectCategory(key),
                 roomWidth: getRoomWidth(key),
                 folder: getFolderName(path),
             };
@@ -215,6 +472,7 @@ function createLocalRoomObjectOptions() {
             key: object.key,
             label: object.label,
             image: object.image,
+            category: object.category,
             roomWidth: object.roomWidth,
         }));
 }
@@ -224,6 +482,7 @@ function createMissingRoomObjectOption(key: RoomObjectKey): RoomObjectOption {
         key,
         label: getObjectLabel(key),
         image: MISSING_ROOM_OBJECT_IMAGE,
+        category: getRoomObjectCategory(key),
         roomWidth: getRoomWidth(key),
     };
 }
@@ -291,6 +550,7 @@ function toCatalogRoomObjectOption(catalog: ObjectCatalogResponse, mode: ObjectC
         key,
         label: catalogLabel && catalogLabel !== key ? catalogLabel : localObject?.label || getObjectLabel(key),
         image: resolveCatalogImage(catalog, mode, localObject),
+        category: normalizeRoomObjectCategory(catalog.category) ?? localObject?.category ?? getRoomObjectCategory(key),
         roomWidth: catalog.width ?? localObject?.roomWidth ?? getRoomWidth(key),
     };
 }

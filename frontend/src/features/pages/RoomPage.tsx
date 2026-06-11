@@ -79,7 +79,7 @@ function normalizeMemoryObjectLayers(memories: Memory[]) {
 }
 
 function RoomPage() {
-    useRoomObjectCatalog();
+    const { isLoading: isObjectCatalogLoading } = useRoomObjectCatalog();
 
     const [weather] = useState<WeatherKey>('sunny');
     const stageWidth = useResponsiveStageWidth({
@@ -177,6 +177,7 @@ function RoomPage() {
             layer: memory.objectLayer ?? OBJECT_LAYER_MIN,
             title: memory.title,
         }));
+    const isRoomLoading = isMemoryLoading || isObjectCatalogLoading;
     const roomMonthLabel = formatRoomMonthLabel(roomMonthKey);
 
     const getNextObjectLayer = (dateString: string) => {
@@ -611,6 +612,21 @@ function RoomPage() {
                                     : "이야기를 확인하고 마음의 날씨를 분석하고 있어요. 잠시만 기다려주세요."
                             }
                         />
+                        {isRoomLoading && (
+                            <div
+                                className="absolute inset-0 z-[80] flex items-center justify-center bg-[#faf8f2]/82 backdrop-blur-[1px]"
+                                aria-live="polite"
+                            >
+                                <div className="flex w-[280px] flex-col items-center gap-4 text-[#5a4632]/60">
+                                    <div className="relative h-24 w-44">
+                                        <span className="absolute bottom-0 left-1/2 h-20 w-20 -translate-x-1/2 rounded-[999px_999px_42%_42%] bg-[#5a4632]/10 shadow-[0_14px_24px_rgba(90,70,50,0.08)] animate-pulse" />
+                                        <span className="absolute bottom-2 left-8 h-12 w-12 rounded-[999px_999px_42%_42%] bg-[#9b6b54]/10 shadow-[0_10px_18px_rgba(90,70,50,0.07)] animate-pulse [animation-delay:160ms]" />
+                                        <span className="absolute bottom-3 right-7 h-14 w-14 rounded-[999px_999px_42%_42%] bg-white/55 shadow-[0_10px_18px_rgba(90,70,50,0.07)] animate-pulse [animation-delay:320ms]" />
+                                    </div>
+                                    <p className="text-sm">방을 불러오는 중입니다.</p>
+                                </div>
+                            </div>
+                        )}
                         {/* <div className="pointer-events-none absolute inset-0 z-50 rounded-2xl ring-1 ring-inset ring-[#fffbf6]/40" /> */}
                     </div>
 

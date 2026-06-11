@@ -31,6 +31,7 @@ public class ObjectCatalogController {
                 catalog.getObjectKey(),
                 catalog.getObjectName(),
                 catalog.getImageUrl(),
+                catalog.getCategory(),
                 catalog.getWidth()
         );
     }
@@ -39,6 +40,7 @@ public class ObjectCatalogController {
             String objectKey,
             String name,
             String imageUrl,
+            String category,
             Integer width
     ) {
     }

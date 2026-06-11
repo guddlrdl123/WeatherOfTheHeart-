@@ -36,6 +36,10 @@ public class ObjectCatalog {
     @Column(name = "width", nullable = false)
     private Integer width;
 
+    @Column(name = "category", nullable = false, length = 30)
+    @Builder.Default
+    private String category = "decor";
+
     @Column(name = "is_active", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
     @Builder.Default
     private Boolean isActive = true;

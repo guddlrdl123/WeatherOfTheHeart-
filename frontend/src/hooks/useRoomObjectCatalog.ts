@@ -3,6 +3,7 @@ import { loadRoomObjectCatalog } from "../constants/roomObjects";
 
 export function useRoomObjectCatalog() {
   const [, setVersion] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let ignore = false;
@@ -11,11 +12,13 @@ export function useRoomObjectCatalog() {
       .then(() => {
         if (!ignore) {
           setVersion((version) => version + 1);
+          setIsLoading(false);
         }
       })
       .catch(() => {
         if (!ignore) {
           setVersion((version) => version + 1);
+          setIsLoading(false);
         }
       });
 
@@ -23,4 +26,6 @@ export function useRoomObjectCatalog() {
       ignore = true;
     };
   }, []);
+
+  return { isLoading };
 }

@@ -1,6 +1,10 @@
 import { useState } from "react";
-import { X } from "lucide-react";
-import { ROOM_OBJECT_OPTIONS } from "../../constants/roomObjects";
+import { Search, X } from "lucide-react";
+import {
+    ROOM_OBJECT_CATEGORIES,
+    ROOM_OBJECT_OPTIONS,
+    type RoomObjectCategoryFilterKey,
+} from "../../constants/roomObjects";
 import type { RoomObjectKey } from "../../types/roomObject";
 
 type Props = {
@@ -22,7 +26,17 @@ export function MemoryObjectSelectModal({
     unavailableObjectKeys = [],
     allowDuplicateObjects = true,
 }: Props) {
-    const firstSelectableObject = ROOM_OBJECT_OPTIONS.find(
+    const [searchText, setSearchText] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState<RoomObjectCategoryFilterKey>("all");
+    const normalizedSearchText = searchText.trim().toLocaleLowerCase();
+    const filteredObjects = ROOM_OBJECT_OPTIONS.filter((object) => {
+        const matchesCategory = selectedCategory === "all" || object.category === selectedCategory;
+        const matchesSearch = !normalizedSearchText
+            || object.label.toLocaleLowerCase().includes(normalizedSearchText);
+
+        return matchesCategory && matchesSearch;
+    });
+    const firstSelectableObject = filteredObjects.find(
         (object) => allowDuplicateObjects || !unavailableObjectKeys.includes(object.key),
     );
     const [selectedObjectKey, setSelectedObjectKey] = useState<RoomObjectKey | null>(
@@ -30,7 +44,7 @@ export function MemoryObjectSelectModal({
     );
     const hasObjects = ROOM_OBJECT_OPTIONS.length > 0;
     const selectedObjectExists = selectedObjectKey !== null
-        && ROOM_OBJECT_OPTIONS.some((object) => object.key === selectedObjectKey);
+        && filteredObjects.some((object) => object.key === selectedObjectKey);
     const selectedUnavailable = selectedObjectKey !== null
         && !allowDuplicateObjects
         && unavailableObjectKeys.includes(selectedObjectKey);
@@ -49,8 +63,8 @@ export function MemoryObjectSelectModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
-            <div className="bg-[#fffbf6c2] w-full max-w-[760px] max-h-[calc(100vh-64px)] overflow-y-auto rounded-xl p-6">
-                <div className="mb-5 flex items-start justify-between">
+            <div className="flex h-[min(720px,calc(100vh-64px))] w-full max-w-[760px] flex-col overflow-hidden rounded-xl bg-[#fffbf6c2] p-6">
+                <div className="mb-5 flex shrink-0 items-start justify-between">
                     <h2 className="text-xl text-[#5a4632]">
                         {title}
                     </h2>
@@ -64,46 +78,100 @@ export function MemoryObjectSelectModal({
                     </button>
                 </div>
 
-                {hasObjects ? (
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                        {ROOM_OBJECT_OPTIONS.map((object) => {
-                            const selected = effectiveSelectedObjectKey === object.key;
-                            const unavailable = !allowDuplicateObjects && unavailableObjectKeys.includes(object.key);
-
-                            return (
+                {hasObjects && (
+                    <div className="mb-4 shrink-0">
+                        <div className="flex h-11 items-center gap-2 rounded-md border border-[#5a4632]/12 bg-white/40 px-3 text-[#5a4632]">
+                            <Search size={16} className="shrink-0 text-[#5a4632]/45" />
+                            <input
+                                value={searchText}
+                                onChange={(event) => setSearchText(event.target.value)}
+                                placeholder="오브젝트명으로 검색"
+                                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[#5a4632]/35"
+                            />
+                            {searchText && (
                                 <button
-                                    key={object.key}
                                     type="button"
-                                    disabled={unavailable}
-                                    onClick={() => setSelectedObjectKey(object.key)}
-                                    className="flex h-[150px] flex-col items-center justify-center gap-3 rounded-md border p-3 text-sm text-[#5a4632] transition hover:bg-white/85 disabled:opacity-35"
-                                    style={{
-                                        borderColor: selected ? "rgba(200,150,106,0.68)" : "rgba(73, 63, 61, 0.13)",
-                                        background: selected ? "rgba(200,150,106,0.14)" : "rgba(73, 63, 61, 0.07)",
-                                    }}
+                                    onClick={() => setSearchText("")}
+                                    className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-[#5a4632]/50 transition hover:bg-[#5a4632]/10 hover:text-[#5a4632]"
+                                    aria-label="검색어 지우기"
+                                    title="검색어 지우기"
                                 >
-                                    <img
-                                        src={object.image}
-                                        alt=""
-                                        className="h-24 w-full object-contain"
-                                    />
-                                    <span>{object.label}</span>
+                                    <X size={14} />
                                 </button>
-                            );
-                        })}
+                            )}
+                        </div>
+                        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                            {ROOM_OBJECT_CATEGORIES.map((category) => {
+                                const selected = selectedCategory === category.key;
+
+                                return (
+                                    <button
+                                        key={category.key}
+                                        type="button"
+                                        onClick={() => setSelectedCategory(category.key)}
+                                        className="shrink-0 rounded-full border px-3 py-1.5 text-xs transition"
+                                        style={{
+                                            borderColor: selected ? "rgba(155,107,84,0.52)" : "rgba(90,70,50,0.14)",
+                                            background: selected ? "rgba(155,107,84,0.14)" : "rgba(255,255,255,0.34)",
+                                            color: selected ? "#7a5242" : "rgba(90,70,50,0.68)",
+                                        }}
+                                    >
+                                        {category.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
-                ) : (
-                    <div className="rounded-md border border-[#5a4632]/12 bg-white/35 px-4 py-10 text-center text-sm leading-6 text-[#5a4632]/60">
-                        등록된 오브젝트가 없습니다.
-                    </div>
-                )}
-                {hasObjects && !firstSelectableObject && (
-                    <p className="mt-4 rounded-md border border-[#5a4632]/12 bg-white/35 px-3 py-2 text-sm text-[#5a4632]/60">
-                        선택 가능한 오브젝트가 없습니다.
-                    </p>
                 )}
 
-                <div className="mt-6 flex justify-end gap-3">
+                <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                    {hasObjects ? (
+                        filteredObjects.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                {filteredObjects.map((object) => {
+                                    const selected = effectiveSelectedObjectKey === object.key;
+                                    const unavailable = !allowDuplicateObjects && unavailableObjectKeys.includes(object.key);
+
+                                    return (
+                                        <button
+                                            key={object.key}
+                                            type="button"
+                                            disabled={unavailable}
+                                            onClick={() => setSelectedObjectKey(object.key)}
+                                            className="flex h-[150px] flex-col items-center justify-center gap-3 rounded-md border p-3 text-sm text-[#5a4632] transition hover:bg-white/85 disabled:opacity-35"
+                                            style={{
+                                                borderColor: selected ? "rgba(200,150,106,0.68)" : "rgba(73, 63, 61, 0.13)",
+                                                background: selected ? "rgba(200,150,106,0.14)" : "rgba(73, 63, 61, 0.07)",
+                                            }}
+                                        >
+                                            <img
+                                                src={object.image}
+                                                alt=""
+                                                className="h-24 w-full object-contain"
+                                            />
+                                            <span>{object.label}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="grid min-h-full place-items-center rounded-md border border-[#5a4632]/12 bg-white/35 px-4 py-10 text-center text-sm leading-6 text-[#5a4632]/60">
+                                검색 결과가 없습니다.
+                            </div>
+                        )
+                    ) : (
+                        <div className="grid min-h-full place-items-center rounded-md border border-[#5a4632]/12 bg-white/35 px-4 py-10 text-center text-sm leading-6 text-[#5a4632]/60">
+                            등록된 오브젝트가 없습니다.
+                        </div>
+                    )}
+                    {hasObjects && filteredObjects.length > 0 && !firstSelectableObject && (
+                        <p className="mt-4 rounded-md border border-[#5a4632]/12 bg-white/35 px-3 py-2 text-sm text-[#5a4632]/60">
+                            선택 가능한 오브젝트가 없습니다.
+                        </p>
+                    )}
+                </div>
+
+                <div className="mt-6 flex shrink-0 justify-end gap-3">
                     <button
                         type="button"
                         onClick={onBack}
