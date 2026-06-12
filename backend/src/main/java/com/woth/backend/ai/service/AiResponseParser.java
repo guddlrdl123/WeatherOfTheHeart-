@@ -20,7 +20,7 @@ public class AiResponseParser {
 			"rainy", "비",
 			"sunset", "노을",
 			"night", "밤",
-			"dawn", "새벽",
+			"dawn", "오로라",
 			"cherry", "벚꽃"
 	);
 	private static final Set<String> WEATHER_KEYS = WEATHER_LABEL_BY_KEY.keySet();
@@ -38,7 +38,7 @@ public class AiResponseParser {
 			validate(parsedResponse);
 			return parsedResponse;
 		} catch (Exception e) {
-			throw new CustomException(ErrorCode.INVALID_INPUT);
+			throw new CustomException(ErrorCode.AI_API_ERROR);
 		}
 	}
 
