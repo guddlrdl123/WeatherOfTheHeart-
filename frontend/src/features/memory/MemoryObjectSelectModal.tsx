@@ -63,7 +63,7 @@ export function MemoryObjectSelectModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
-            <div className="flex h-[min(720px,calc(100vh-64px))] w-full max-w-[760px] flex-col overflow-hidden rounded-xl bg-[#fffbf6c2] p-6">
+            <div className="flex h-[min(820px,calc(100vh-48px))] w-full max-w-[760px] flex-col overflow-hidden rounded-xl bg-[#fffbf6c2] p-6">
                 <div className="mb-5 flex shrink-0 items-start justify-between">
                     <h2 className="text-xl text-[#5a4632]">
                         {title}
