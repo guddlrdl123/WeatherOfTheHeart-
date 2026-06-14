@@ -3,10 +3,11 @@ package com.woth.backend.auth;
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
 import com.woth.backend.user.UserRepository;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -99,15 +100,27 @@ public class EmailVerificationService {
             throw new CustomException(ErrorCode.EMAIL_SEND_FAILED);
         }
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(mailUsername);
-        message.setTo(email);
-        message.setSubject("[마음의 날씨] 이메일 인증번호");
-        message.setText("인증번호는 " + code + " 입니다. 10분 안에 입력해주세요.");
-
+        // [수정] SimpleMailMessage 대신 MimeMessageHelper를 사용해서
+        // 발신자 표시 이름을 "마음의 날씨"로 설정할 수 있도록 변경
         try {
-            mailSender.send(message);
-        } catch (MailException e) {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+
+            // [수정] UTF-8 인코딩을 사용해 한글 표시 이름이 깨지지 않도록 설정
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, false, "UTF-8");
+
+            // [수정] 실제 로그인 계정(mailUsername)은 유지하고,
+            // 수신자에게 보이는 발신자 이름만 "마음의 날씨"로 설정
+            helper.setFrom(new InternetAddress(mailUsername, "마음의 날씨"));
+
+            helper.setTo(email);
+
+            // [수정] 제목 문구를 조금 더 간결하게 조정
+            helper.setSubject("[마음의 날씨] 인증코드");
+
+            helper.setText("인증번호는 " + code + " 입니다. 10분 안에 입력해주세요.", false);
+
+            mailSender.send(mimeMessage);
+        } catch (Exception e) {
             throw new CustomException(ErrorCode.EMAIL_SEND_FAILED);
         }
     }
