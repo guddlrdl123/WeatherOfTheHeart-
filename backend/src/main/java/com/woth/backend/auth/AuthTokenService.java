@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
 import com.woth.backend.user.User;
+import com.woth.backend.user.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -25,15 +26,18 @@ public class AuthTokenService {
     private static final Base64.Decoder BASE64_URL_DECODER = Base64.getUrlDecoder();
 
     private final ObjectMapper objectMapper;
+    private final UserRepository userRepository;
     private final String secret;
     private final long expiresInSeconds;
 
     public AuthTokenService(
             ObjectMapper objectMapper,
+            UserRepository userRepository,
             @Value("${auth.jwt.secret:${JWT_SECRET:weather-of-the-heart-local-dev-secret-change-me}}") String secret,
             @Value("${auth.jwt.expires-in-seconds:${JWT_EXPIRES_IN_SECONDS:86400}}") long expiresInSeconds
     ) {
         this.objectMapper = objectMapper;
+        this.userRepository = userRepository;
         this.secret = secret;
         this.expiresInSeconds = expiresInSeconds;
     }
@@ -68,7 +72,7 @@ public class AuthTokenService {
     }
 
     private AuthenticatedUser parse(String token) {
-        String[] parts = token.split("\\.");
+        String[] parts = token.split("/.");
 
         if (parts.length != 3) {
             throw new CustomException(ErrorCode.AUTH_INVALID);
@@ -88,11 +92,15 @@ public class AuthTokenService {
             throw new CustomException(ErrorCode.AUTH_EXPIRED);
         }
 
+        Long userId = Long.valueOf(String.valueOf(payload.get("sub")));
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_WITHDRAWN));
+
         return new AuthenticatedUser(
-                Long.valueOf(String.valueOf(payload.get("sub"))),
-                String.valueOf(payload.getOrDefault("email", "")),
-                String.valueOf(payload.getOrDefault("nickname", "")),
-                Boolean.TRUE.equals(payload.get("admin"))
+                user.getId(),
+                user.getEmail(),
+                user.getNickname(),
+                Boolean.TRUE.equals(user.getIsAdmin())
         );
     }
 
