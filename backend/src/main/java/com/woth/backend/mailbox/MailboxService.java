@@ -83,6 +83,15 @@ public class MailboxService {
         return letterRepository.markAllAsReadByReceiverId(receiverId);
     }
 
+    // [수정] 우편함에서 본인 편지만 삭제할 수 있도록 삭제 로직 추가
+    @Transactional
+    public void deleteLetter(Long receiverId, Long letterId) {
+        Letter letter = letterRepository.findByIdAndReceiverId(letterId, receiverId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MAILBOX_NOT_FOUND));
+
+        letterRepository.delete(letter);
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendPlazaCompletionLetters(
             Long plazaId,
@@ -176,33 +185,3 @@ public class MailboxService {
     ) {
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
