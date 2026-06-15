@@ -137,7 +137,6 @@ public class EmailVerificationService {
                         <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;max-width:520px;">
                           <tr>
                             <td align="center" style="padding-bottom:34px;">
-                              <div style="display:inline-block;width:34px;height:34px;line-height:34px;border:2px solid #18181b;border-radius:10px;font-size:18px;font-weight:700;color:#18181b;">W</div>
                               <div style="margin-top:12px;font-size:24px;font-weight:700;color:#18181b;">마음의 날씨</div>
                             </td>
                           </tr>
