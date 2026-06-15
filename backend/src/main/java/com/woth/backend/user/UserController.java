@@ -7,10 +7,12 @@ import com.woth.backend.plaza.Plaza;
 import com.woth.backend.plaza.PlazaEntry;
 import com.woth.backend.plaza.PlazaService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -115,6 +117,16 @@ public class UserController {
         )));
     }
 
+    // [수정] 현재 로그인한 사용자가 본인 비밀번호를 다시 확인한 뒤 탈퇴 처리할 수 있는 엔드포인트를 추가합니다.
+    @DeleteMapping("/me")
+    public ApiResponse<Void> withdrawMe(
+            @CurrentUser AuthenticatedUser currentUser,
+            @Valid @RequestBody WithdrawRequest request
+    ) {
+        userService.withdraw(currentUser.id(), request.currentPassword());
+        return ApiResponse.success(null);
+    }
+
     private UserProfileResponse toResponse(User user) {
         return new UserProfileResponse(
                 user.getId(),
@@ -177,6 +189,12 @@ public class UserController {
             @Size(max = 10) String nickname,
             String currentPassword,
             @Size(min = 8) @Pattern(regexp = ".*[^A-Za-z0-9].*") String newPassword
+    ) {
+    }
+
+    // [수정] 회원 탈퇴 시 현재 비밀번호를 다시 입력받기 위한 요청 DTO
+    public record WithdrawRequest(
+            @NotBlank String currentPassword
     ) {
     }
 
