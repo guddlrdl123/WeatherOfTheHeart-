@@ -103,7 +103,7 @@ public class AuthController {
 
     public record EmailCodeVerifyRequest(
             @NotBlank @Email String email,
-            @NotBlank @Pattern(regexp = "/d{6}") String code
+            @NotBlank @Pattern(regexp = "\\d{6}") String code
     ) {
     }
 
