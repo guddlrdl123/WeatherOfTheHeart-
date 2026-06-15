@@ -21,15 +21,18 @@ public class AuthController {
 
     private final AuthService authService;
     private final EmailVerificationService emailVerificationService;
+    private final PasswordResetService passwordResetService; // [수정] 비밀번호 찾기/재설정 서비스 추가
     private final AuthTokenService authTokenService;
 
     public AuthController(
             AuthService authService,
             EmailVerificationService emailVerificationService,
+            PasswordResetService passwordResetService,
             AuthTokenService authTokenService
     ) {
         this.authService = authService;
         this.emailVerificationService = emailVerificationService;
+        this.passwordResetService = passwordResetService;
         this.authTokenService = authTokenService;
     }
 
@@ -54,6 +57,20 @@ public class AuthController {
     @PostMapping("/email/verify")
     public ApiResponse<Void> verifyEmailCode(@Valid @RequestBody EmailCodeVerifyRequest request) {
         emailVerificationService.verifyCode(request.email(), request.code());
+        return ApiResponse.success(null);
+    }
+
+    // [수정] 비밀번호 찾기용 재설정 토큰 발급 요청 엔드포인트 추가
+    @PostMapping("/password/reset/request")
+    public ApiResponse<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
+        passwordResetService.requestReset(request.email());
+        return ApiResponse.success(null);
+    }
+
+    // [수정] 비밀번호 재설정 토큰 검증 후 새 비밀번호를 저장하는 엔드포인트 추가
+    @PostMapping("/password/reset/confirm")
+    public ApiResponse<Void> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
+        passwordResetService.resetPassword(request.email(), request.token(), request.newPassword());
         return ApiResponse.success(null);
     }
 
@@ -86,7 +103,19 @@ public class AuthController {
 
     public record EmailCodeVerifyRequest(
             @NotBlank @Email String email,
-            @NotBlank @Pattern(regexp = "\\d{6}") String code
+            @NotBlank @Pattern(regexp = "/d{6}") String code
+    ) {
+    }
+
+    // [수정] 비밀번호 재설정 메일 발송 요청 DTO
+    public record PasswordResetRequest(@NotBlank @Email String email) {
+    }
+
+    // [수정] 비밀번호 재설정 완료 요청 DTO
+    public record PasswordResetConfirmRequest(
+            @NotBlank @Email String email,
+            @NotBlank String token,
+            @NotBlank @Size(min = 8) @Pattern(regexp = ".*[^A-Za-z0-9].*") String newPassword
     ) {
     }
 
