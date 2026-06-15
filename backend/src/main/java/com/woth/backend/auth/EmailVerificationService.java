@@ -5,6 +5,7 @@ import com.woth.backend.global.exception.ErrorCode;
 import com.woth.backend.user.UserRepository;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -24,6 +25,7 @@ public class EmailVerificationService {
 
     private static final int CODE_BOUND = 1_000_000;
     private static final int CODE_EXPIRES_MINUTES = 10;
+    private static final String EMAIL_LOGO_CONTENT_ID = "weatherLogo";
 
     private final EmailVerificationRepository emailVerificationRepository;
     private final UserRepository userRepository;
@@ -121,6 +123,10 @@ public class EmailVerificationService {
                     "인증번호는 " + code + " 입니다. 10분 안에 입력해주세요.",
                     buildVerificationEmailHtml(code)
             );
+            helper.addInline(
+                    EMAIL_LOGO_CONTENT_ID,
+                    new ClassPathResource("static/email/weather-logo.png")
+            );
 
             mailSender.send(mimeMessage);
         } catch (Exception e) {
@@ -137,7 +143,14 @@ public class EmailVerificationService {
                         <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;max-width:520px;">
                           <tr>
                             <td align="center" style="padding-bottom:34px;">
-                              <div style="margin-top:12px;font-size:24px;font-weight:700;color:#18181b;">마음의 날씨</div>
+                              <table role="presentation" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:12px auto 0;">
+                                <tr>
+                                  <td align="center" valign="middle" style="width:48px;height:48px;border-radius:14px;background-color:#dff4cf;">
+                                    <img src="cid:%s" width="34" height="34" alt="" style="display:block;width:34px;height:34px;border:0;outline:none;">
+                                  </td>
+                                  <td valign="middle" style="padding-left:12px;font-size:24px;font-weight:700;color:#18181b;">마음의 날씨</td>
+                                </tr>
+                              </table>
                             </td>
                           </tr>
                           <tr>
@@ -163,6 +176,6 @@ public class EmailVerificationService {
                     </tr>
                   </table>
                 </div>
-                """.formatted(code);
+                """.formatted(EMAIL_LOGO_CONTENT_ID, code);
     }
 }
