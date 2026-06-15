@@ -6,11 +6,6 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-// [plaza 테이블 매핑 엔티티]
-import jakarta.persistence.*;
-import lombok.*;
-import java.time.LocalDateTime;
-
 /**
  * [plazas 테이블 매핑 엔티티]
  * 유저들이 참여하여 소통할 수 있는 개별 광장 공간의 마스터 정보입니다.
@@ -72,7 +67,13 @@ public class Plaza {
     private Boolean isActive = true; // 광장 활성화 및 노출 여부
 
     @Column(name = "completed_at")
-    private LocalDateTime completedAt; // 최대 오브젝트 수에 도달해 광장 완성 우편 발송이 시작된 시각
+    private LocalDateTime completedAt;
+
+    // [수정] AI 이미지 생성 중인지 여부를 따로 관리해서,
+    // "광장 완료"와 "삭제 잠금"을 분리합니다.
+    @Column(name = "image_generating", nullable = false)
+    @Builder.Default
+    private Boolean imageGenerating = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -97,9 +98,22 @@ public class Plaza {
         return completedAt != null;
     }
 
+    public boolean isImageGenerating() {
+        return Boolean.TRUE.equals(imageGenerating);
+    }
+
     public void markCompleted(LocalDateTime completedAt) {
-        // 광장 완성 처리와 우편 발송이 중복 실행되지 않도록 완료 시각을 엔티티에 기록합니다.
+        // 광장 종료 시각 기록
         this.completedAt = completedAt;
     }
 
+    // [수정] AI 이미지 생성 시작 시 삭제 잠금 상태로 전환
+    public void startImageGeneration() {
+        this.imageGenerating = true;
+    }
+
+    // [수정] AI 이미지 생성 종료 시 삭제 잠금 해제
+    public void finishImageGeneration() {
+        this.imageGenerating = false;
+    }
 }

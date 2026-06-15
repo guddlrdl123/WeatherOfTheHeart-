@@ -136,6 +136,7 @@ public class PlazaController {
         return ApiResponse.success(toEntryResponse(entry));
     }
 
+
     @PostMapping("/entries/{entryId}/likes")
     public ApiResponse<PlazaEntryResponse> toggleEntryLike(
             @CurrentUser AuthenticatedUser currentUser,

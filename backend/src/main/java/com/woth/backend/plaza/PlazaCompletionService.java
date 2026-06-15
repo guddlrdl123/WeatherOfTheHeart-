@@ -66,41 +66,47 @@ public class PlazaCompletionService {
                 snapshot.receivers().stream().map(receiver -> receiver.receiver().getId()).toList()
         );
 
-        int marked = markCompleted(snapshot.plazaId(), snapshot.completedAt());
-        if (marked == 0 && !event.forceComplete()) {
-            log.info("[plaza-completion-test] plaza already completed. plazaId={}", snapshot.plazaId());
+        // [수정] AI 이미지 생성 시작 시점에만 삭제를 잠그기 위해 imageGenerating=true로 전환
+        boolean locked = markImageGenerationStarted(snapshot.plazaId(), snapshot.completedAt());
+        if (!locked) {
+            log.info("[plaza-completion-test] plaza image generation already locked. plazaId={}", snapshot.plazaId());
             return;
         }
 
-        log.info("[plaza-completion-test] plaza marked completed. plazaId={}", snapshot.plazaId());
+        log.info("[plaza-completion-test] plaza image generation locked. plazaId={}", snapshot.plazaId());
 
-        String generatedImageData = generateImage(snapshot);
-        String generatedImageUrl = uploadImageToS3(snapshot, generatedImageData);
+        try {
+            String generatedImageData = generateImage(snapshot);
+            String generatedImageUrl = uploadImageToS3(snapshot, generatedImageData);
 
-        String imageForMailbox = generatedImageUrl != null && !generatedImageUrl.isBlank()
-                ? generatedImageUrl
-                : generatedImageData;
+            String imageForMailbox = generatedImageUrl != null && !generatedImageUrl.isBlank()
+                    ? generatedImageUrl
+                    : generatedImageData;
 
-        log.info("[plaza-completion-test] image processing finished. plazaId={}, hasImage={}, storedAsS3Url={}",
-                snapshot.plazaId(),
-                imageForMailbox != null && !imageForMailbox.isBlank(),
-                generatedImageUrl != null && !generatedImageUrl.isBlank()
-        );
+            log.info("[plaza-completion-test] image processing finished. plazaId={}, hasImage={}, storedAsS3Url={}",
+                    snapshot.plazaId(),
+                    imageForMailbox != null && !imageForMailbox.isBlank(),
+                    generatedImageUrl != null && !generatedImageUrl.isBlank()
+            );
 
-        mailboxService.sendPlazaCompletionLetters(
-                snapshot.plazaId(),
-                snapshot.plazaTitle(),
-                snapshot.plazaCreatedAt(),
-                snapshot.completedAt(),
-                snapshot.participantCount(),
-                snapshot.receivers(),
-                imageForMailbox
-        );
+            mailboxService.sendPlazaCompletionLetters(
+                    snapshot.plazaId(),
+                    snapshot.plazaTitle(),
+                    snapshot.plazaCreatedAt(),
+                    snapshot.completedAt(),
+                    snapshot.participantCount(),
+                    snapshot.receivers(),
+                    imageForMailbox
+            );
 
-        log.info("[plaza-completion-test] completion letters sent. plazaId={}, receiverCount={}",
-                snapshot.plazaId(),
-                snapshot.receivers().size()
-        );
+            log.info("[plaza-completion-test] completion letters sent. plazaId={}, receiverCount={}",
+                    snapshot.plazaId(),
+                    snapshot.receivers().size()
+            );
+        } finally {
+            // [수정] 성공/실패 여부와 상관없이 AI 생성 종료 후 삭제 잠금을 해제
+            markImageGenerationFinished(snapshot.plazaId());
+        }
     }
 
     private CompletionSnapshot loadCompletionSnapshot(Long plazaId, boolean forceComplete) {
@@ -156,12 +162,39 @@ public class PlazaCompletionService {
         });
     }
 
-    private int markCompleted(Long plazaId, LocalDateTime completedAt) {
-        Integer marked = transactionTemplate.execute(
-                status -> plazaRepository.markCompletedIfNotAlready(plazaId, completedAt)
-        );
+    // [수정] AI 이미지 생성 시작 시 completedAt은 유지하되 imageGenerating=true로 전환
+    private boolean markImageGenerationStarted(Long plazaId, LocalDateTime completedAt) {
+        Boolean started = transactionTemplate.execute(status -> {
+            Plaza plaza = plazaRepository.findById(plazaId).orElse(null);
+            if (plaza == null) {
+                return false;
+            }
 
-        return marked == null ? 0 : marked;
+            if (plaza.isImageGenerating()) {
+                return false;
+            }
+
+            if (plaza.getCompletedAt() == null) {
+                plaza.markCompleted(completedAt);
+            }
+
+            plaza.startImageGeneration();
+            return true;
+        });
+
+        return Boolean.TRUE.equals(started);
+    }
+
+    // [수정] AI 이미지 생성 종료 시 imageGenerating=false로 전환
+    private void markImageGenerationFinished(Long plazaId) {
+        transactionTemplate.executeWithoutResult(status -> {
+            Plaza plaza = plazaRepository.findById(plazaId).orElse(null);
+            if (plaza == null) {
+                return;
+            }
+
+            plaza.finishImageGeneration();
+        });
     }
 
     private String generateImage(CompletionSnapshot snapshot) {

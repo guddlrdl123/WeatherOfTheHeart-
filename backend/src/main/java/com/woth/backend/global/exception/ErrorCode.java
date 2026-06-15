@@ -28,7 +28,7 @@ public enum ErrorCode {
     PLAZA_DUPLICATE_OBJECT("PLAZA_004", "이미 해당 오브젝트가 광장에 놓여 있습니다."),
     PLAZA_ENTRY_NOT_FOUND("PLAZA_005", "존재하지 않는 광장 글입니다."),
     PLAZA_ENTRY_FORBIDDEN("PLAZA_006", "광장 글/오브젝트를 수정하거나 삭제할 권한이 없습니다."),
-    PLAZA_DELETE_FORBIDDEN("PLAZA_007", "완료된 광장은 삭제할 수 없습니다."),
+    PLAZA_DELETE_FORBIDDEN("PLAZA_007", "AI 이미지 생성 중인 광장은 삭제할 수 없습니다."),
     MAILBOX_NOT_FOUND("MAILBOX_001", "존재하지 않는 우편입니다."),
     ROOM_NOT_FOUND("ROOM_001", "존재하지 않는 방입니다."),
     AI_API_KEY_MISSING("AI_001", "OpenAI API 키가 설정되지 않았습니다."),

@@ -1,9 +1,5 @@
 package com.woth.backend.plaza;
 
-
-
-
-
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
 import com.woth.backend.like.ObjectLike;
@@ -22,8 +18,6 @@ import java.util.List;
  * 광장 관련 비즈니스 로직을 수행하는 서비스입니다.
  * 광장 조회, 생성, 엔트리 등록 및 참가 제한 검증 등을 처리합니다.
  */
-
-
 @Service
 public class PlazaService {
 
@@ -161,7 +155,9 @@ public class PlazaService {
             throw new CustomException(ErrorCode.PLAZA_ALREADY_JOINED);
         }
 
-        if (!adminEntryOwner && !plaza.getAllowDuplicateObjects() && plazaEntryRepository.existsByPlazaIdAndObjectKey(plazaId, request.objectKey())) {
+        if (!adminEntryOwner
+                && !plaza.getAllowDuplicateObjects()
+                && plazaEntryRepository.existsByPlazaIdAndObjectKey(plazaId, request.objectKey())) {
             throw new CustomException(ErrorCode.PLAZA_DUPLICATE_OBJECT);
         }
 
@@ -218,8 +214,9 @@ public class PlazaService {
             throw new CustomException(ErrorCode.INVALID_INPUT);
         }
 
-        // [수정] 광장이 이미 종료되어 완성 이미지 생성 흐름에 들어간 경우에는 삭제를 막습니다.
-        if (plaza.isCompleted()) {
+        // [수정] 이제는 "완료된 광장" 전체를 막는 게 아니라,
+        // AI 이미지 생성 중일 때만 삭제를 막습니다.
+        if (plaza.isImageGenerating()) {
             throw new CustomException(ErrorCode.PLAZA_DELETE_FORBIDDEN);
         }
 
@@ -394,6 +391,3 @@ public class PlazaService {
     ) {
     }
 }
-
-
-
