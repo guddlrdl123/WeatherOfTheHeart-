@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 편지(우편함) 엔티티에 대한 JPA 리포지토리입니다.
@@ -14,6 +15,7 @@ import java.util.List;
 
 public interface LetterRepository extends JpaRepository<Letter, Long> {
     List<Letter> findByReceiverIdOrderByCreatedAtDesc(Long receiverId);
+    Optional<Letter> findByIdAndReceiverId(Long id, Long receiverId);
     boolean existsByReceiverIdAndPlazaId(Long receiverId, Long plazaId);
     long countByReceiverIdAndIsReadFalse(Long receiverId);
 
