@@ -21,7 +21,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public User getUser(Long userId) {
-        return userRepository.findById(userId)
+        return userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
@@ -38,6 +38,21 @@ public class UserService {
         }
 
         return user;
+    }
+
+    @Transactional
+    public void withdraw(Long userId, String currentPassword) {
+        User user = getUser(userId);
+
+        if (!hasText(currentPassword)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        if (!matchesPassword(currentPassword, user.getPassword())) {
+            throw new CustomException(ErrorCode.USER_PASSWORD_MISMATCH);
+        }
+
+        user.withdraw();
     }
 
     private void validatePasswordChange(User user, String currentPassword, String newPassword) {
