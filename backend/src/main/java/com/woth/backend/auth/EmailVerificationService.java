@@ -144,7 +144,7 @@ public class EmailVerificationService {
                             <td style="font-size:16px;line-height:1.7;color:#52525b;text-align:left;">
                               <p style="margin:0 0 16px;">안녕하세요.</p>
                               <p style="margin:0 0 16px;">마음의 날씨 회원가입을 위한 인증번호입니다.</p>
-                              <p style="margin:0;">아래 인증번호를 앱에 입력해주세요.</p>
+                              <p style="margin:0;">아래 인증번호를 입력해주세요.</p>
                             </td>
                           </tr>
                           <tr>
