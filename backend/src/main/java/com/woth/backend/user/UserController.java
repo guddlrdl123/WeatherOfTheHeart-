@@ -7,6 +7,7 @@ import com.woth.backend.plaza.Plaza;
 import com.woth.backend.plaza.PlazaEntry;
 import com.woth.backend.plaza.PlazaService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email; // [수정] 새 이메일 형식 검증을 위해 추가
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping; // [수정] 이메일 변경 인증코드 발송용 엔드포인트 추가
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -117,6 +119,35 @@ public class UserController {
         )));
     }
 
+    // [수정] 현재 비밀번호를 다시 확인한 뒤 새 이메일로 인증코드를 발송하는 엔드포인트 추가
+    @PostMapping("/me/email/change/send")
+    public ApiResponse<Void> sendEmailChangeCode(
+            @CurrentUser AuthenticatedUser currentUser,
+            @Valid @RequestBody EmailChangeSendRequest request
+    ) {
+        userService.sendEmailChangeCode(
+                currentUser.id(),
+                request.currentPassword(),
+                request.newEmail()
+        );
+        return ApiResponse.success(null);
+    }
+
+    // [수정] 새 이메일과 인증코드를 확인한 뒤 실제 이메일을 변경하는 엔드포인트 추가
+    @PatchMapping("/me/email")
+    public ApiResponse<UserProfileResponse> updateMyEmail(
+            @CurrentUser AuthenticatedUser currentUser,
+            @Valid @RequestBody EmailChangeConfirmRequest request
+    ) {
+        return ApiResponse.success(toResponse(
+                userService.updateEmail(
+                        currentUser.id(),
+                        request.newEmail(),
+                        request.code()
+                )
+        ));
+    }
+
     // [수정] 현재 로그인한 사용자가 본인 비밀번호를 다시 확인한 뒤 탈퇴 처리할 수 있는 엔드포인트를 추가합니다.
     @DeleteMapping("/me")
     public ApiResponse<Void> withdrawMe(
@@ -189,6 +220,20 @@ public class UserController {
             @Size(max = 10) String nickname,
             String currentPassword,
             @Size(min = 8) @Pattern(regexp = ".*[^A-Za-z0-9].*") String newPassword
+    ) {
+    }
+
+    // [수정] 이메일 변경 인증코드 발송 시 현재 비밀번호와 새 이메일을 함께 받는 요청 DTO
+    public record EmailChangeSendRequest(
+            @NotBlank String currentPassword,
+            @NotBlank @Email String newEmail
+    ) {
+    }
+
+    // [수정] 이메일 변경 확정 시 새 이메일과 6자리 인증코드를 받는 요청 DTO
+    public record EmailChangeConfirmRequest(
+            @NotBlank @Email String newEmail,
+            @NotBlank @Pattern(regexp = "[0-9]{6}") String code
     ) {
     }
 

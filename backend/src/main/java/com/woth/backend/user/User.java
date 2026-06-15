@@ -76,6 +76,11 @@ public class User {
         this.password = password;
     }
 
+    // [수정] 새 이메일 인증이 완료된 뒤 실제 이메일 주소를 반영
+    public void updateEmail(String email) {
+        this.email = email;
+    }
+
     // [수정] 회원 탈퇴 시 soft delete 처리
     public void withdraw() {
         this.isDeleted = true;
