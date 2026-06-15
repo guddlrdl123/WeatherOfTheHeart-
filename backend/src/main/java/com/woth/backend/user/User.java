@@ -33,6 +33,15 @@ public class User {
     @Builder.Default
     private Boolean isAdmin = false; // 관리자 여부 (기본값 false)
 
+    // [수정] 회원 탈퇴 시 하드 삭제 대신 상태값으로 관리하기 위한 필드
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private Boolean isDeleted = false;
+
+    // [수정] 회원 탈퇴 시각 저장
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP") // DB default도 함께 둬 SQL 직접 INSERT 시에도 생성 시간이 채워짐
     private LocalDateTime createdAt;
 
@@ -65,5 +74,11 @@ public class User {
 
     public void updatePassword(String password) {
         this.password = password;
+    }
+
+    // [수정] 회원 탈퇴 시 soft delete 처리
+    public void withdraw() {
+        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
     }
 }
