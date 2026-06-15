@@ -1,11 +1,11 @@
 package com.woth.backend.user;
 
+import com.woth.backend.auth.EmailVerificationService; // [수정] 기존 이메일 인증 서비스를 재사용하기 위해 추가
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.woth.backend.auth.EmailVerificationService;
 
 @Service
 public class UserService {
@@ -14,11 +14,16 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailVerificationService emailVerificationService; // 이메일 변경 시 인증코드 발송/검증
+    private final EmailVerificationService emailVerificationService; // [수정] 이메일 변경 시 인증코드 발송/검증 재사용
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            EmailVerificationService emailVerificationService
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @Transactional(readOnly = true)
@@ -41,7 +46,8 @@ public class UserService {
 
         return user;
     }
-    // 현재 비밀번호를 다시 확인한 뒤 새 이메일 인증코드를 발송
+
+    // [수정] 현재 비밀번호를 다시 확인한 뒤 새 이메일로 인증코드를 발송
     @Transactional
     public void sendEmailChangeCode(Long userId, String currentPassword, String newEmail) {
         User user = getUser(userId);
@@ -102,8 +108,6 @@ public class UserService {
         return user;
     }
 
-
-
     @Transactional
     public void withdraw(Long userId, String currentPassword) {
         User user = getUser(userId);
@@ -157,6 +161,4 @@ public class UserService {
         return value != null
                 && (value.startsWith("$2a$") || value.startsWith("$2b$") || value.startsWith("$2y$"));
     }
-
-
 }
