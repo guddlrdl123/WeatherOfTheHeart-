@@ -35,7 +35,7 @@ public class AuthService {
     @Transactional
     public User login(String email, String password) {
         if (ADMIN_EMAIL.equals(email) && ADMIN_PASSWORD.equals(password)) {
-            return userRepository.findByEmail(email)
+            return userRepository.findByEmailAndIsDeletedFalse(email)
                     .map(user -> {
                         user.promoteToAdmin(passwordEncoder.encode(password));
                         return user;
@@ -43,8 +43,13 @@ public class AuthService {
                     .orElseGet(() -> createAdminUser(email, password));
         }
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
+                .orElseGet(() -> {
+                    if (userRepository.existsByEmail(email)) {
+                        throw new CustomException(ErrorCode.USER_WITHDRAWN);
+                    }
+                    throw new CustomException(ErrorCode.USER_NOT_FOUND);
+                });
 
         if (!matchesPassword(password, user.getPassword())) {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);
@@ -57,7 +62,10 @@ public class AuthService {
     @Transactional
     public User signup(String email, String password, String nickname) {
         if (userRepository.existsByEmail(email)) {
-            throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
+            if (userRepository.existsByEmailAndIsDeletedFalse(email)) {
+                throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
+            }
+            throw new CustomException(ErrorCode.USER_WITHDRAWN);
         }
         emailVerificationService.ensureVerified(email);
 
