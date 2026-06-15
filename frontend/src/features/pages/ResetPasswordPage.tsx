@@ -1,6 +1,6 @@
 import { CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { useEffect, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   AuthApiError,
   confirmPasswordReset,
@@ -10,6 +10,7 @@ import {
 
 const CODE_LENGTH = 6;
 const RESET_CODE_EXPIRES_SECONDS = 10 * 60;
+const LOGIN_REDIRECT_SECONDS = 5;
 const PASSWORD_MIN_LENGTH = 8;
 const EMPTY_CODE_DIGITS = Array.from({ length: CODE_LENGTH }, () => "");
 
@@ -31,6 +32,7 @@ function formatRemainingTime(seconds: number) {
 type ResetStep = "request" | "code" | "password" | "done";
 
 export function ResetPasswordPage() {
+  const navigate = useNavigate();
   const codeInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const [step, setStep] = useState<ResetStep>("request");
   const [email, setEmail] = useState("");
@@ -43,9 +45,10 @@ export function ResetPasswordPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const [redirectSeconds, setRedirectSeconds] = useState(LOGIN_REDIRECT_SECONDS);
 
   const verificationCode = codeDigits.join("");
-  const isCodeFlowActive = step === "code" || step === "password";
+  const isCodeFlowActive = step === "code";
   const isCodeExpired = isCodeFlowActive && remainingSeconds <= 0;
   const remainingTimeText = formatRemainingTime(remainingSeconds);
 
@@ -60,6 +63,23 @@ export function ResetPasswordPage() {
 
     return () => window.clearInterval(timerId);
   }, [isCodeFlowActive, remainingSeconds]);
+
+  useEffect(() => {
+    if (step !== "done") {
+      return;
+    }
+
+    if (redirectSeconds <= 0) {
+      navigate("/login", { replace: true, state: { fromLanding: true } });
+      return;
+    }
+
+    const timerId = window.setTimeout(() => {
+      setRedirectSeconds((current) => Math.max(current - 1, 0));
+    }, 1000);
+
+    return () => window.clearTimeout(timerId);
+  }, [navigate, redirectSeconds, step]);
 
   function focusCodeInput(index: number) {
     window.setTimeout(() => codeInputRefs.current[index]?.focus(), 0);
@@ -181,11 +201,6 @@ export function ResetPasswordPage() {
     event.preventDefault();
     setError("");
 
-    if (isCodeExpired) {
-      setError("인증번호가 만료되었습니다. 다시 받아 주세요.");
-      return;
-    }
-
     if (newPassword.length < PASSWORD_MIN_LENGTH || !hasRequiredPasswordSpecialCharacter(newPassword)) {
       setError("새 비밀번호는 8자 이상이고 특수문자를 포함해야 합니다.");
       return;
@@ -203,6 +218,7 @@ export function ResetPasswordPage() {
         token: verifiedCode,
         newPassword,
       });
+      setRedirectSeconds(LOGIN_REDIRECT_SECONDS);
       setStep("done");
     } catch (caughtError) {
       setError(caughtError instanceof AuthApiError ? caughtError.message : "비밀번호 재설정에 실패했습니다.");
@@ -343,16 +359,6 @@ export function ResetPasswordPage() {
 
             {step === "password" && (
               <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-4">
-                <p
-                  className={`text-xs ${isCodeExpired ? "text-[#e6a1a1]" : "text-[#5a4632]/55"
-                    }`}
-                  role="status"
-                >
-                  {isCodeExpired
-                    ? "인증번호가 만료되었습니다."
-                    : `인증번호 유효시간 ${remainingTimeText}`}
-                </p>
-
                 <label className="flex flex-col gap-2 text-sm">
                   새 비밀번호
                   <div className="relative">
@@ -403,23 +409,10 @@ export function ResetPasswordPage() {
 
                 <button
                   type="submit"
-                  disabled={isSubmitting || isCodeExpired}
+                  disabled={isSubmitting}
                   className="mw-button-solid mt-1 h-11 rounded-[8px] px-3 text-sm disabled:opacity-50"
                 >
                   비밀번호 변경
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStep("code");
-                    setError("");
-                    focusCodeInput(0);
-                  }}
-                  disabled={isSubmitting}
-                  className="text-xs text-[#5a4632]/55 hover:text-[#5a4632] disabled:opacity-50"
-                >
-                  인증번호 다시 입력
                 </button>
               </form>
             )}
@@ -431,6 +424,9 @@ export function ResetPasswordPage() {
                   비밀번호 변경 완료
                 </div>
                 <p className="text-sm leading-6 text-[#5a4632]/65">새 비밀번호로 다시 로그인해 주세요.</p>
+                <p className="mt-2 text-xs text-[#5a4632]/55" aria-live="polite">
+                  {redirectSeconds}초 후 로그인 페이지로 이동합니다.
+                </p>
               </div>
             )}
           </section>
