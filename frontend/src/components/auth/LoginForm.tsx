@@ -59,9 +59,6 @@ export function LoginForm() {
     <form onSubmit={handleSubmit} className="mw-surface mx-auto flex w-full max-w-[420px] flex-col gap-4 rounded-xl p-8 select-none">
       <div>
         <p className="mb-2 text-[0.68rem] tracking-[0.2em] text-[#e0d2ba]">LOGIN</p>
-        {/* <h1 className="text-xl font-normal text-[#e0d2ba]" style={{ fontFamily: "'Noto Serif KR', Georgia, serif" }}>
-          다시 방으로 돌아가기
-        </h1> */}
       </div>
 
       <label className="flex flex-col gap-2 text-sm">
@@ -96,12 +93,16 @@ export function LoginForm() {
         로그인
       </button>
 
-      <p className="text-center text-xs text-white/38">
-        처음 오셨나요?
-        <Link to="/signup" state={{ fromLanding: true }} className="ml-2 text-[#d8bd9a] text-xs hover:text-[#ead2b1]">
-          회원가입
-        </Link>
-      </p>
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-center text-xs text-white/38">
+          <Link to="/reset-password" className="ml-2 text-xs">
+            비밀번호 찾기
+          </Link>
+          <Link to="/signup" state={{ fromLanding: true }} className="ml-2 text-xs">
+            회원가입
+          </Link>
+        </p>
+      </div>
     </form>
   );
 }

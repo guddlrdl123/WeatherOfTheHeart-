@@ -27,4 +27,16 @@ public interface LetterRepository extends JpaRepository<Letter, Long> {
               and letter.isRead = false
             """)
     int markAllAsReadByReceiverId(@Param("receiverId") Long receiverId);
+
+    @Modifying
+    @Query("delete from Letter letter where letter.receiver.id = :receiverId")
+    void deleteByReceiverId(@Param("receiverId") Long receiverId);
+
+    @Modifying
+    @Query("""
+            update Letter letter
+            set letter.sender = null
+            where letter.sender.id = :senderId
+            """)
+    void clearSenderByUserId(@Param("senderId") Long senderId);
 }

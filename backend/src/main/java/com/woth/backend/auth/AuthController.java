@@ -1,9 +1,5 @@
 package com.woth.backend.auth;
 
-/*
- * 인증 관련 REST API 컨트롤러입니다.
- * /api/auth/login : 로그인 엔드포인트로, 이메일과 비밀번호를 받아 인증 후 사용자 정보를 반환
- */
 import com.woth.backend.global.dto.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -11,7 +7,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.format.DateTimeFormatter;
 
@@ -21,7 +20,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final EmailVerificationService emailVerificationService;
-    private final PasswordResetService passwordResetService; // [수정] 비밀번호 찾기/재설정 서비스 추가
+    private final PasswordResetService passwordResetService;
     private final AuthTokenService authTokenService;
 
     public AuthController(
@@ -60,14 +59,18 @@ public class AuthController {
         return ApiResponse.success(null);
     }
 
-    // [수정] 비밀번호 찾기용 재설정 토큰 발급 요청 엔드포인트 추가
     @PostMapping("/password/reset/request")
     public ApiResponse<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
         passwordResetService.requestReset(request.email());
         return ApiResponse.success(null);
     }
 
-    // [수정] 비밀번호 재설정 토큰 검증 후 새 비밀번호를 저장하는 엔드포인트 추가
+    @PostMapping("/password/reset/verify")
+    public ApiResponse<Void> verifyPasswordReset(@Valid @RequestBody PasswordResetVerifyRequest request) {
+        passwordResetService.verifyToken(request.email(), request.token());
+        return ApiResponse.success(null);
+    }
+
     @PostMapping("/password/reset/confirm")
     public ApiResponse<Void> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
         passwordResetService.resetPassword(request.email(), request.token(), request.newPassword());
@@ -107,14 +110,18 @@ public class AuthController {
     ) {
     }
 
-    // [수정] 비밀번호 재설정 메일 발송 요청 DTO
     public record PasswordResetRequest(@NotBlank @Email String email) {
     }
 
-    // [수정] 비밀번호 재설정 완료 요청 DTO
+    public record PasswordResetVerifyRequest(
+            @NotBlank @Email String email,
+            @NotBlank @Pattern(regexp = "\\d{6}") String token
+    ) {
+    }
+
     public record PasswordResetConfirmRequest(
             @NotBlank @Email String email,
-            @NotBlank String token,
+            @NotBlank @Pattern(regexp = "\\d{6}") String token,
             @NotBlank @Size(min = 8) @Pattern(regexp = ".*[^A-Za-z0-9].*") String newPassword
     ) {
     }

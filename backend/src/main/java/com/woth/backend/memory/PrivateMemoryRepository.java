@@ -5,6 +5,9 @@ package com.woth.backend.memory;
  * 사용자 개인 방에 속한 메모 조회 및 중복 검사 메서드
  */
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -16,4 +19,13 @@ public interface PrivateMemoryRepository extends JpaRepository<PrivateMemory, Lo
     boolean existsByPrivateRoomUserIdAndMemoryDate(Long userId, LocalDate memoryDate);
     // 위치 수정 시 요청 사용자의 기억인지 함께 검증하기 위한 조회
     Optional<PrivateMemory> findByIdAndPrivateRoomUserId(Long id, Long userId);
+
+    @Modifying
+    @Query("""
+            delete from PrivateMemory memory
+            where memory.privateRoom.id in (
+                select room.id from PrivateRoom room where room.user.id = :userId
+            )
+            """)
+    void deleteByPrivateRoomUserId(@Param("userId") Long userId);
 }

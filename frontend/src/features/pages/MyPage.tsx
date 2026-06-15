@@ -8,11 +8,11 @@ import {
   Eye,
   EyeOff,
   KeyRound,
-  LogOut,
+  // LogOut,
   Mail,
   MapPinned,
   MessageSquareText,
-  Pencil,
+  // Pencil,
   UserRound,
   X,
 } from "lucide-react";
@@ -22,7 +22,7 @@ import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
 import { useRoomObjectCatalog } from "../../hooks/useRoomObjectCatalog";
 import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
 import { fetchUserCreatedPlazas, fetchUserPlazaEntries } from "../../services/plazaService";
-import { fetchUserProfile, updateUserProfile } from "../../services/userService";
+import { deleteUserAccount, fetchUserProfile, updateUserProfile } from "../../services/userService";
 import type { Plaza, PlazaEntry } from "../../types/plaza";
 import {
   clearAuthenticated,
@@ -52,6 +52,10 @@ type ProfileEditValue = {
   currentPassword: string;
   newPassword: string;
   newPasswordConfirm: string;
+};
+
+type AccountWithdrawalValue = {
+  currentPassword: string;
 };
 
 const MYPAGE_LAYOUT_WIDTH = 1460;
@@ -108,10 +112,11 @@ type ProfileEditModalProps = {
   nickname: string;
   isSaving: boolean;
   onClose: () => void;
+  onRequestWithdrawal: () => void;
   onSave: (value: ProfileEditValue) => void;
 };
 
-function ProfileEditModal({ nickname, isSaving, onClose, onSave }: ProfileEditModalProps) {
+function ProfileEditModal({ nickname, isSaving, onClose, onRequestWithdrawal, onSave }: ProfileEditModalProps) {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showNewPasswordConfirm, setShowNewPasswordConfirm] = useState(false);
@@ -280,6 +285,123 @@ function ProfileEditModal({ nickname, isSaving, onClose, onSave }: ProfileEditMo
             {isSaving ? "저장 중" : "저장"}
           </button>
         </div>
+
+        <div className="mt-6 border-t border-[#b36a5e]/18 pt-5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm text-[#8f5149]">회원탈퇴</p>
+            </div>
+            <button
+              type="button"
+              className="inline-flex shrink-0 items-center gap-2 rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9]/45 px-3 py-2 text-xs text-[#9f5c53] hover:bg-[#f4dfd9] disabled:opacity-50"
+              onClick={onRequestWithdrawal}
+              disabled={isSaving}
+            >
+              {/* <Trash2 size={14} /> */}
+              탈퇴하기
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+type AccountWithdrawalModalProps = {
+  isDeleting: boolean;
+  onClose: () => void;
+  onConfirm: (value: AccountWithdrawalValue) => void;
+};
+
+function AccountWithdrawalModal({ isDeleting, onClose, onConfirm }: AccountWithdrawalModalProps) {
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [value, setValue] = useState<AccountWithdrawalValue>({
+    currentPassword: "",
+  });
+
+  function updateValue(key: keyof AccountWithdrawalValue, nextValue: string) {
+    setValue((previousValue) => ({
+      ...previousValue,
+      [key]: nextValue,
+    }));
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 py-8 backdrop-blur-sm select-none"
+      role="presentation"
+      onMouseDown={onClose}
+    >
+      <form
+        className="w-full max-w-[520px] rounded-xl bg-[#fffbf6f2] p-6 text-[#5a4632] shadow-xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="account-withdrawal-title"
+        onMouseDown={(event) => event.stopPropagation()}
+        onSubmit={(event) => {
+          event.preventDefault();
+          onConfirm(value);
+        }}
+      >
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            {/* <p className="text-xs tracking-[0.18em] text-[#b36a5e]/60">DANGER</p> */}
+            <h2 id="account-withdrawal-title" className="text-2xl font-normal leading-9 text-[#5a4632]">회원탈퇴</h2>
+          </div>
+          <button
+            type="button"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#5a4632]/10 text-[#5a4632] hover:bg-black/5 disabled:opacity-50"
+            onClick={onClose}
+            disabled={isDeleting}
+            aria-label="닫기"
+            title="닫기"
+          >
+            <X size={17} />
+          </button>
+        </div>
+
+        <div className="mb-5 flex gap-2 text-xs leading-6 text-[#8f5149]">
+          <CircleAlert size={14} className="mt-0.5 shrink-0" />
+          <p>회원탈퇴 시 계정은 즉시 삭제되며 복구할 수 없습니다.
+            다만 이미 종료된 광장에 남긴 오브젝트와 글은 유지됩니다.</p>
+        </div>
+
+        <div className="grid gap-4">
+          <label className="block">
+            <span className="mb-2 block text-xs text-[#5a4632]/55">현재 비밀번호</span>
+            <div className="relative">
+              <input
+                className="mw-input h-10 px-3 pr-10 text-sm"
+                type={showCurrentPassword ? "text" : "password"}
+                value={value.currentPassword}
+                onChange={(event) => updateValue("currentPassword", event.target.value)}
+                disabled={isDeleting}
+                autoComplete="current-password"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrentPassword((current) => !current)}
+                className="absolute right-3 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center text-[#5a4632]/60 hover:text-[#5a4632] disabled:opacity-50"
+                disabled={isDeleting}
+                aria-label={showCurrentPassword ? "현재 비밀번호 숨기기" : "현재 비밀번호 보기"}
+                title={showCurrentPassword ? "현재 비밀번호 숨기기" : "현재 비밀번호 보기"}
+              >
+                {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </label>
+        </div>
+
+        <div className="mt-6 flex justify-end gap-2">
+          <button
+            type="submit"
+            className="inline-flex items-center gap-2 rounded-md bg-[#b36a5e] px-4 py-2 text-sm text-white hover:bg-[#9f5c53] disabled:opacity-50"
+            disabled={isDeleting}
+          >
+            탈퇴하기
+          </button>
+        </div>
       </form>
     </div>
   );
@@ -296,8 +418,10 @@ function MyPage() {
   const [joinedAt, setJoinedAt] = useState("");
   const [nicknameDraft, setNicknameDraft] = useState(nickname);
   const [isEditingNickname, setIsEditingNickname] = useState(false);
+  const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isActivityLoading, setIsActivityLoading] = useState(true);
   const [profileNotice, setProfileNotice] = useState<ProfileNotice | null>(null);
   const [createdPlazas, setCreatedPlazas] = useState<Plaza[]>([]);
@@ -440,6 +564,20 @@ function MyPage() {
     setIsEditingNickname(false);
   }
 
+  function handleRequestWithdrawal() {
+    setIsEditingNickname(false);
+    closeProfileNotice();
+    setIsWithdrawalOpen(true);
+  }
+
+  function handleCloseWithdrawal() {
+    if (isDeletingAccount) {
+      return;
+    }
+
+    setIsWithdrawalOpen(false);
+  }
+
   async function handleSaveProfile(value: ProfileEditValue) {
     const nextNickname = normalizeProfileNickname(value.nickname);
     const currentPassword = value.currentPassword;
@@ -490,6 +628,26 @@ function MyPage() {
       showProfileNotice(caughtError instanceof Error ? caughtError.message : "프로필 정보를 수정하지 못했습니다.", "error");
     } finally {
       setIsSavingProfile(false);
+    }
+  }
+
+  async function handleConfirmWithdrawal(value: AccountWithdrawalValue) {
+    if (!value.currentPassword) {
+      showProfileNotice("현재 비밀번호를 입력해주세요.", "error");
+      return;
+    }
+
+    try {
+      setIsDeletingAccount(true);
+      closeProfileNotice();
+
+      await deleteUserAccount({ currentPassword: value.currentPassword });
+      clearAuthenticated();
+      navigate("/", { replace: true });
+    } catch (caughtError) {
+      showProfileNotice(caughtError instanceof Error ? caughtError.message : "회원탈퇴에 실패했습니다.", "error");
+    } finally {
+      setIsDeletingAccount(false);
     }
   }
 
@@ -568,7 +726,7 @@ function MyPage() {
                       onClick={handleStartEdit}
                       disabled={isProfileLoading || isSavingProfile}
                     >
-                      <Pencil size={14} />
+                      {/* <Pencil size={14} /> */}
                       정보수정
                     </button>
                     <button
@@ -576,7 +734,7 @@ function MyPage() {
                       className="mw-button inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm"
                       onClick={handleLogout}
                     >
-                      <LogOut size={14} />
+                      {/* <LogOut size={14} /> */}
                       로그아웃
                     </button>
                   </div>
@@ -756,9 +914,13 @@ function MyPage() {
                           <div className="min-w-0">
                             <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-[#5a4632]/48">
                               <span className="inline-flex items-center gap-1.5 rounded-full border border-[#5a4632]/12 bg-white/30 px-2.5 py-1">
-                                <MapPinned size={13} />
+                                {/* <MapPinned size={13} /> */}
                                 {getPlazaStatusLabel(selectedRecord.plaza)}
                               </span>
+                              <div className="flex items-center gap-1 px-3 py-1 text-xs text-[#5a4632]/58">
+                                <CalendarDays size={14} />
+                                {formatCreatedAt(selectedRecord.entry.createdAt)}
+                              </div>
                             </div>
                             <h3 className="truncate text-2xl font-normal text-[#5a4632]">
                               {selectedRecord.plaza.topic}
@@ -769,10 +931,7 @@ function MyPage() {
                           </div>
 
                           <div className="flex shrink-0 items-center gap-2">
-                            <div className="flex items-center gap-2 rounded-full border border-[#5a4632]/15 bg-white/35 px-3 py-1.5 text-xs text-[#5a4632]/58">
-                              <CalendarDays size={14} />
-                              {formatCreatedAt(selectedRecord.entry.createdAt)}
-                            </div>
+
                             <button
                               type="button"
                               onClick={() => navigate(`/plaza/${selectedRecord.plaza.id}`)}
@@ -832,7 +991,16 @@ function MyPage() {
           nickname={nicknameDraft || nickname}
           isSaving={isSavingProfile}
           onClose={handleCancelEdit}
+          onRequestWithdrawal={handleRequestWithdrawal}
           onSave={(value) => void handleSaveProfile(value)}
+        />
+      )}
+
+      {isWithdrawalOpen && (
+        <AccountWithdrawalModal
+          isDeleting={isDeletingAccount}
+          onClose={handleCloseWithdrawal}
+          onConfirm={(value) => void handleConfirmWithdrawal(value)}
         />
       )}
     </div>

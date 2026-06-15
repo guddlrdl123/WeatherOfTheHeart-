@@ -30,4 +30,19 @@ public interface PlazaRepository extends JpaRepository<Plaza, Long> {
               and p.completedAt is null
             """)
     int markCompletedIfNotAlready(@Param("plazaId") Long plazaId, @Param("completedAt") LocalDateTime completedAt);
+
+    @Modifying
+    @Query("""
+            update Plaza plaza
+            set plaza.owner = null
+            where plaza.owner.id = :ownerId
+            """)
+    void clearOwnerByUserId(@Param("ownerId") Long ownerId);
+
+    @Modifying
+    @Query("""
+            delete from Plaza plaza
+            where plaza.owner.id = :ownerId
+            """)
+    void deleteByOwnerId(@Param("ownerId") Long ownerId);
 }

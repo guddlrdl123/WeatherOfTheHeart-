@@ -19,6 +19,7 @@ import {
   getPlazaStatusLabel,
   getPlazaEntryLikeCount,
   getPopularPlazaEntries,
+  hasLikedPlazaEntry,
   isPlazaFull,
   normalizePlaza,
   togglePlazaEntryLike,
@@ -81,7 +82,7 @@ function PlazaConfirmModal({ action, onCancel, onConfirm }: PlazaConfirmModalPro
       onPointerDown={onCancel}
     >
       <div
-        className="w-full max-w-[380px] max-h-[calc(100vh-64px)] overflow-y-auto rounded-xl border border-[#b36a5e]/25 bg-[#fffbf6f2] p-5 text-[#5a4632] shadow-xl"
+        className="w-full max-w-[420px] max-h-[calc(100vh-64px)] overflow-y-auto rounded-xl border border-[#b36a5e]/25 bg-[#fffbf6f2] p-5 text-[#5a4632] shadow-xl"
         onPointerDown={(event) => event.stopPropagation()}
       >
         <div className="mb-4 flex items-start gap-3">
@@ -92,7 +93,7 @@ function PlazaConfirmModal({ action, onCancel, onConfirm }: PlazaConfirmModalPro
             <h4 className="text-base font-semibold text-[#5a4632]">
               {isDelete ? "광장을 삭제할까요?" : "광장을 종료할까요?"}
             </h4>
-            <p className="mt-1 text-xs leading-6 text-[#5a4632]/65">
+            <p className="mt-1 text-xs whitespace-pre-line leading-6 text-[#5a4632]/65">
               {isDelete
                 ? "삭제한 광장은 되돌릴 수 없어요."
                 : "종료된 광장은 더 이상 발자취를 남길 수 없고 구경만 할 수 있어요."}
@@ -251,6 +252,10 @@ export function PlazaRoomPage({
   }
 
   function showEntryObject(entryId: string) {
+    if (pendingPlacement || isPlacementSaving) {
+      return;
+    }
+
     setActiveEntryId(entryId);
     setHighlightedEntryId(entryId);
 
@@ -743,13 +748,15 @@ export function PlazaRoomPage({
                     const object = ROOM_OBJECT_BY_KEY[entry.objectKey];
                     const rank = index + 1;
                     const likeCount = getPlazaEntryLikeCount(entry);
+                    const likedByCurrentGuest = hasLikedPlazaEntry(entry, currentGuestId);
 
                     return (
                       <button
                         key={entry.id}
                         type="button"
                         onClick={() => showEntryObject(entry.id)}
-                        className="grid grid-cols-[24px_38px_1fr_auto] items-center gap-2 rounded-md border border-[#5a4632]/12 bg-white/30 px-3 py-2 text-left text-xs text-[#5a4632]/70 transition hover:bg-white/55"
+                        disabled={Boolean(pendingPlacement) || isPlacementSaving}
+                        className="grid grid-cols-[24px_38px_1fr_auto] items-center gap-2 rounded-md border border-[#5a4632]/12 bg-white/30 px-3 py-2 text-left text-xs text-[#5a4632]/70 transition hover:bg-white/55 disabled:cursor-default disabled:opacity-55 disabled:hover:bg-white/30"
                       >
                         <span className="text-center text-sm text-[#5a4632]/55">{rank === 1 ? "☀️" : rank}</span>
                         <span className="grid h-9 w-9 place-items-center rounded-md border border-[#5a4632]/10 bg-white/35">
@@ -759,7 +766,7 @@ export function PlazaRoomPage({
                           {entry.title || "어느 나그네의 발자취"}
                         </span>
                         <span className="inline-flex items-center gap-1 text-xs text-[#b65f55]">
-                          <Heart size={12} fill={likeCount > 0 ? "currentColor" : "none"} />
+                          <Heart size={12} fill={likedByCurrentGuest ? "currentColor" : "none"} />
                           {likeCount}
                         </span>
                       </button>

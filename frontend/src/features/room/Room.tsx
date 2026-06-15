@@ -152,6 +152,7 @@ export default function Room({
   const [hoverTooltip, setHoverTooltip] = useState<HoverTooltip | null>(null);
   const [controlPlacementByObjectId, setControlPlacementByObjectId] = useState<Record<string, HoverTooltip["placement"]>>({});
   const weatherTone = WEATHER_BY_KEY[weatherKey];
+  const objectInteractionDisabled = Boolean(placementDraft);
 
   function clearHoverTooltip() {
     if (hoverTooltipTimerRef.current !== null) {
@@ -205,6 +206,10 @@ export default function Room({
   function handleObjectClick(event: MouseEvent<HTMLDivElement>, fallbackObjectId: string) {
     event.stopPropagation();
     clearHoverTooltip();
+
+    if (objectInteractionDisabled) {
+      return;
+    }
 
     const hitObjectIds = getObjectHits(event.clientX, event.clientY).map((candidate) => candidate.id);
     const activeIndex = activeObjectId ? hitObjectIds.indexOf(activeObjectId) : -1;
@@ -361,7 +366,7 @@ export default function Room({
         const label = placedObject.title?.trim() || "어느 날의 이야기";
         const active = placedObject.id === activeObjectId;
         const bouncing = placedObject.id === bouncingObjectId;
-        const hoverEnabled = !active && suppressedHoverObjectId !== placedObject.id;
+        const hoverEnabled = !objectInteractionDisabled && !active && suppressedHoverObjectId !== placedObject.id;
         const controlPlacement = controlPlacementByObjectId[placedObject.id]
           ?? (shouldPlaceControlsBelow(null, null, placedObject.position.y, object.roomWidth) ? "below" : "above");
         const controlsBelow = controlPlacement === "below";
@@ -370,7 +375,7 @@ export default function Room({
           <div
             key={placedObject.id}
             ref={(node) => setObjectNode(placedObject.id, node)}
-            className={`absolute pointer-events-auto select-none ${hoverEnabled ? "group" : ""}`}
+            className={`absolute select-none ${objectInteractionDisabled ? "pointer-events-none" : "pointer-events-auto"} ${hoverEnabled ? "group" : ""}`}
             onPointerDown={(event) => {
               event.stopPropagation();
             }}
@@ -450,6 +455,7 @@ export default function Room({
             <img
               src={object.image}
               alt=""
+              draggable={false}
               className={`cursor-pointer ${bouncing ? "mw-room-object-bounce" : ""}`}
               style={{
                 width: "100%",

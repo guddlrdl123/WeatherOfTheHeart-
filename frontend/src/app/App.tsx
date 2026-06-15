@@ -3,6 +3,7 @@ import { Navigate, Routes, Route, useLocation } from "react-router-dom";
 import RoomPage from "../features/pages/RoomPage";
 import LoginPage from "../features/pages/LoginPage";
 import { SignupPage } from "../features/pages/SignupPage";
+import { ResetPasswordPage } from "../features/pages/ResetPasswordPage";
 import { LandingPage } from "../features/pages/LandingPage";
 import { AUTH_SESSION_CHANGED_EVENT, isAuthenticated } from "../utils/authSession";
 import "../styles/App.css";
@@ -102,6 +103,10 @@ function App() {
             <SignupPage />
           </AuthEntryRoute>
         }
+      />
+      <Route
+        path="/reset-password"
+        element={authenticated ? <Navigate to="/room" replace /> : <ResetPasswordPage />}
       />
       <Route
         path="/mypage"

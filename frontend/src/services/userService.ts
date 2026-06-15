@@ -15,6 +15,10 @@ type UserProfileUpdateRequest = {
   newPassword?: string;
 };
 
+type UserWithdrawalRequest = {
+  currentPassword: string;
+};
+
 export async function fetchUserProfile() {
   const response = await authFetch(toApiUrl("/api/users/me"));
 
@@ -23,6 +27,20 @@ export async function fetchUserProfile() {
   }
 
   return readApiData<UserProfile>(response);
+}
+
+export async function deleteUserAccount(value: UserWithdrawalRequest) {
+  const response = await authFetch(toApiUrl("/api/users/me"), {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(value),
+  });
+
+  if (!response.ok) {
+    throw await readApiError(response, "회원탈퇴에 실패했습니다.");
+  }
 }
 
 export async function updateUserProfile(value: UserProfileUpdateRequest) {

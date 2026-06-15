@@ -15,6 +15,29 @@ public interface ObjectLikeRepository extends JpaRepository<ObjectLike, Long> {
     void deleteByPlazaEntryId(Long plazaEntryId);
 
     @Modifying
-    @Query("delete from ObjectLike like where like.plazaEntry.plaza.id = :plazaId")
+    @Query("delete from ObjectLike objectLike where objectLike.plazaEntry.plaza.id = :plazaId")
     void deleteByPlazaId(@Param("plazaId") Long plazaId);
+
+    @Modifying
+    @Query("delete from ObjectLike objectLike where objectLike.user.id = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("""
+            delete from ObjectLike objectLike
+            where objectLike.plazaEntry.id in (
+                select entry.id from PlazaEntry entry where entry.owner.id = :ownerId
+            )
+            """)
+    void deleteByPlazaEntryOwnerId(@Param("ownerId") Long ownerId);
+
+    @Modifying
+    @Query("""
+            delete from ObjectLike objectLike
+            where objectLike.plazaEntry.plaza.id in (
+                select plaza.id from Plaza plaza
+                where plaza.owner.id = :ownerId
+            )
+            """)
+    void deleteByPlazaOwnerId(@Param("ownerId") Long ownerId);
 }

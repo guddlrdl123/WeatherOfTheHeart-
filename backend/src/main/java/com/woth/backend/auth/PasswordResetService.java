@@ -13,17 +13,18 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * [비밀번호 재설정 서비스]
- * 비밀번호 찾기 요청 시 재설정 토큰을 발급하고, 토큰 검증 후 비밀번호를 변경하는 서비스입니다.
+ * 비밀번호 찾기 요청 시 6자리 인증코드를 발급하고, 코드 검증 후 비밀번호를 변경하는 서비스입니다.
  */
 @Service
 public class PasswordResetService {
 
-    private static final int RESET_TOKEN_EXPIRES_MINUTES = 30;
+    private static final int RESET_TOKEN_EXPIRES_MINUTES = 10;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final UserRepository userRepository;
@@ -47,22 +48,40 @@ public class PasswordResetService {
 
     @Transactional
     public void requestReset(String email) {
-        User user = userRepository.findByEmailAndIsDeletedFalse(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        User user = userRepository.findByEmailAndIsDeletedFalse(email).orElse(null);
 
+        if (user == null) {
+            return;
+        }
+
+        String resetEmail = user.getEmail();
         String token = generateToken();
-        passwordResetTokenRepository.deleteByEmail(email);
+        passwordResetTokenRepository.deleteByEmail(resetEmail);
         passwordResetTokenRepository.save(new PasswordResetToken(
-                user.getEmail(),
+                resetEmail,
                 token,
                 LocalDateTime.now().plusMinutes(RESET_TOKEN_EXPIRES_MINUTES)
         ));
 
-        sendMail(user.getEmail(), token);
+        sendMail(resetEmail, token);
+    }
+
+    @Transactional(readOnly = true)
+    public void verifyToken(String email, String token) {
+        getValidResetToken(email, token);
     }
 
     @Transactional
     public void resetPassword(String email, String token, String newPassword) {
+        PasswordResetToken resetToken = getValidResetToken(email, token);
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        user.updatePassword(passwordEncoder.encode(newPassword));
+        resetToken.markUsed();
+    }
+
+    private PasswordResetToken getValidResetToken(String email, String token) {
         PasswordResetToken resetToken = passwordResetTokenRepository.findTopByEmailOrderByCreatedAtDesc(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.PASSWORD_RESET_TOKEN_INVALID));
 
@@ -74,15 +93,11 @@ public class PasswordResetService {
             throw new CustomException(ErrorCode.PASSWORD_RESET_TOKEN_EXPIRED);
         }
 
-        User user = userRepository.findByEmailAndIsDeletedFalse(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        user.updatePassword(passwordEncoder.encode(newPassword));
-        resetToken.markUsed();
+        return resetToken;
     }
 
     private String generateToken() {
-        return UUID.randomUUID().toString().replace("-", "");
+        return String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
     }
 
     private void sendMail(String email, String token) {
@@ -96,9 +111,9 @@ public class PasswordResetService {
 
             helper.setFrom(new InternetAddress(mailUsername, "마음의 날씨"));
             helper.setTo(email);
-            helper.setSubject("[마음의 날씨] 비밀번호 재설정");
+            helper.setSubject("[마음의 날씨] 비밀번호 재설정 인증코드");
             helper.setText(
-                    "비밀번호 재설정 토큰은 " + token + " 입니다. 30분 안에 입력해주세요.",
+                    "비밀번호 재설정 인증코드는 " + token + " 입니다. 10분 안에 입력해 주세요.",
                     false
             );
 

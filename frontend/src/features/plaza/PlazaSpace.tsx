@@ -223,6 +223,7 @@ export function PlazaSpace({
     : null;
   const weatherTone = roomWeatherKey ? WEATHER_BY_KEY[roomWeatherKey] : null;
   const objectFilter = plazaWeatherKey ? PLAZA_OBJECT_FILTER_BY_WEATHER[plazaWeatherKey] : undefined;
+  const entryInteractionDisabled = Boolean(placementDraft);
 
   function clearHoverTooltip() {
     if (hoverTooltipTimerRef.current !== null) {
@@ -276,6 +277,10 @@ export function PlazaSpace({
   function handleEntryClick(event: MouseEvent<HTMLDivElement>, fallbackEntryId: string) {
     event.stopPropagation();
     clearHoverTooltip();
+
+    if (entryInteractionDisabled) {
+      return;
+    }
 
     const hitEntryIds = getEntryHits(event.clientX, event.clientY).map((candidate) => candidate.id);
     const activeIndex = activeEntryId ? hitEntryIds.indexOf(activeEntryId) : -1;
@@ -444,7 +449,7 @@ export function PlazaSpace({
         const active = entry.id === activeEntryId;
         const movableEntry = canMoveEntry(entry);
         const highlighted = entry.id === highlightedEntryId;
-        const hoverEnabled = !active && suppressedHoverEntryId !== entry.id;
+        const hoverEnabled = !entryInteractionDisabled && !active && suppressedHoverEntryId !== entry.id;
         const controlPlacement = controlPlacementByEntryId[entry.id]
           ?? (shouldPlaceControlsBelow(null, null, entry.positionY, object.roomWidth) ? "below" : "above");
         const controlsBelow = controlPlacement === "below";
@@ -455,7 +460,7 @@ export function PlazaSpace({
           <div
             key={entry.id}
             ref={(node) => setEntryNode(entry.id, node)}
-            className={`absolute pointer-events-auto select-none ${hoverEnabled ? "group" : ""}`}
+            className={`absolute select-none ${entryInteractionDisabled ? "pointer-events-none" : "pointer-events-auto"} ${hoverEnabled ? "group" : ""}`}
             onPointerDown={(event) => event.stopPropagation()}
             onPointerEnter={(event) => {
               if (!activeEntryId && suppressedHoverEntryId === entry.id) {

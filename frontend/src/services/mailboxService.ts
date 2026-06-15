@@ -98,3 +98,15 @@ export async function markAllMailboxItemsAsRead() {
   await readApiData<MailboxReadAllResponse>(response);
   notifyMailboxChanged();
 }
+
+export async function deleteMailboxItem(letterId: string) {
+  const response = await authFetch(toApiUrl(`/api/mailbox/${encodeURIComponent(letterId)}`), {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw await readApiError(response, "우편을 삭제하지 못했습니다.");
+  }
+
+  notifyMailboxChanged();
+}

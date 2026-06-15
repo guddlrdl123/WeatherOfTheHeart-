@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowRight, CalendarDays, ImageIcon, Inbox, MailCheck, MapPinned, RefreshCw, Users, X } from "lucide-react";
+import { ArrowRight, CalendarDays, Download, ImageIcon, Inbox, MailCheck, MapPinned, RefreshCw, Trash2, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { MailboxCard } from "../../components/mailbox/MailboxCard";
 import { AppHeader } from "../../components/layout/AppHeader";
@@ -7,7 +7,7 @@ import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock";
 import { useRoomObjectCatalog } from "../../hooks/useRoomObjectCatalog";
 import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
-import { fetchMailbox, markAllMailboxItemsAsRead, markMailboxItemAsRead } from "../../services/mailboxService";
+import { deleteMailboxItem, fetchMailbox, markAllMailboxItemsAsRead, markMailboxItemAsRead } from "../../services/mailboxService";
 import type { MailboxItem } from "../../types/mailbox";
 
 const MAILBOX_LAYOUT_WIDTH = 1460;
@@ -55,25 +55,79 @@ function formatPlazaPeriod(startValue: string, endValue: string) {
   return `${formatDate(startValue)} ~ ${endText}`;
 }
 
+function getImageDownloadFileName(item: MailboxItem) {
+  const baseName = (item.plazaTitle || item.title || "mailbox-image")
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, "-")
+    .slice(0, 80);
+
+  return `${baseName || "mailbox-image"}.png`;
+}
+
 function MailboxDetailModal({
   item,
   onClose,
+  onRequestDelete,
   onGoToPlaza,
 }: {
   item: MailboxItem;
   onClose: () => void;
+  onRequestDelete: (itemId: string) => void;
   onGoToPlaza: (plazaId: string) => void;
 }) {
   useBodyScrollLock();
 
+  const [isDownloadingImage, setIsDownloadingImage] = useState(false);
   const myObject = item.myObjectKey ? ROOM_OBJECT_BY_KEY[item.myObjectKey] : null;
   const myObjectContent = item.myObjectContent.trim();
+
+  async function handleDownloadImage() {
+    if (!item.generatedImageData || isDownloadingImage) {
+      return;
+    }
+
+    try {
+      setIsDownloadingImage(true);
+      const response = await fetch(item.generatedImageData);
+
+      if (!response.ok) {
+        throw new Error("image download failed");
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = getImageDownloadFileName(item);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+    } catch {
+      window.alert("이미지를 다운로드하지 못했습니다.");
+    } finally {
+      setIsDownloadingImage(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overscroll-contain bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
       <section className="mw-surface grid max-h-[calc(100vh-64px)] w-full max-w-[980px] grid-cols-1 overflow-y-auto overscroll-contain rounded-xl bg-[#fffbf6f2] shadow-xl lg:grid-cols-[minmax(0,640px)_340px] lg:overflow-hidden">
-        <div className="aspect-square w-full bg-[#5a4632]/[0.07]">
+        <div className="relative aspect-square w-full bg-[#5a4632]/[0.07]">
           {/* 우편의 핵심 데이터인 generatedImageData를 크게 보여주는 영역입니다. */}
+          {item.generatedImageData && (
+            <button
+              type="button"
+              onClick={() => void handleDownloadImage()}
+              disabled={isDownloadingImage}
+              className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-md border border-[#5a4632]/10 bg-[#fffbf6]/30 text-[#5a4632] shadow-sm backdrop-blur-sm hover:bg-black/5 disabled:opacity-50"
+              aria-label="이미지 다운로드"
+              title="이미지 다운로드"
+            >
+              <Download size={17} />
+            </button>
+          )}
           {item.generatedImageData ? (
             <img
               src={item.generatedImageData}
@@ -91,19 +145,32 @@ function MailboxDetailModal({
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <p className="text-xs tracking-[0.18em] text-[#5a4632]/40">MAILBOX</p>
-              <h2 className="mt-3 text-xl font-normal leading-9 text-[#5a4632]">{item.title}</h2>
             </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#5a4632]/10 text-[#5a4632] hover:bg-black/5"
-              aria-label="닫기"
-              title="닫기"
-            >
-              <X size={17} />
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => onRequestDelete(item.id)}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#5a4632]/10 text-[#5a4632] hover:bg-black/5"
+                aria-label="우편 삭제"
+                title="우편 삭제"
+              >
+                <Trash2 size={17} />
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#5a4632]/10 text-[#5a4632] hover:bg-black/5"
+                aria-label="닫기"
+                title="닫기"
+              >
+                <X size={17} />
+              </button>
+            </div>
           </div>
+
+          <h2 className="mt-3 text-lg font-normal leading-9 text-[#5a4632]">{item.title}</h2>
 
           <div className="mt-4 flex flex-col gap-3 text-sm text-[#5a4632]/65">
             <div className="flex items-center gap-3 rounded-lg border border-[#5a4632]/12 bg-white/30 px-4 py-3">
@@ -125,9 +192,9 @@ function MailboxDetailModal({
                     <img src={myObject.image} alt="" className="h-11 w-11 object-contain" />
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-base text-[#5a4632]">{myObject.label}</p>
+                    <p className="truncate text-xs text-[#5a4632]/52">{myObject.label}</p>
                     {item.myObjectTitle && (
-                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#5a4632]/52">{item.myObjectTitle}</p>
+                      <p className="mt-1 line-clamp-2 text-base leading-5 text-[#5a4632]">{item.myObjectTitle}</p>
                     )}
                   </div>
                 </div>
@@ -145,7 +212,7 @@ function MailboxDetailModal({
             )}
             <div className="flex items-center gap-3 rounded-lg border border-[#5a4632]/12 bg-white/30 px-4 py-3">
               <Users size={16} className="shrink-0 text-[#9b6b54]" />
-              <span>총 {item.participantCount}명이 오브젝트를 남겼어요.</span>
+              <span>총 {item.participantCount}명이 발자취를 남겼어요.</span>
             </div>
           </div>
 
@@ -154,7 +221,7 @@ function MailboxDetailModal({
           <button
             type="button"
             onClick={() => onGoToPlaza(item.plazaId)}
-            className="mw-button mt-6 inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm"
+            className="mw-button inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm"
           >
             연결된 광장 보기
             <ArrowRight size={15} />
@@ -165,12 +232,65 @@ function MailboxDetailModal({
   );
 }
 
+type MailboxDeleteConfirmModalProps = {
+  isDeleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+};
+
+function MailboxDeleteConfirmModal({ isDeleting, onCancel, onConfirm }: MailboxDeleteConfirmModalProps) {
+  return (
+    <div
+      className="fixed inset-0 z-[130] flex items-center justify-center bg-black/25 px-4 py-8 backdrop-blur-[2px]"
+      onPointerDown={isDeleting ? undefined : onCancel}
+    >
+      <div
+        className="w-full max-w-[420px] max-h-[calc(100vh-64px)] overflow-y-auto rounded-xl border border-[#b36a5e]/25 bg-[#fffbf6f2] p-5 text-[#5a4632] shadow-xl"
+        onPointerDown={(event) => event.stopPropagation()}
+      >
+        <div className="mb-4 flex items-start gap-3">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9] text-[#b36a5e]">
+            <Trash2 size={17} />
+          </div>
+          <div>
+            <h4 className="text-base font-semibold text-[#5a4632]">우편을 삭제할까요?</h4>
+            <p className="mt-1 text-xs leading-6 text-[#5a4632]/65">
+              삭제한 우편은 되돌릴 수 없어요.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isDeleting}
+            className="rounded-md border border-[#9b6b54]/40 bg-white/30 px-4 py-2 text-sm text-[#9b6b54]/80 hover:bg-white/60 disabled:opacity-50"
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9] px-4 py-2 text-sm text-[#b36a5e] hover:bg-[#faebe7] disabled:opacity-50"
+          >
+            {isDeleting ? "삭제 중" : "삭제"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MailboxPage() {
   useRoomObjectCatalog();
 
   const navigate = useNavigate();
   const [items, setItems] = useState<MailboxItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [deleteTargetItemId, setDeleteTargetItemId] = useState<string | null>(null);
+  const [isDeletingItem, setIsDeletingItem] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -244,6 +364,38 @@ function MailboxPage() {
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "우편 전체 읽음 처리에 실패했습니다.");
       void loadMailbox();
+    }
+  }
+
+  function handleCancelDelete() {
+    if (isDeletingItem) {
+      return;
+    }
+
+    setDeleteTargetItemId(null);
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteTargetItemId || isDeletingItem) {
+      return;
+    }
+
+    const targetItemId = deleteTargetItemId;
+
+    try {
+      setIsDeletingItem(true);
+      setError("");
+      await deleteMailboxItem(targetItemId);
+      setItems((current) => current.filter((item) => item.id !== targetItemId));
+      setDeleteTargetItemId(null);
+
+      if (selectedItemId === targetItemId) {
+        setSelectedItemId(null);
+      }
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "우편을 삭제하지 못했습니다.");
+    } finally {
+      setIsDeletingItem(false);
     }
   }
 
@@ -326,7 +478,16 @@ function MailboxPage() {
         <MailboxDetailModal
           item={selectedItem}
           onClose={() => setSelectedItemId(null)}
+          onRequestDelete={setDeleteTargetItemId}
           onGoToPlaza={(plazaId) => navigate(`/plaza/${plazaId}`)}
+        />
+      )}
+
+      {deleteTargetItemId && (
+        <MailboxDeleteConfirmModal
+          isDeleting={isDeletingItem}
+          onCancel={handleCancelDelete}
+          onConfirm={() => void handleConfirmDelete()}
         />
       )}
     </div>

@@ -1,29 +1,66 @@
 package com.woth.backend.user;
 
 import com.woth.backend.auth.EmailVerificationService; // [수정] 기존 이메일 인증 서비스를 재사용하기 위해 추가
+import com.woth.backend.auth.PasswordResetTokenRepository;
+import com.woth.backend.auth.RefreshTokenRepository;
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
+import com.woth.backend.like.ObjectLikeRepository;
+import com.woth.backend.mailbox.LetterRepository;
+import com.woth.backend.memory.PrivateMemoryRepository;
+import com.woth.backend.plaza.PlazaEntryRepository;
+import com.woth.backend.plaza.PlazaRepository;
+import com.woth.backend.room.PrivateRoomRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 public class UserService {
+
+    private static final String WITHDRAWN_NICKNAME = "withdrawn";
+    private static final String WITHDRAWN_USER_EMAIL = "withdrawn-user@maeum.weather";
 
     private static final String DEFAULT_NICKNAME = "나그네";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationService emailVerificationService; // [수정] 이메일 변경 시 인증코드 발송/검증 재사용
+    private final ObjectLikeRepository objectLikeRepository;
+    private final LetterRepository letterRepository;
+    private final PrivateMemoryRepository privateMemoryRepository;
+    private final PrivateRoomRepository privateRoomRepository;
+    private final PlazaEntryRepository plazaEntryRepository;
+    private final PlazaRepository plazaRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     public UserService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            EmailVerificationService emailVerificationService
+            EmailVerificationService emailVerificationService,
+            ObjectLikeRepository objectLikeRepository,
+            LetterRepository letterRepository,
+            PrivateMemoryRepository privateMemoryRepository,
+            PrivateRoomRepository privateRoomRepository,
+            PlazaEntryRepository plazaEntryRepository,
+            PlazaRepository plazaRepository,
+            RefreshTokenRepository refreshTokenRepository,
+            PasswordResetTokenRepository passwordResetTokenRepository
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailVerificationService = emailVerificationService;
+        this.objectLikeRepository = objectLikeRepository;
+        this.letterRepository = letterRepository;
+        this.privateMemoryRepository = privateMemoryRepository;
+        this.privateRoomRepository = privateRoomRepository;
+        this.plazaEntryRepository = plazaEntryRepository;
+        this.plazaRepository = plazaRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
     }
 
     @Transactional(readOnly = true)
@@ -120,7 +157,44 @@ public class UserService {
             throw new CustomException(ErrorCode.USER_PASSWORD_MISMATCH);
         }
 
+        String originalEmail = user.getEmail();
+        User withdrawnOwner = getWithdrawnOwner();
+
+        objectLikeRepository.deleteByUserId(userId);
+        objectLikeRepository.deleteByPlazaOwnerId(userId);
+        objectLikeRepository.deleteByPlazaEntryOwnerId(userId);
+
+        plazaEntryRepository.deleteByPlazaOwnerId(userId);
+        plazaEntryRepository.deleteOpenByOwnerId(userId);
+        plazaEntryRepository.anonymizeCompletedOwnerByOwnerId(userId, withdrawnOwner);
+        plazaRepository.deleteByOwnerId(userId);
+
+        privateMemoryRepository.deleteByPrivateRoomUserId(userId);
+        privateRoomRepository.deleteByUserId(userId);
+
+        letterRepository.deleteByReceiverId(userId);
+        letterRepository.clearSenderByUserId(userId);
+        refreshTokenRepository.deleteByUserId(userId);
+        passwordResetTokenRepository.deleteByEmail(originalEmail);
+        emailVerificationService.clear(originalEmail);
+
+        user.updateNickname(WITHDRAWN_NICKNAME);
+        user.updatePassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.updateEmail(createWithdrawnEmail(userId));
         user.withdraw();
+    }
+
+    private User getWithdrawnOwner() {
+        return userRepository.findByEmail(WITHDRAWN_USER_EMAIL)
+                .orElseGet(() -> userRepository.save(User.builder()
+                        .email(WITHDRAWN_USER_EMAIL)
+                        .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                        .nickname(WITHDRAWN_NICKNAME)
+                        .build()));
+    }
+
+    private String createWithdrawnEmail(Long userId) {
+        return "withdrawn-" + userId + "-" + UUID.randomUUID() + "@deleted.local";
     }
 
     private void validatePasswordChange(User user, String currentPassword, String newPassword) {

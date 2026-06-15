@@ -1,5 +1,6 @@
 package com.woth.backend.plaza;
 
+import com.woth.backend.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -25,4 +26,42 @@ public interface PlazaEntryRepository extends JpaRepository<PlazaEntry, Long> {
     @Modifying
     @Query("delete from PlazaEntry entry where entry.plaza.id = :plazaId")
     void deleteByPlazaId(@Param("plazaId") Long plazaId);
+
+    @Modifying
+    @Query("delete from PlazaEntry entry where entry.owner.id = :ownerId")
+    void deleteByOwnerId(@Param("ownerId") Long ownerId);
+
+    @Modifying
+    @Query("""
+            delete from PlazaEntry entry
+            where entry.owner.id = :ownerId
+              and entry.plaza.id in (
+                  select plaza.id from Plaza plaza where plaza.completedAt is null
+              )
+            """)
+    void deleteOpenByOwnerId(@Param("ownerId") Long ownerId);
+
+    @Modifying
+    @Query("""
+            delete from PlazaEntry entry
+            where entry.plaza.id in (
+                select plaza.id from Plaza plaza
+                where plaza.owner.id = :ownerId
+            )
+            """)
+    void deleteByPlazaOwnerId(@Param("ownerId") Long ownerId);
+
+    @Modifying
+    @Query("""
+            update PlazaEntry entry
+            set entry.owner = :anonymousOwner
+            where entry.owner.id = :ownerId
+              and entry.plaza.id in (
+                  select plaza.id from Plaza plaza where plaza.completedAt is not null
+              )
+            """)
+    void anonymizeCompletedOwnerByOwnerId(
+            @Param("ownerId") Long ownerId,
+            @Param("anonymousOwner") User anonymousOwner
+    );
 }
