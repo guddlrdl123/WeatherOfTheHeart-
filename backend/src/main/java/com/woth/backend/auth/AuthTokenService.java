@@ -72,7 +72,7 @@ public class AuthTokenService {
     }
 
     private AuthenticatedUser parse(String token) {
-        String[] parts = token.split("/.");
+        String[] parts = token.split("\\.");
 
         if (parts.length != 3) {
             throw new CustomException(ErrorCode.AUTH_INVALID);
