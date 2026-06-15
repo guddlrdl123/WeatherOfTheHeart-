@@ -149,7 +149,7 @@ public class EmailVerificationService {
                           </tr>
                           <tr>
                             <td align="center" style="padding:34px 0 30px;">
-                              <div style="font-size:36px;line-height:1.2;letter-spacing:6px;font-weight:500;color:#3f3f46;">%s</div>
+                              <div style="display:inline-block;padding:18px 34px;border-radius:18px;background-color:#dff4cf;font-size:36px;line-height:1.2;letter-spacing:6px;font-weight:600;color:#3f3f46;">%s</div>
                             </td>
                           </tr>
                           <tr>
