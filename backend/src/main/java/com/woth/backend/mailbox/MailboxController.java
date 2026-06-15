@@ -49,6 +49,14 @@ public class MailboxController {
         return ApiResponse.success(new MailboxReadAllResponse(updatedCount));
     }
 
+    // [수정] 사용자가 자기 우편함의 편지를 삭제할 수 있는 엔드포인트를 추가합니다.
+    @DeleteMapping("/{letterId}")
+    public ApiResponse<Void> delete(@CurrentUser AuthenticatedUser currentUser,
+                                    @PathVariable Long letterId) {
+        mailboxService.deleteLetter(currentUser.id(), letterId);
+        return ApiResponse.success(null);
+    }
+
     private MailboxItemResponse toResponse(MailboxService.MailboxItemView item) {
         Letter letter = item.letter();
 
@@ -98,36 +106,3 @@ public class MailboxController {
 
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
