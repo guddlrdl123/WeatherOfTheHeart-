@@ -19,6 +19,7 @@ public enum ErrorCode {
     EMAIL_SEND_FAILED("EMAIL_004", "이메일 인증번호 발송에 실패했습니다."),
     PASSWORD_RESET_TOKEN_INVALID("EMAIL_005", "비밀번호 재설정 토큰이 올바르지 않습니다."),
     PASSWORD_RESET_TOKEN_EXPIRED("EMAIL_006", "비밀번호 재설정 토큰이 만료되었습니다."),
+    EMAIL_SAME_AS_CURRENT("EMAIL_007", "현재 사용 중인 이메일과 동일합니다."),
     MEMORY_DUPLICATE("MEMORY_001", "이미 해당 날짜에 기록이 존재합니다."),
     MEMORY_NOT_FOUND("MEMORY_002", "존재하지 않는 기억입니다."),
     PLAZA_NOT_FOUND("PLAZA_001", "존재하지 않는 광장입니다."),
