@@ -106,7 +106,7 @@ public class EmailVerificationService {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
 
             // [수정] UTF-8 인코딩을 사용해 한글 표시 이름이 깨지지 않도록 설정
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, false, "UTF-8");
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
             // [수정] 실제 로그인 계정(mailUsername)은 유지하고,
             // 수신자에게 보이는 발신자 이름만 "마음의 날씨"로 설정
@@ -117,11 +117,53 @@ public class EmailVerificationService {
             // [수정] 제목 문구를 조금 더 간결하게 조정
             helper.setSubject("[마음의 날씨] 인증코드");
 
-            helper.setText("인증번호는 " + code + " 입니다. 10분 안에 입력해주세요.", false);
+            helper.setText(
+                    "인증번호는 " + code + " 입니다. 10분 안에 입력해주세요.",
+                    buildVerificationEmailHtml(code)
+            );
 
             mailSender.send(mimeMessage);
         } catch (Exception e) {
             throw new CustomException(ErrorCode.EMAIL_SEND_FAILED);
         }
+    }
+
+    private String buildVerificationEmailHtml(String code) {
+        return """
+                <div style="margin:0;padding:0;background-color:#ffffff;font-family:Arial,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#3f3f46;">
+                  <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background-color:#ffffff;">
+                    <tr>
+                      <td align="center" style="padding:48px 20px;">
+                        <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;max-width:520px;">
+                          <tr>
+                            <td align="center" style="padding-bottom:34px;">
+                              <div style="display:inline-block;width:34px;height:34px;line-height:34px;border:2px solid #18181b;border-radius:10px;font-size:18px;font-weight:700;color:#18181b;">W</div>
+                              <div style="margin-top:12px;font-size:24px;font-weight:700;color:#18181b;">마음의 날씨</div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="font-size:16px;line-height:1.7;color:#52525b;text-align:left;">
+                              <p style="margin:0 0 16px;">안녕하세요.</p>
+                              <p style="margin:0 0 16px;">마음의 날씨 회원가입을 위한 인증번호입니다.</p>
+                              <p style="margin:0;">아래 인증번호를 앱에 입력해주세요.</p>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td align="center" style="padding:34px 0 30px;">
+                              <div style="font-size:36px;line-height:1.2;letter-spacing:6px;font-weight:500;color:#3f3f46;">%s</div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td align="center" style="font-size:13px;line-height:1.6;color:#a1a1aa;">
+                              이 인증번호는 10분 동안 유효합니다.<br>
+                              본인이 요청하지 않았다면 이 메일을 무시해주세요.
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+                """.formatted(code);
     }
 }
