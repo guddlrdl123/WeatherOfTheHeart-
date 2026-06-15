@@ -218,6 +218,11 @@ public class PlazaService {
             throw new CustomException(ErrorCode.INVALID_INPUT);
         }
 
+        // [수정] 광장이 이미 종료되어 완성 이미지 생성 흐름에 들어간 경우에는 삭제를 막습니다.
+        if (plaza.isCompleted()) {
+            throw new CustomException(ErrorCode.PLAZA_DELETE_FORBIDDEN);
+        }
+
         objectLikeRepository.deleteByPlazaId(plazaId);
         plazaEntryRepository.deleteByPlazaId(plazaId);
         plazaRepository.delete(plaza);
