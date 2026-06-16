@@ -163,7 +163,9 @@ public class EmailVerificationService {
                     <td align="center" style="padding-bottom:34px;">
                       <table role="presentation" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:12px auto 0;">
                         <tr>
+                          <td align="center" valign="middle" style="width:48px;height:48px;border-radius:14px;">
                             <img src="cid:%s" width="34" height="34" alt="" style="display:block;width:34px;height:34px;border:0;outline:none;">
+                          </td>
                           <td valign="middle" style="padding-left:12px;font-size:24px;font-weight:700;color:#18181b;">마음의 날씨</td>
                         </tr>
                       </table>
