@@ -10,8 +10,8 @@ import java.util.stream.Collectors;
 public class PlazaImagePromptBuilder {
 
     private static final int MAX_TOTAL_OBJECTS = 30;
-    private static final int MAIN_OBJECT_LIMIT = 12;
-    private static final int SUPPORTING_OBJECT_LIMIT = 12;
+    private static final int MAX_MAIN_VISIBLE_OBJECTS = 12;
+    private static final int MAX_SUPPORTING_OBJECTS = 12;
 
     public String build(Plaza plaza, List<PlazaEntry> entries) {
         List<PlazaEntry> safeEntries = entries == null
@@ -21,39 +21,48 @@ public class PlazaImagePromptBuilder {
                   .collect(Collectors.toList());
 
         List<PlazaEntry> mainEntries = safeEntries.stream()
-                .limit(MAIN_OBJECT_LIMIT)
+                .limit(MAX_MAIN_VISIBLE_OBJECTS)
                 .collect(Collectors.toList());
 
         List<PlazaEntry> supportingEntries = safeEntries.stream()
-                .skip(MAIN_OBJECT_LIMIT)
-                .limit(SUPPORTING_OBJECT_LIMIT)
+                .skip(MAX_MAIN_VISIBLE_OBJECTS)
+                .limit(MAX_SUPPORTING_OBJECTS)
                 .collect(Collectors.toList());
 
         List<PlazaEntry> backgroundEntries = safeEntries.stream()
-                .skip(MAIN_OBJECT_LIMIT + SUPPORTING_OBJECT_LIMIT)
+                .skip(MAX_MAIN_VISIBLE_OBJECTS + MAX_SUPPORTING_OBJECTS)
                 .collect(Collectors.toList());
 
         String mainObjects = buildObjectSection(
                 mainEntries,
                 PromptRole.MAIN,
-                "- a cozy emotional plaza with a few clearly visible animals, furniture, plants, and lights"
+                "None. No footprint objects are provided. Do not add intentional objects."
         );
 
         String supportingObjects = buildObjectSection(
                 supportingEntries,
                 PromptRole.SUPPORTING,
-                "- small cozy furniture, plants, lights, props, and soft decorations"
+                "None. Do not add extra supporting footprint objects."
         );
 
         String backgroundDetails = buildObjectSection(
                 backgroundEntries,
                 PromptRole.BACKGROUND,
-                "- subtle background plants, soft lighting, small blank decorations, and gentle plaza details"
+                "None. Do not add extra background footprint objects."
         );
 
-        String backgroundType = safe(plaza.getBackgroundType());
-        String backgroundColor = plaza.getBackgroundColor() == null ? "none" : safe(plaza.getBackgroundColor());
-        String backgroundWeather = toWeatherPrompt(plaza.getBackgroundKey());
+        String backgroundType = plaza == null ? "" : safe(plaza.getBackgroundType());
+        String backgroundColor = plaza == null || plaza.getBackgroundColor() == null
+                ? "none"
+                : safe(plaza.getBackgroundColor());
+        String backgroundWeather = plaza == null
+                ? "soft emotional weather"
+                : toWeatherPrompt(plaza.getBackgroundKey());
+
+        String plazaTitle = plaza == null ? "" : safe(plaza.getTitle());
+        String plazaTopic = plaza == null ? "" : safe(plaza.getTopic());
+
+        int totalFootprints = entries == null ? 0 : entries.size();
 
         return """
                 Create one finished high-resolution illustration for an emotional plaza scene.
@@ -70,9 +79,19 @@ public class PlazaImagePromptBuilder {
                 This must be one coherent place where objects naturally belong together.
 
                 Scene direction:
-                Create a cozy hybrid space between a private room and a small outdoor plaza.
-                The scene may have indoor comfort, outdoor air, soft plants, gentle lights, and a peaceful open feeling.
-                Make it look like a completed shared memory space made from many people's feelings.
+                Create a cozy emotional plaza scene.
+                The scene may feel like a small outdoor plaza, a private room, or a gentle hybrid space between the two.
+                Choose the space type naturally based on the provided objects.
+                Make it look like a completed shared memory space made from people's feelings.
+
+                Object count rule:
+                Use only the provided footprint objects as intentional objects.
+                The plaza can be completed with only one footprint object.
+                If there is only one footprint object, create a complete emotional plaza scene centered around that single object.
+                If there are no footprint objects, create a quiet empty emotional plaza with only simple environment, weather, light, floor, wall, sky, and atmosphere.
+                Do not invent extra footprint objects.
+                Do not add animals, furniture, plants, props, food, or outdoor objects unless they are listed below.
+                The environment may still include simple floor, wall, sky, window light, weather, shadows, air, and atmosphere.
 
                 Visual style:
                 Hand-painted cozy illustration.
@@ -94,9 +113,9 @@ public class PlazaImagePromptBuilder {
                 Avoid overlapping too many animals or props.
                 Do not make every object equally large.
                 Make only the main visible objects clearly recognizable.
-                Supporting objects should be smaller and naturally placed.
-                Background details should be subtle.
-                It is acceptable if not every footprint object is fully visible.
+                Supporting objects should appear only when they are listed in the Supporting objects section.
+                Background footprint details should appear only when they are listed in the Background details section.
+                It is acceptable if not every footprint object is fully visible when there are many objects.
                 The goal is an emotionally coherent plaza, not exact object counting.
 
                 Object placement rules:
@@ -187,7 +206,7 @@ public class PlazaImagePromptBuilder {
                 Final goal:
                 A single beautiful emotional plaza illustration.
                 It should look cozy, quiet, complete, and emotionally meaningful.
-                The final image should feel like many small feelings have gathered into one gentle place.
+                The final image should feel like small feelings have gathered into one gentle place.
                 """.formatted(
                 mainObjects,
                 supportingObjects,
@@ -195,9 +214,9 @@ public class PlazaImagePromptBuilder {
                 backgroundType,
                 backgroundColor,
                 backgroundWeather,
-                safe(plaza.getTitle()),
-                safe(plaza.getTopic()),
-                entries == null ? 0 : entries.size()
+                plazaTitle,
+                plazaTopic,
+                totalFootprints
         );
     }
 
@@ -274,8 +293,8 @@ public class PlazaImagePromptBuilder {
         double number;
 
         try {
-            if (value instanceof Number num) {
-                number = num.doubleValue();
+            if (value instanceof Number) {
+                number = ((Number) value).doubleValue();
             } else {
                 number = Double.parseDouble(String.valueOf(value).trim());
             }
@@ -292,7 +311,7 @@ public class PlazaImagePromptBuilder {
         }
 
         // positionX/Y가 픽셀값으로 들어오는 경우를 위한 대략적인 보정값입니다.
-        // 실제 광장 캔버스 크기가 다르면 이 값은 프론트 기준에 맞춰 바꾸면 됩니다.
+        // 실제 광장 캔버스 크기가 다르면 이 값을 프론트 기준에 맞춰 수정하세요.
         double assumedMax = xAxis ? 1024.0 : 768.0;
         double percent = (number / assumedMax) * 100.0;
 
@@ -538,7 +557,9 @@ public class PlazaImagePromptBuilder {
             case "얼음 디딤돌" -> "shiny ice stepping stones";
             case "구멍 튜브" -> "a small swimming tube with no letters, no numbers, and no pattern that looks like text";
 
-            default -> "a small cozy object with no text, no letters, no numbers, and no symbols";
+            default -> key.isBlank()
+                    ? "a small cozy object with no text, no letters, no numbers, and no symbols"
+                    : "a small cozy object matching this object name: " + key + ". Do not draw any text, letters, numbers, or symbols on it";
         };
     }
 
