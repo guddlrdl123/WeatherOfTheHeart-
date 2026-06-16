@@ -23,72 +23,52 @@ public class PlazaImagePromptBuilder {
         List<PlazaEntry> safeEntries = entries == null
                 ? List.of()
                 : entries.stream()
-                .limit(MAX_OBJECTS_FOR_PROMPT)
+                .limit(12)
                 .collect(Collectors.toList());
 
         String objects = safeEntries.isEmpty()
-                ? "A quiet empty emotional plaza with soft light."
+                ? "a quiet empty emotional plaza"
                 : safeEntries.stream()
-                .map(entry -> String.format(
-                        "- %s, rough placement: %s",
-                        toEnglishObjectDescription(entry.getObjectKey()),
-                        toPositionLabel(entry.getPositionX(), entry.getPositionY())
-                ))
+                .map(entry -> "- " + toEnglishObjectDescription(entry.getObjectKey()))
                 .collect(Collectors.joining("\n"));
 
-        String backgroundType = plaza == null ? "" : safe(plaza.getBackgroundType());
-        String backgroundColor = plaza == null || plaza.getBackgroundColor() == null
-                ? "none"
-                : safe(plaza.getBackgroundColor());
-
-        String backgroundWeather = plaza == null
-                ? "soft emotional weather"
-                : toWeatherPrompt(plaza.getBackgroundKey());
-
-        // [수정] API 크레딧 절약용 초간단 프롬프트입니다.
-        // 기존처럼 규칙을 많이 넣으면 AI가 오히려 장면을 과하게 재구성하거나,
-        // 사용자가 놓은 오브젝트와 무관한 실내 소품을 추가하는 문제가 생겼습니다.
+        // [수정] 완전 완화 버전입니다.
+        // 이전 버전에서는 weather, position, strict layout, text ban, object count rule이 너무 강해서
+        // AI가 오히려 비 오는 배경이나 실내 소품 중심으로 장면을 새로 만들어버렸습니다.
         //
-        // [수정] plazaTitle, plazaTopic, totalFootprints는 일부러 제거했습니다.
-        // 제목, 주제, 숫자가 프롬프트에 들어가면 이미지 안에 글자나 숫자 흔적이 생길 수 있습니다.
-        // 이 정보들은 오른쪽 UI에서 이미 보여주므로 이미지 생성에는 넣지 않는 편이 안전합니다.
+        // [수정] positionX / positionY를 이번 테스트에서는 일부러 제거했습니다.
+        // 이유: 좌표 설명이 길어지면 모델이 장면 구성보다 규칙 해석에 힘을 쓰고,
+        // 결과적으로 오브젝트 자체를 놓치는 경우가 생겼습니다.
         //
-        // [수정] 오브젝트는 "정확한 복사"가 아니라 "부드러운 감성 재해석"으로 유도합니다.
-        // 이미지 AI는 좌표 기반 렌더러가 아니라 장면 재해석 모델이라서,
-        // 너무 강하게 "무조건 그대로 그려라"라고 하면 오히려 결과가 망가질 수 있습니다.
+        // [수정] backgroundType / backgroundColor / backgroundWeather도 프롬프트에서 제거했습니다.
+        // 이유: 방금 결과처럼 weather mood가 너무 강하게 먹으면,
+        // 사용자가 놓은 오브젝트보다 비/가로등/우산 같은 장면 분위기를 우선 생성합니다.
+        //
+        // [수정] "정확히 전부 그려라", "추가하지 마라" 같은 강한 금지문도 제거했습니다.
+        // 이유: 이미지 AI는 좌표 기반 렌더러가 아니라 장면 재해석 모델이라서,
+        // 너무 강하게 묶으면 오히려 더 이상한 새 장면을 만들 수 있습니다.
+        //
+        // [목표] 이번 버전은 처음 결과처럼 "예쁜 감성 재해석"을 복구하는 테스트용입니다.
         return """
-                Create one warm hand-painted cozy plaza illustration for a Korean emotional memo app.
+            Create one warm hand-painted cozy illustration for a Korean emotional memo app.
 
-                Use the user's placed objects as the main inspiration.
-                Keep their rough placement when possible.
-                Do not create a completely unrelated room.
-                Make it feel like a polished emotional version of the current plaza canvas.
+            Make a gentle emotional plaza inspired by these placed objects:
+            %s
 
-                Style:
-                soft pastel, warm light, calm, poetic, cozy, gentle, nostalgic.
+            The image should feel warm, quiet, soft, poetic, nostalgic, and comforting.
+            Use soft pastel colors, gentle lighting, and a calm diary-like mood.
 
-                Background:
-                type: %s
-                color: %s
-                weather mood: %s
+            Make the objects feel naturally gathered in one peaceful place.
+            The result does not need to be an exact copy of the layout.
+            It should feel like a beautiful emotional reinterpretation of the user's plaza.
 
-                If weather type is used, show an open sky, soft air, simple ground, and gentle weather atmosphere.
+            Keep the scene simple.
+            Avoid clutter.
+            Avoid making the scene look like a sticker sheet or item inventory.
 
-                Objects:
-                %s
-
-                Keep the upper area open and airy.
-                Place most objects in the lower and middle area.
-                Avoid clutter and unclear merged shapes.
-
-                No readable text, no letters, no numbers, no UI, no logo, no watermark.
-                No people, no human faces.
-                """.formatted(
-                backgroundType,
-                backgroundColor,
-                backgroundWeather,
-                objects
-        );
+            No readable text, no letters, no numbers, no UI, no logo, no watermark.
+            No people, no human faces.
+            """.formatted(objects);
     }
 
     private String toPositionLabel(Object xValue, Object yValue) {
