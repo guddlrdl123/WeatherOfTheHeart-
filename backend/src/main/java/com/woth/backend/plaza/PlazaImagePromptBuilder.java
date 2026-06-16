@@ -77,45 +77,45 @@ public class PlazaImagePromptBuilder {
         // [추가] backgroundMood는 배경 날씨 키를 영어 감성 표현으로 한 번 풀어준 보조 힌트입니다.
         // 단, 너무 강하게 먹지 않도록 "참고용" 흐름 안에만 넣었습니다.
         return """
-               완성된 감정 광장을 세련된 고해상도 일러스트 한 장으로 그려주세요.
-               참여자들이 놓은 오브젝트들이 모여 만들어진 아늑한 방 또는 야외의 광장처럼 보여야 합니다.
-               웬만하면 배치되어 있는 오브젝트만을 이용해서 방이나 야외 광장을 그려주세요.
-               꾸며진 공간이 방 안에 있어야 하는 오브젝트가 많을 시에는 방으로 그려주시고, 야외에 있어야 하는 오브젝트가 많을 시에는 야외의 광장으로 그려주세요.
+       Please create one polished high-resolution illustration of a completed emotional plaza.
+       It should look like a cozy room or an outdoor plaza created by the objects placed by the participants.
+       As much as possible, please draw the room or outdoor plaza using only the placed objects.
+       If there are more objects that naturally belong indoors, please make it a room, and if there are more objects that naturally belong outdoors, please make it an outdoor plaza.
 
-               한국 앱 "마음의 날씨"의 분위기를 유지해주세요:
-               따뜻하고, 조용하고, 시적이며, 부드러운 조명이 있는 장면.
-               손으로 그린 듯한 포근한 일러스트 느낌.
-               부드러운 파스텔 색감.
-               감성적인 일기장 같은 분위기.
+       Please preserve the atmosphere of the Korean app "Weather of the Heart":
+       a warm, quiet, poetic scene with soft lighting.
+       A cozy hand-painted illustration style.
+       Soft pastel colors.
+       An emotional atmosphere like a diary.
 
-               배치된 오브젝트들이 장면의 중심이 되게 해주세요.
-               오브젝트 목록표나 스티커 모음처럼 보이지 않게 해주세요.
-               하나의 완성된 감정 공간처럼 자연스럽게 재해석해주세요.
-               오브젝트가 서로 너무 뭉개지지 않도록 적당히 떨어뜨려 표현해주세요.
+       Please make the placed objects the center of the scene.
+       Please make sure it does not look like an object list or a sticker collection.
+       Please reinterpret it naturally as one complete emotional space.
+       Please place the objects with enough space so that they do not blend together too much.
 
-               position 값과 roughPosition 값은 정확한 좌표가 아니라 대략적인 배치 참고용입니다.
-               visualMood 값은 전체 분위기를 부드럽게 잡기 위한 참고용입니다.
-               정확한 복사보다 자연스럽고 감성적인 완성 이미지를 우선해주세요.
+       The position and roughPosition values are not exact coordinates, but only references for the approximate layout.
+       The visualMood value is only a reference to help guide the overall atmosphere gently.
+       Please prioritize a natural and emotional finished image over an exact copy.
 
-               새로운 큰 오브젝트를 과하게 추가하지는 말아주세요.
-               단, 바닥, 벽, 하늘, 조명, 그림자, 공기감처럼 장면을 완성하는 기본 배경 요소는 자연스럽게 추가해도 됩니다.
+       Please do not add too many large new objects.
+       However, you may naturally add basic background elements that complete the scene, such as the floor, walls, sky, lighting, shadows, and atmosphere.
 
-               사용자 이름, 사람의 얼굴, 로고, UI, 캡션, 워터마크를 넣지 마세요.
-               이미지 안에는 한글, 영어, 숫자, 기호를 포함한 어떤 글자도 절대 넣지 마세요.
-               간판, 종이, 책 표지, 벽 장식, 오브젝트 표면에도 읽을 수 있는 텍스트나 글자처럼 보이는 무늬를 넣지 마세요.
+       Do not include user names, human faces, logos, UI, captions, or watermarks.
+       Do not include any readable text in the image, including Korean, English, numbers, or symbols.
+       Do not put readable text or text-like patterns on signs, paper, book covers, wall decorations, or object surfaces.
 
-               배경 타입이 weather라면 배경 날씨 키의 날씨를 장면의 배경, 조명, 하늘, 공기감에 분명히 반영해주세요.
-               배경 타입이 color라면 배경 색상을 장면의 주조색과 조명 분위기에 자연스럽게 반영해주세요.
+       If the background type is weather, clearly reflect the weather of the background weather key in the background, lighting, sky, and atmosphere of the scene.
+       If the background type is color, naturally reflect the background color in the main color tone and lighting mood of the scene.
 
-               광장 제목: %s
-               광장 주제: %s
-               배경 타입: %s
-               배경 색상: %s
-               배경 날씨 키: %s
-               배경 분위기 참고: %s
-               오브젝트와 감정 메모:
-               %s
-               """.formatted(
+       Plaza title: %s
+       Plaza topic: %s
+       Background type: %s
+       Background color: %s
+       Background weather key: %s
+       Background mood reference: %s
+       Objects and emotional notes:
+       %s
+       """.formatted(
                 title,
                 topic,
                 backgroundType,
