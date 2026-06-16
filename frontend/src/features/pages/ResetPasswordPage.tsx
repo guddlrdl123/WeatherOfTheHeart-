@@ -11,6 +11,7 @@ import {
 const CODE_LENGTH = 6;
 const RESET_CODE_EXPIRES_SECONDS = 10 * 60;
 const LOGIN_REDIRECT_SECONDS = 5;
+// const ENABLE_LOGIN_REDIRECT = false;
 const PASSWORD_MIN_LENGTH = 8;
 const EMPTY_CODE_DIGITS = Array.from({ length: CODE_LENGTH }, () => "");
 
@@ -65,6 +66,7 @@ export function ResetPasswordPage() {
   }, [isCodeFlowActive, remainingSeconds]);
 
   useEffect(() => {
+    // if (!ENABLE_LOGIN_REDIRECT || step !== "done") {
     if (step !== "done") {
       return;
     }
@@ -264,7 +266,7 @@ export function ResetPasswordPage() {
                 {step === "request" && "이메일로 인증번호를 받을 수 있어요."}
                 {step === "code" && "메일로 받은 6자리 인증번호를 입력해 주세요."}
                 {step === "password" && "새 비밀번호를 입력해 주세요."}
-                {step === "done" && "비밀번호 재설정이 완료되었습니다."}
+                {step === "done" && ""}
               </p>
             </div>
 
@@ -418,20 +420,20 @@ export function ResetPasswordPage() {
             )}
 
             {step === "done" && (
-              <div className="rounded-lg border border-[#8aa178]/25 bg-[#8aa178]/10 px-4 py-5">
-                <div className="mb-3 flex items-center gap-2 text-sm text-[#5f754f]">
+              <div className="flex flex-col gap-3">
+                < div className="flex items-center gap-2 text-md font-bold text-[#5f754f]">
                   <CheckCircle2 size={17} />
                   비밀번호 변경 완료
                 </div>
                 <p className="text-sm leading-6 text-[#5a4632]/65">새 비밀번호로 다시 로그인해 주세요.</p>
-                <p className="mt-2 text-xs text-[#5a4632]/55" aria-live="polite">
+                <p className="text-sm text-[#5a4632]/55" aria-live="polite">
                   {redirectSeconds}초 후 로그인 페이지로 이동합니다.
                 </p>
               </div>
             )}
           </section>
         </div>
-      </main>
-    </div>
+      </main >
+    </div >
   );
 }
