@@ -77,46 +77,46 @@ public class PlazaImagePromptBuilder {
         // [추가] backgroundMood는 배경 날씨 키를 영어 감성 표현으로 한 번 풀어준 보조 힌트입니다.
         // 단, 너무 강하게 먹지 않도록 "참고용" 흐름 안에만 넣었습니다.
         return """
-                Create one polished high-resolution illustration of a completed emotional plaza.
-                The scene should feel like a cozy room or a small outdoor plaza formed by the objects placed by the participants.
-                As much as possible, build the room or plaza around the placed objects.
-                If most objects feel more suitable for an indoor space, make it a cozy room.
-                If most objects feel more suitable for an outdoor space, make it a small outdoor plaza.
-                
-                Please preserve the atmosphere of the Korean app "Weather of the Heart":
-                warm, quiet, poetic, softly lit, and emotionally gentle.
-                Use a cozy hand-painted illustration style.
-                Use soft pastel colors.
-                Make the scene feel like a calm emotional diary.
-                
-                Let the placed objects become the center of the scene.
-                Do not make the image look like an object list or a sticker collection.
-                Reinterpret the objects naturally as one complete emotional space.
-                Leave enough space between the objects so they do not blend together too much.
-                
-                The position and roughPosition values are only rough layout references, not exact coordinates.
-                The visualMood value is only a soft reference for the overall atmosphere.
-                Prioritize a natural, emotional finished illustration over an exact copy of the layout.
-                
-                Please do not add too many large new objects.
-                However, simple background elements such as floor, wall, sky, light, shadow, and atmosphere may be added naturally to complete the scene.
-                
-                Do not include usernames, human faces, logos, UI elements, captions, or watermarks.
-                Do not include readable text of any kind, including Korean, English, numbers, or symbols.
-                Do not put readable text or text-like marks on signs, paper, book covers, wall decorations, or object surfaces.
-                
-                If the background type is weather, clearly reflect the background weather key through the sky, lighting, air, and overall atmosphere.
-                If the background type is color, naturally reflect the background color through the main color palette and lighting mood.
-                
-                Plaza title: %s
-                Plaza topic: %s
-                Background type: %s
-                Background color: %s
-                Background weather key: %s
-                Background mood reference: %s
-                Objects and emotional notes:
-                %s
-                """.formatted(
+       Create one beautiful high-resolution illustration of a finished emotional plaza.
+       Imagine that the objects placed by different participants have quietly gathered and formed one warm shared space.
+       The scene may become a cozy private room, a peaceful outdoor plaza, or a gentle space somewhere between the two.
+       Choose the setting naturally based on the placed objects.
+
+       The image should carry the atmosphere of the Korean app "Weather of the Heart":
+       warm, quiet, poetic, comforting, and softly emotional.
+       Use a cozy hand-painted style with soft pastel colors, gentle light, and a calm diary-like mood.
+       The scene should feel intimate, nostalgic, and emotionally safe.
+
+       Use the placed objects as the heart of the image.
+       They should feel like small traces of people's feelings left in the plaza.
+       Do not arrange them like a catalog, sticker sheet, or item inventory.
+       Reinterpret them as part of one complete emotional place.
+       Keep enough breathing room between objects so each important object can still be understood.
+
+       The position and roughPosition values are only loose composition hints.
+       They do not need to be copied exactly.
+       The visualMood value is only a gentle emotional guide.
+       The final image should feel natural, poetic, and complete rather than technically exact.
+
+       Avoid adding large unrelated focal objects that overpower the placed objects.
+       You may add simple environmental elements such as floor, wall, sky, soft light, shadow, distant background, and atmosphere if they help the scene feel complete.
+
+       Do not include usernames, people, human faces, logos, UI elements, captions, or watermarks.
+       Do not include readable text, Korean letters, English letters, numbers, symbols, labels, or text-like marks.
+       Any signs, papers, books, posters, boards, packages, or object surfaces should remain blank or abstract and unreadable.
+
+       If the background type is weather, express the weather through the sky, light, air, color, and atmosphere rather than through icons.
+       If the background type is color, let that color gently influence the whole palette and lighting.
+
+       Plaza title: %s
+       Plaza topic: %s
+       Background type: %s
+       Background color: %s
+       Background weather key: %s
+       Background mood reference: %s
+       Objects and emotional notes:
+       %s
+       """.formatted(
                 title,
                 topic,
                 backgroundType,
