@@ -186,16 +186,13 @@ export function SignupForm() {
         <form onSubmit={handleSubmit} className="mw-surface mx-auto flex w-full max-w-[440px] flex-col gap-4 rounded-xl p-8 select-none">
             <div>
                 <p className="mb-2 text-[0.68rem] tracking-[0.2em] text-[#e0d2ba]">SIGNUP</p>
-                {/* <h1 className="text-xl font-normal text-[#e0d2ba]" style={{ fontFamily: "'Noto Serif KR', Georgia, serif" }}>
-                    조용한 방 하나 만들기
-                </h1> */}
             </div>
 
             <div className="flex flex-col gap-2 text-sm text-white/54">
                 <span>이메일</span>
                 <div className="flex flex-col gap-2 sm:flex-row">
                     <input
-                        className="mw-input h-11 px-3 text-sm"
+                        className="mw-input h-10 px-3 text-sm"
                         value={email}
                         onChange={(event) => resetEmailVerification(event.target.value)}
                     />
@@ -203,7 +200,7 @@ export function SignupForm() {
                         type="button"
                         onClick={handleSendVerificationCode}
                         disabled={isEmailVerified || isSendingVerification}
-                        className="mw-button h-11 shrink-0 rounded-[8px] px-3 text-sm disabled:opacity-50"
+                        className="mw-button h-10 shrink-0 rounded-[8px] px-3 text-sm disabled:opacity-50"
                     >
                         {isEmailVerified ? "인증완료" : isVerificationSent ? "재전송" : "인증"}
                     </button>
@@ -229,7 +226,7 @@ export function SignupForm() {
                     <span>인증번호</span>
                     <div className="flex flex-col gap-2 sm:flex-row">
                         <input
-                            className="mw-input h-11 px-3 text-sm"
+                            className="mw-input h-10 px-3 text-sm"
                             value={verificationCode}
                             inputMode="numeric"
                             maxLength={6}
@@ -241,7 +238,7 @@ export function SignupForm() {
                             type="button"
                             onClick={handleVerifyCode}
                             disabled={isEmailVerified || isVerifyingEmail}
-                            className="mw-button h-11 shrink-0 rounded-[8px] px-3 text-sm disabled:opacity-50"
+                            className="mw-button h-10 shrink-0 rounded-[8px] px-3 text-sm disabled:opacity-50"
                         >
                             {isVerifyingEmail ? "확인 중" : "확인"}
                         </button>
@@ -257,7 +254,7 @@ export function SignupForm() {
             <label className="flex flex-col gap-2 text-sm text-white/54">
                 닉네임
                 <input
-                    className="mw-input h-11 px-3 text-sm"
+                    className="mw-input h-10 px-3 text-sm"
                     value={nickname}
                     maxLength={PROFILE_NICKNAME_MAX_LENGTH}
                     onChange={(event) => handleNicknameChange(event.target.value)}
@@ -271,7 +268,7 @@ export function SignupForm() {
                 비밀번호
                 <div className="relative">
                     <input
-                        className="mw-input h-11 px-3 pr-10 text-sm"
+                        className="mw-input h-10 px-3 pr-10 text-sm"
                         type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
@@ -292,7 +289,7 @@ export function SignupForm() {
                 비밀번호 확인
                 <div className="relative">
                     <input
-                        className="mw-input h-11 px-3 pr-10 text-sm"
+                        className="mw-input h-10 px-3 pr-10 text-sm"
                         type={showPasswordConfirm ? "text" : "password"}
                         value={passwordConfirm}
                         onChange={(event) => setPasswordConfirm(event.target.value)}
@@ -311,7 +308,7 @@ export function SignupForm() {
 
             {error && <p className="text-sm text-[#e6a1a1]">{error}</p>}
 
-            <button type="submit" disabled={isSubmitting} className="mw-button-solid mt-2 h-11 rounded-[8px] px-3 text-sm disabled:opacity-50">
+            <button type="submit" disabled={isSubmitting} className="mw-button-solid mt-2 h-10 rounded-[8px] px-3 text-sm disabled:opacity-50">
                 회원가입
             </button>
 

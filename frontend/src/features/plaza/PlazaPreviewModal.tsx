@@ -161,7 +161,7 @@ export function PlazaPreviewModal({ entry, currentGuestId, onClose, onUpdate, on
               <label className="flex flex-col gap-2 text-sm text-[#5a4632]">
                 제목
                 <input
-                  className="mw-input h-11 px-3 text-sm"
+                  className="mw-input h-10 px-3 text-sm"
                   value={title}
                   placeholder="어느 나그네의 발자취"
                   onChange={(event) => setTitle(event.target.value)}

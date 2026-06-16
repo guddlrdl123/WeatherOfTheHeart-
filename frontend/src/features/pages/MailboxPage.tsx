@@ -185,11 +185,11 @@ function MailboxDetailModal({
               </div>
             </div>
             <div className="rounded-lg border border-[#5a4632]/12 bg-white/30 px-4 py-4">
-              <p className="text-[11px] text-[#5a4632]/42">내가 남긴 오브젝트</p>
+              <p className="text-[11px] text-[#5a4632]/42">내가 남긴 발자취</p>
               {myObject ? (
                 <div className="mt-3 flex items-center gap-3">
                   <div className="grid h-14 w-14 shrink-0 place-items-center rounded-lg bg-[#5a4632]/[0.06]">
-                    <img src={myObject.image} alt="" className="h-11 w-11 object-contain" />
+                    <img src={myObject.image} alt="" className="h-10 w-11 object-contain" />
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-xs text-[#5a4632]/52">{myObject.label}</p>
@@ -199,7 +199,7 @@ function MailboxDetailModal({
                   </div>
                 </div>
               ) : (
-                <p className="mt-3 text-sm text-[#5a4632]/48">작성한 오브젝트 기록이 없어요.</p>
+                <p className="mt-3 text-sm text-[#5a4632]/48">작성한 발자취 기록이 없어요.</p>
               )}
             </div>
             {myObjectContent && (

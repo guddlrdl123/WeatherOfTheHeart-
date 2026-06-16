@@ -80,7 +80,7 @@ export function MemoryObjectSelectModal({
 
                 {hasObjects && (
                     <div className="mb-4 shrink-0">
-                        <div className="flex h-11 items-center gap-2 rounded-md border border-[#5a4632]/12 bg-white/40 px-3 text-[#5a4632]">
+                        <div className="flex h-10 items-center gap-2 rounded-md border border-[#5a4632]/12 bg-white/40 px-3 text-[#5a4632]">
                             <Search size={16} className="shrink-0 text-[#5a4632]/45" />
                             <input
                                 value={searchText}

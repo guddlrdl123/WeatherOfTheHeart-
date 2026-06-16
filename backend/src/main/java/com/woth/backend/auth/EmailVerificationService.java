@@ -51,6 +51,15 @@ public class EmailVerificationService {
       throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
     }
 
+    createAndSendCode(email);
+  }
+
+  @Transactional
+  public void sendCodeForEmailChange(String email) {
+    createAndSendCode(email);
+  }
+
+  private void createAndSendCode(String email) {
     String code = generateCode();
     EmailVerification verification = new EmailVerification(
         email,

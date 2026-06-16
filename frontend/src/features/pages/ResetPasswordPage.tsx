@@ -275,7 +275,7 @@ export function ResetPasswordPage() {
                 <label className="flex flex-col gap-2 text-sm">
                   이메일
                   <input
-                    className="mw-input h-11 px-3 text-sm"
+                    className="mw-input h-10 px-3 text-sm"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     autoComplete="email"
@@ -288,7 +288,7 @@ export function ResetPasswordPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="mw-button-solid mt-1 inline-flex h-11 items-center justify-center gap-2 rounded-[8px] px-3 text-sm disabled:opacity-50"
+                  className="mw-button-solid mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-[8px] px-3 text-sm disabled:opacity-50"
                 >
                   다음
                 </button>
@@ -341,7 +341,7 @@ export function ResetPasswordPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting || isCodeExpired}
-                  className="mw-button-solid mt-1 h-11 rounded-[8px] px-3 text-sm disabled:opacity-50"
+                  className="mw-button-solid mt-1 h-10 rounded-[8px] px-3 text-sm disabled:opacity-50"
                 >
                   다음
                 </button>
@@ -365,7 +365,7 @@ export function ResetPasswordPage() {
                   새 비밀번호
                   <div className="relative">
                     <input
-                      className="mw-input h-11 px-3 pr-11 text-sm"
+                      className="mw-input h-10 px-3 pr-11 text-sm"
                       type={showNewPassword ? "text" : "password"}
                       value={newPassword}
                       onChange={(event) => setNewPassword(event.target.value)}
@@ -388,7 +388,7 @@ export function ResetPasswordPage() {
                   새 비밀번호 확인
                   <div className="relative">
                     <input
-                      className="mw-input h-11 px-3 pr-11 text-sm"
+                      className="mw-input h-10 px-3 pr-11 text-sm"
                       type={showNewPasswordConfirm ? "text" : "password"}
                       value={newPasswordConfirm}
                       onChange={(event) => setNewPasswordConfirm(event.target.value)}
@@ -412,7 +412,7 @@ export function ResetPasswordPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="mw-button-solid mt-1 h-11 rounded-[8px] px-3 text-sm disabled:opacity-50"
+                  className="mw-button-solid mt-1 h-10 rounded-[8px] px-3 text-sm disabled:opacity-50"
                 >
                   비밀번호 변경
                 </button>

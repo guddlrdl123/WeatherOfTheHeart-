@@ -63,14 +63,14 @@ export function LoginForm() {
 
       <label className="flex flex-col gap-2 text-sm">
         이메일
-        <input className="mw-input h-11 px-3 text-sm" value={email} onChange={(event) => setEmail(event.target.value)} />
+        <input className="mw-input h-10 px-3 text-sm" value={email} onChange={(event) => setEmail(event.target.value)} />
       </label>
 
       <label className="flex flex-col gap-2 text-sm">
         비밀번호
         <div className="relative">
           <input
-            className="mw-input h-11 px-3 text-sm"
+            className="mw-input h-10 px-3 text-sm"
             type={showPassword ? "text" : "password"}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
@@ -89,19 +89,20 @@ export function LoginForm() {
 
       {error && <p className="text-sm text-[#e6a1a1]">{error}</p>}
 
-      <button type="submit" disabled={isSubmitting} className="mw-button-solid mt-2 h-11 rounded-[8px] px-3 text-sm disabled:opacity-50">
+      <button type="submit" disabled={isSubmitting} className="mw-button-solid mt-2 h-10 rounded-[8px] px-3 text-sm disabled:opacity-50">
         로그인
       </button>
 
       <div className="flex flex-col items-center gap-2">
-        <p className="text-center text-xs text-white/38">
-          <Link to="/reset-password" className="ml-2 text-xs">
+        <div className="flex text-center text-xs text-white/38 gap-2">
+          <Link to="/reset-password" className="text-xs">
             비밀번호 찾기
           </Link>
-          <Link to="/signup" state={{ fromLanding: true }} className="ml-2 text-xs">
+          <p>|</p>
+          <Link to="/signup" state={{ fromLanding: true }} className="text-xs">
             회원가입
           </Link>
-        </p>
+        </div>
       </div>
     </form>
   );

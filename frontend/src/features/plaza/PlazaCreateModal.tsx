@@ -81,7 +81,7 @@ export function PlazaCreateModal({ onCreate, onClose }: Props) {
         <label className="flex flex-col gap-2 text-sm text-[#5a4632]">
           주제
           <input
-            className="mw-input h-11 px-3 text-sm"
+            className="mw-input h-10 px-3 text-sm"
             value={topic}
             aria-invalid={topicError ? true : undefined}
             onChange={(event) => {
@@ -111,7 +111,7 @@ export function PlazaCreateModal({ onCreate, onClose }: Props) {
         <label className="flex flex-col gap-2 text-sm text-[#5a4632]">
           최대 오브젝트 수
           <input
-            className="mw-input h-11 px-3 text-sm"
+            className="mw-input h-10 px-3 text-sm"
             type="number"
             min={1}
             max={30}
@@ -130,7 +130,7 @@ export function PlazaCreateModal({ onCreate, onClose }: Props) {
               role="switch"
               aria-checked={isPublicRoom}
               onClick={() => setIsPublicRoom((value) => !value)}
-              className={`flex h-11 items-center justify-between gap-3 rounded-md border px-3 text-left text-sm transition ${isPublicRoom ? "border-[#9b6b54]/45 bg-[#9b6b54]/12 text-[#5a4632]" : "border-[#5a4632]/15 bg-white/30 text-[#5a4632]/55"}`}
+              className={`flex h-10 items-center justify-between gap-3 rounded-md border px-3 text-left text-sm transition ${isPublicRoom ? "border-[#9b6b54]/45 bg-[#9b6b54]/12 text-[#5a4632]" : "border-[#5a4632]/15 bg-white/30 text-[#5a4632]/55"}`}
             >
               <span className="truncate">{isPublicRoom ? "방 공개" : "방 비공개"}</span>
               <span
@@ -148,7 +148,7 @@ export function PlazaCreateModal({ onCreate, onClose }: Props) {
               role="switch"
               aria-checked={allowDuplicateObjects}
               onClick={() => setAllowDuplicateObjects((value) => !value)}
-              className={`flex h-11 items-center justify-between gap-3 rounded-md border px-3 text-left text-sm transition ${allowDuplicateObjects ? "border-[#9b6b54]/45 bg-[#9b6b54]/12 text-[#5a4632]" : "border-[#5a4632]/15 bg-white/30 text-[#5a4632]/55"}`}
+              className={`flex h-10 items-center justify-between gap-3 rounded-md border px-3 text-left text-sm transition ${allowDuplicateObjects ? "border-[#9b6b54]/45 bg-[#9b6b54]/12 text-[#5a4632]" : "border-[#5a4632]/15 bg-white/30 text-[#5a4632]/55"}`}
             >
               <span className="truncate">오브젝트 중복 {allowDuplicateObjects ? "허용" : "금지"}</span>
               <span

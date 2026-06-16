@@ -10,9 +10,19 @@ export type UserProfile = {
 };
 
 type UserProfileUpdateRequest = {
-  nickname: string;
+  nickname?: string;
   currentPassword?: string;
   newPassword?: string;
+};
+
+type UserEmailChangeCodeRequest = {
+  currentPassword: string;
+  newEmail: string;
+};
+
+type UserEmailUpdateRequest = {
+  newEmail: string;
+  verificationCode: string;
 };
 
 type UserWithdrawalRequest = {
@@ -54,6 +64,39 @@ export async function updateUserProfile(value: UserProfileUpdateRequest) {
 
   if (!response.ok) {
     throw await readApiError(response, "프로필 정보를 수정하지 못했습니다.");
+  }
+
+  return readApiData<UserProfile>(response);
+}
+
+export async function sendUserEmailChangeCode(value: UserEmailChangeCodeRequest) {
+  const response = await authFetch(toApiUrl("/api/users/me/email/change/send"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(value),
+  });
+
+  if (!response.ok) {
+    throw await readApiError(response, "인증번호 전송에 실패했습니다.");
+  }
+}
+
+export async function updateUserEmail(value: UserEmailUpdateRequest) {
+  const response = await authFetch(toApiUrl("/api/users/me/email"), {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      newEmail: value.newEmail,
+      code: value.verificationCode,
+    }),
+  });
+
+  if (!response.ok) {
+    throw await readApiError(response, "이메일 변경에 실패했습니다.");
   }
 
   return readApiData<UserProfile>(response);

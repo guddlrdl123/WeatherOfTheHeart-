@@ -72,7 +72,10 @@ public class UserService {
     @Transactional
     public User updateProfile(Long userId, String nickname, String currentPassword, String newPassword) {
         User user = getUser(userId);
-        user.updateNickname(resolveNickname(nickname));
+
+        if (nickname != null) {
+            user.updateNickname(resolveNickname(nickname));
+        }
 
         if (hasText(newPassword)) {
             validatePasswordChange(user, currentPassword, newPassword);
@@ -105,12 +108,10 @@ public class UserService {
         }
 
         // [수정] 이미 사용 중인 이메일이면 변경 불가
-        if (userRepository.existsByEmailAndIsDeletedFalse(normalizedEmail)) {
-            throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
-        }
+        ensureEmailIsNotUsed(normalizedEmail);
 
-        // [수정] 기존 회원가입 이메일 인증 로직을 그대로 재사용해 새 이메일로 코드 발송
-        emailVerificationService.sendCode(normalizedEmail);
+        // [수정] 이메일 변경 전용 인증 코드 발송
+        emailVerificationService.sendCodeForEmailChange(normalizedEmail);
     }
 
     // [수정] 새 이메일과 인증코드를 검증한 뒤 실제 이메일 반영
@@ -130,9 +131,7 @@ public class UserService {
         }
 
         // [수정] 인증 완료 직전에도 중복 이메일 여부를 다시 확인
-        if (userRepository.existsByEmailAndIsDeletedFalse(normalizedEmail)) {
-            throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
-        }
+        ensureEmailIsNotUsed(normalizedEmail);
 
         // [수정] 기존 이메일 인증 검증 로직을 재사용
         emailVerificationService.verifyCode(normalizedEmail, code);
@@ -191,6 +190,13 @@ public class UserService {
                         .password(passwordEncoder.encode(UUID.randomUUID().toString()))
                         .nickname(WITHDRAWN_NICKNAME)
                         .build()));
+    }
+
+    private void ensureEmailIsNotUsed(String email) {
+        userRepository.findByEmailAndIsDeletedFalse(email)
+                .ifPresent(existingUser -> {
+                    throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
+                });
     }
 
     private String createWithdrawnEmail(Long userId) {
