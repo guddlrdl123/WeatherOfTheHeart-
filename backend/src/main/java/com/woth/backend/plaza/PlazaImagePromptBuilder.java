@@ -371,6 +371,11 @@ public class PlazaImagePromptBuilder {
             case "앉아있는 삼색 고양이", "calico cat" -> "a sitting calico cat";
             case "여우", "fox" -> "a quiet small fox";
             case "펭귄", "penguin" -> "a small cute penguin";
+            case "고양이1", "cat1", "cat_1" -> "a small cozy cream-colored cat sitting calmly, soft rounded body, gentle expression";
+            case "고양이2", "cat2", "cat_2" -> "a small cozy gray-and-white cat resting quietly, soft rounded body, calm expression";
+            case "레서판다", "lesser panda", "red panda" -> "a cute red panda sitting gently, fluffy ringed tail, round ears, warm reddish-brown fur";
+            case "햄스터1", "hamster1", "hamster_1" -> "a small cozy cream and beige hamster sitting upright, tiny rounded ears, soft fluffy body";
+            case "햄스터2", "hamster2", "hamster_2" -> "a small cozy warm-brown hamster crawling softly, belly close to the ground, tiny paws forward";
 
             // 가구
             case "사이드 테이블" -> "a small side table";
