@@ -3,14 +3,19 @@ package com.woth.backend.plaza;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Component
 public class PlazaImagePromptBuilder {
 
-    // [추가] 오브젝트가 너무 많을 때 프롬프트가 과하게 길어지는 것만 방지합니다.
-    // 원본 흐름은 유지하되, 최대 개수만 제한합니다.
+    // [추가] 오브젝트가 너무 많아질 때 프롬프트가 과하게 길어지는 것만 방지합니다.
     private static final int MAX_OBJECTS_FOR_PROMPT = 30;
+
+    // [추가] positionX/Y가 픽셀값일 때 roughPosition 계산에 사용하는 캔버스 기준입니다.
+    // 프론트 광장 캔버스가 1024x768이 아니면 여기만 실제 크기에 맞게 바꾸면 됩니다.
+    private static final double CANVAS_WIDTH = 1024.0;
+    private static final double CANVAS_HEIGHT = 768.0;
 
     public String build(Plaza plaza, List<PlazaEntry> entries) {
         List<PlazaEntry> safeEntries = entries == null
@@ -21,44 +26,56 @@ public class PlazaImagePromptBuilder {
 
         String objects = safeEntries.stream()
                 .map(entry -> String.format(
-                        "-object=%s, weather=%s, mood=%s, position=(%s,%s), text=%s",
+                        "-object=%s, weather=%s, mood=%s, visualMood=%s, position=(%s,%s), roughPosition=%s, text=%s",
                         safe(entry.getObjectKey()),
                         safe(entry.getWeatherKey()),
                         safe(entry.getMoodKey()),
+                        toMoodPrompt(entry.getMoodKey()),
                         safe(entry.getPositionX()),
                         safe(entry.getPositionY()),
+                        toRoughPosition(entry.getPositionX(), entry.getPositionY()),
                         summarize(entry.getContent())
                 ))
                 .collect(Collectors.joining("\n"));
 
         if (objects.isBlank()) {
-            objects = "-object=empty plaza, weather=soft, mood=calm, position=(center,center), text=조용한 감정 광장";
+            objects = "-object=empty plaza, weather=soft, mood=calm, visualMood=quiet feeling, position=(center,center), roughPosition=middle center, text=조용한 감정 광장";
         }
 
-        String title = plaza == null ? "조용한 감정 광장" : contextText(plaza.getTitle(), "조용한 감정 광장");
-        String topic = plaza == null ? "말하지 못한 마음이 모이는 공간" : contextText(plaza.getTopic(), "말하지 못한 마음이 모이는 공간");
+        String title = plaza == null
+                ? "조용한 감정 광장"
+                : contextText(plaza.getTitle(), "조용한 감정 광장");
+
+        String topic = plaza == null
+                ? "말하지 못한 마음이 모이는 공간"
+                : contextText(plaza.getTopic(), "말하지 못한 마음이 모이는 공간");
+
         String backgroundType = plaza == null ? "none" : safe(plaza.getBackgroundType());
+
         String backgroundColor = plaza == null || plaza.getBackgroundColor() == null
                 ? "none"
                 : safe(plaza.getBackgroundColor());
+
         String backgroundKey = plaza == null ? "none" : safe(plaza.getBackgroundKey());
 
-        // [수정] 원본 프롬프트 구조로 되돌렸습니다.
-        // 이유: 실제 테스트에서 원본이 가장 풍부하고 자연스럽게 나왔기 때문입니다.
+        String backgroundMood = plaza == null
+                ? "soft emotional atmosphere"
+                : toWeatherPrompt(plaza.getBackgroundKey());
+
+        // [수정] 원본 프롬프트 구조를 최대한 유지했습니다.
+        // 이유: 실제 테스트에서 원본 코드가 가장 풍부하고 자연스럽게 나왔기 때문입니다.
         //
-        // [수정] 영어 프롬프트, 오브젝트 영어 변환, roughPosition 변환을 제거했습니다.
-        // 이유: 오브젝트명이 매핑에서 누락되거나 단순화되면서 AI가 원래 오브젝트를 제대로 못 잡고,
-        //      카페/실내/가구 중심 장면으로 새로 해석하는 문제가 생겼기 때문입니다.
+        // [추가] visualMood와 roughPosition을 오브젝트 메모에만 약하게 추가했습니다.
+        // 이유: mood/position 정보를 완전히 버리지는 않되, AI에게 강제 배치 명령처럼 느껴지지 않도록 하기 위함입니다.
         //
-        // [수정] "절대 추가하지 마라", "무조건 다 그려라", "필수 오브젝트" 같은 강한 지시를 제거했습니다.
-        // 이유: 너무 강한 제한이 들어가면 AI가 장면을 자연스럽게 만들지 못하고 오히려 결과가 빈약해졌습니다.
+        // [주의] "반드시 모두 그려라", "절대 추가하지 마라", "정확히 좌표대로 배치해라" 같은 강한 문장은 넣지 않았습니다.
+        // 이유: 이전 테스트에서 이런 강한 지시가 들어갈수록 결과가 빈약해지거나 엉뚱한 장면으로 바뀌었습니다.
         //
-        // [수정] title/topic/content에서 영어와 숫자는 제거하거나 대체합니다.
-        // 이유: 테스트 제목이나 메모가 123123이면 이미지 안에 숫자 흔적이 생길 수 있기 때문입니다.
+        // [유지] objectKey는 영어로 강제 변환하지 않고 원본 그대로 전달합니다.
+        // 이유: 현재 서비스 오브젝트 이름이 한국어이고, 원본 프롬프트에서 이 방식이 더 풍부하게 나왔기 때문입니다.
         //
-        // [유지] objectKey는 원본 그대로 전달합니다.
-        // 이유: "수달", "펭귄", "벤치", "풍선 다발" 같은 실제 오브젝트명이 그대로 들어가야
-        //      AI가 장면을 더 풍부하게 해석했습니다.
+        // [추가] backgroundMood는 배경 날씨 키를 영어 감성 표현으로 한 번 풀어준 보조 힌트입니다.
+        // 단, 너무 강하게 먹지 않도록 "참고용" 흐름 안에만 넣었습니다.
         return """
                완성된 감정 광장을 세련된 고해상도 일러스트 한 장으로 그려주세요.
                참여자들이 놓은 오브젝트들이 모여 만들어진 아늑한 방 또는 야외의 광장처럼 보여야 합니다.
@@ -76,6 +93,10 @@ public class PlazaImagePromptBuilder {
                하나의 완성된 감정 공간처럼 자연스럽게 재해석해주세요.
                오브젝트가 서로 너무 뭉개지지 않도록 적당히 떨어뜨려 표현해주세요.
 
+               position 값과 roughPosition 값은 정확한 좌표가 아니라 대략적인 배치 참고용입니다.
+               visualMood 값은 전체 분위기를 부드럽게 잡기 위한 참고용입니다.
+               정확한 복사보다 자연스럽고 감성적인 완성 이미지를 우선해주세요.
+
                새로운 큰 오브젝트를 과하게 추가하지는 말아주세요.
                단, 바닥, 벽, 하늘, 조명, 그림자, 공기감처럼 장면을 완성하는 기본 배경 요소는 자연스럽게 추가해도 됩니다.
 
@@ -91,6 +112,7 @@ public class PlazaImagePromptBuilder {
                배경 타입: %s
                배경 색상: %s
                배경 날씨 키: %s
+               배경 분위기 참고: %s
                오브젝트와 감정 메모:
                %s
                """.formatted(
@@ -99,6 +121,7 @@ public class PlazaImagePromptBuilder {
                 backgroundType,
                 backgroundColor,
                 backgroundKey,
+                backgroundMood,
                 objects
         );
     }
@@ -108,11 +131,11 @@ public class PlazaImagePromptBuilder {
             return "조용한 감정 메모";
         }
 
-        // [수정] 원본은 공백을 전부 제거했는데,
-        // 한국어 문장이 붙어버리면 오히려 의미가 흐려질 수 있어서 공백 하나로 정리합니다.
+        // [수정] 원본처럼 공백을 전부 없애지 않고, 공백 하나로 정리합니다.
+        // 예: "오늘은 조금 쉬고 싶다" 형태를 유지하기 위함입니다.
         String normalized = content.replaceAll("\\s+", " ").trim();
 
-        // [추가] 테스트용 숫자/영어가 이미지 안에 흔적처럼 생길 수 있어서 제거합니다.
+        // [추가] 테스트용 숫자/영어가 이미지 안에 흔적처럼 생길 수 있어 제거합니다.
         normalized = normalized
                 .replaceAll("[A-Za-z0-9]", "")
                 .replaceAll("\\s+", " ")
@@ -135,13 +158,105 @@ public class PlazaImagePromptBuilder {
         }
 
         // [추가] 제목/주제에 숫자나 영어가 있으면 이미지에 글자 흔적이 생길 수 있어서 제거합니다.
-        // 예: 테스트 제목 123123 -> fallback 사용
         text = text
                 .replaceAll("[A-Za-z0-9]", "")
                 .replaceAll("\\s+", " ")
                 .trim();
 
         return text.isBlank() ? fallback : text;
+    }
+
+    private String toMoodPrompt(Object moodKey) {
+        String key = safe(moodKey).toLowerCase(Locale.ROOT);
+
+        return switch (key) {
+            case "happy", "joy", "기쁨", "행복" -> "gentle happiness";
+            case "sad", "sadness", "슬픔", "우울" -> "quiet sadness";
+            case "angry", "anger", "화남", "분노" -> "soft tension";
+            case "anxious", "anxiety", "불안" -> "calm reassurance";
+            case "lonely", "loneliness", "외로움" -> "lonely but warm";
+            case "tired", "피곤", "지침" -> "tired but resting";
+            case "peaceful", "calm", "평온", "차분" -> "peaceful calm";
+            case "excited", "설렘" -> "quiet excitement";
+            case "empty", "허무" -> "gentle emptiness";
+            default -> "quiet feeling";
+        };
+    }
+
+    private String toWeatherPrompt(Object weatherKey) {
+        String key = safe(weatherKey).toLowerCase(Locale.ROOT);
+
+        return switch (key) {
+            case "sunny", "clear", "맑음", "sun" -> "warm sunlight and clear soft air";
+            case "cloudy", "cloud", "흐림", "구름" -> "soft cloudy light and muted air";
+            case "rain", "rainy", "비" -> "gentle rainy atmosphere";
+            case "snow", "snowy", "눈" -> "quiet snowy air and soft white light";
+            case "night", "밤" -> "calm night light with small warm lamps";
+            case "fog", "foggy", "안개" -> "misty air and quiet distant background";
+            case "wind", "windy", "바람" -> "gentle breeze and softly moving air";
+            case "storm", "stormy", "폭풍" -> "dramatic but still comforting weather mood";
+            default -> "soft emotional atmosphere";
+        };
+    }
+
+    private String toRoughPosition(Object xValue, Object yValue) {
+        double x = toPercent(xValue, true);
+        double y = toPercent(yValue, false);
+
+        String vertical;
+        if (y < 33) {
+            vertical = "upper";
+        } else if (y < 66) {
+            vertical = "middle";
+        } else {
+            vertical = "lower";
+        }
+
+        String horizontal;
+        if (x < 33) {
+            horizontal = "left";
+        } else if (x < 66) {
+            horizontal = "center";
+        } else {
+            horizontal = "right";
+        }
+
+        return vertical + " " + horizontal;
+    }
+
+    private double toPercent(Object value, boolean xAxis) {
+        if (value == null) {
+            return 50.0;
+        }
+
+        double number;
+
+        try {
+            if (value instanceof Number) {
+                number = ((Number) value).doubleValue();
+            } else {
+                number = Double.parseDouble(String.valueOf(value).trim());
+            }
+        } catch (NumberFormatException e) {
+            return 50.0;
+        }
+
+        if (number >= 0 && number <= 1) {
+            return number * 100.0;
+        }
+
+        if (number >= 0 && number <= 100) {
+            return number;
+        }
+
+        double max = xAxis ? CANVAS_WIDTH : CANVAS_HEIGHT;
+        double percent = (number / max) * 100.0;
+
+        if (percent < 0) {
+            return 0;
+        }
+
+        return Math.min(percent, 100.0);
     }
 
     private String safe(Object value) {
