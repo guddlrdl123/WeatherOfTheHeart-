@@ -56,7 +56,8 @@ export function AppHeader() {
         <header className="sticky top-0 z-50 w-full mw-header shadow-xs border-b">
             <div className="px-6">
                 <div className="mx-auto flex h-16 w-full max-w-[1460px] items-center justify-between py-2">
-                    <Link to="/" className="font-semibold text-2xl text-[#5a4632]" style={{ fontFamily: "'Noto Serif KR', Georgia, serif" }}>
+                    <Link to="/" className="flex items-center gap-2 font-semibold text-2xl text-[#5a4632]" style={{ fontFamily: "'Noto Serif KR', Georgia, serif" }}>
+                        <img src="/favicon.png" alt="" className="h-7 w-auto" />
                         마음의 날씨
                     </Link>
 
