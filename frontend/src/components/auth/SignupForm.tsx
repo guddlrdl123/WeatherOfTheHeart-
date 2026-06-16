@@ -7,6 +7,19 @@ import { normalizeProfileNickname, PROFILE_NICKNAME_MAX_LENGTH, setAuthenticated
 // import { useAppStore } from "../../stores/AppStore";
 
 const VERIFICATION_CODE_TTL_SECONDS = 10 * 60;
+const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
+const PASSWORD_SPECIAL_CHARACTER_PATTERN = /[^A-Za-z0-9]/;
+const EMAIL_FORMAT_ERROR_MESSAGE = "올바른 이메일 형식으로 입력해주세요.";
+const PASSWORD_FORMAT_ERROR_MESSAGE = "비밀번호는 8자 이상이고 특수문자를 포함해야 합니다.";
+const PASSWORD_CONFIRM_ERROR_MESSAGE = "비밀번호 확인이 일치하지 않습니다.";
+
+function isValidEmailFormat(value: string) {
+    return EMAIL_PATTERN.test(value.trim());
+}
+
+function isValidPasswordFormat(value: string) {
+    return value.length >= 8 && PASSWORD_SPECIAL_CHARACTER_PATTERN.test(value);
+}
 
 function formatVerificationTime(totalSeconds: number) {
     const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
@@ -36,6 +49,12 @@ export function SignupForm() {
     const [isVerificationExpired, setIsVerificationExpired] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+    const [hasEmailBlurred, setHasEmailBlurred] = useState(false);
+    const [hasPasswordBlurred, setHasPasswordBlurred] = useState(false);
+    const [hasPasswordConfirmBlurred, setHasPasswordConfirmBlurred] = useState(false);
+    const [emailError, setEmailError] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+    const [passwordConfirmError, setPasswordConfirmError] = useState("");
 
     useEffect(() => {
         if (!isVerificationSent || isEmailVerified || isVerificationExpired) {
@@ -68,6 +87,64 @@ export function SignupForm() {
         setEmailMessage("");
     }
 
+    function getEmailFormatError(value: string) {
+        return value.trim() && !isValidEmailFormat(value) ? EMAIL_FORMAT_ERROR_MESSAGE : "";
+    }
+
+    function getPasswordFormatError(value: string) {
+        return value && !isValidPasswordFormat(value) ? PASSWORD_FORMAT_ERROR_MESSAGE : "";
+    }
+
+    function getPasswordConfirmError(nextPassword: string, nextPasswordConfirm: string) {
+        return nextPasswordConfirm && nextPassword !== nextPasswordConfirm ? PASSWORD_CONFIRM_ERROR_MESSAGE : "";
+    }
+
+    function handleEmailChange(nextEmail: string) {
+        setError("");
+        resetEmailVerification(nextEmail);
+
+        if (hasEmailBlurred) {
+            setEmailError(getEmailFormatError(nextEmail));
+        }
+    }
+
+    function handleEmailBlur() {
+        setHasEmailBlurred(true);
+        setEmailError(getEmailFormatError(email));
+    }
+
+    function handlePasswordChange(nextPassword: string) {
+        setError("");
+        setPassword(nextPassword);
+
+        if (hasPasswordBlurred) {
+            setPasswordError(getPasswordFormatError(nextPassword));
+        }
+
+        if (hasPasswordConfirmBlurred) {
+            setPasswordConfirmError(getPasswordConfirmError(nextPassword, passwordConfirm));
+        }
+    }
+
+    function handlePasswordBlur() {
+        setHasPasswordBlurred(true);
+        setPasswordError(getPasswordFormatError(password));
+    }
+
+    function handlePasswordConfirmChange(nextPasswordConfirm: string) {
+        setError("");
+        setPasswordConfirm(nextPasswordConfirm);
+
+        if (hasPasswordConfirmBlurred) {
+            setPasswordConfirmError(getPasswordConfirmError(password, nextPasswordConfirm));
+        }
+    }
+
+    function handlePasswordConfirmBlur() {
+        setHasPasswordConfirmBlurred(true);
+        setPasswordConfirmError(getPasswordConfirmError(password, passwordConfirm));
+    }
+
     function handleVerificationCodeChange(value: string) {
         setVerificationCode(value.replace(/\D/g, "").slice(0, 6));
     }
@@ -80,8 +157,9 @@ export function SignupForm() {
         setError("");
         setEmailMessage("");
 
-        if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
-            setError("올바른 이메일 형식으로 입력해주세요.");
+        if (!isValidEmailFormat(email)) {
+            setHasEmailBlurred(true);
+            setEmailError(EMAIL_FORMAT_ERROR_MESSAGE);
             return;
         }
 
@@ -139,8 +217,9 @@ export function SignupForm() {
         setError("");
 
         // 백엔드가 붙기 전에도 사용 흐름을 확인할 수 있도록 기본 검증을 둡니다.
-        if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
-            setError("올바른 이메일 형식으로 입력해주세요.");
+        if (!isValidEmailFormat(email)) {
+            setHasEmailBlurred(true);
+            setEmailError(EMAIL_FORMAT_ERROR_MESSAGE);
             return;
         }
 
@@ -149,13 +228,15 @@ export function SignupForm() {
             return;
         }
 
-        if (password.length < 8 || !/[^A-Za-z0-9]/.test(password)) {
-            setError("비밀번호는 8자 이상이고 특수문자를 포함해야 합니다.");
+        if (!isValidPasswordFormat(password)) {
+            setHasPasswordBlurred(true);
+            setPasswordError(PASSWORD_FORMAT_ERROR_MESSAGE);
             return;
         }
 
         if (password !== passwordConfirm) {
-            setError("비밀번호 확인이 일치하지 않습니다.");
+            setHasPasswordConfirmBlurred(true);
+            setPasswordConfirmError(PASSWORD_CONFIRM_ERROR_MESSAGE);
             return;
         }
 
@@ -194,7 +275,8 @@ export function SignupForm() {
                     <input
                         className="mw-input h-10 px-3 text-sm"
                         value={email}
-                        onChange={(event) => resetEmailVerification(event.target.value)}
+                        onChange={(event) => handleEmailChange(event.target.value)}
+                        onBlur={handleEmailBlur}
                     />
                     <button
                         type="button"
@@ -205,7 +287,9 @@ export function SignupForm() {
                         {isEmailVerified ? "인증완료" : isVerificationSent ? "재전송" : "인증"}
                     </button>
                 </div>
-                {emailMessage && (
+                {emailError ? (
+                    <span className="text-xs text-[#c86f67]">{emailError}</span>
+                ) : emailMessage && (
                     <div className="flex items-center gap-2 text-xs text-[#9b6b54]/80">
                         <span>{emailMessage}</span>
                         {isVerificationSent && !isEmailVerified && !isVerificationExpired && remainingVerificationSeconds > 0 && (
@@ -244,7 +328,7 @@ export function SignupForm() {
                         </button>
                     </div>
                     {verificationMessage && (
-                        <span className={isEmailVerified ? "text-xs text-[#6f8f62]" : "text-xs text-[#e6a1a1]"}>
+                        <span className={isEmailVerified ? "text-xs text-[#6f8f62]" : "text-xs text-[#c86f67]"}>
                             {verificationMessage}
                         </span>
                     )}
@@ -271,7 +355,8 @@ export function SignupForm() {
                         className="mw-input h-10 px-3 pr-10 text-sm"
                         type={showPassword ? "text" : "password"}
                         value={password}
-                        onChange={(event) => setPassword(event.target.value)}
+                        onChange={(event) => handlePasswordChange(event.target.value)}
+                        onBlur={handlePasswordBlur}
                     />
                     <button
                         type="button"
@@ -283,6 +368,7 @@ export function SignupForm() {
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                 </div>
+                {passwordError && <span className="text-xs text-[#c86f67]">{passwordError}</span>}
             </label>
 
             <label className="flex flex-col gap-2 text-sm text-white/54">
@@ -292,7 +378,8 @@ export function SignupForm() {
                         className="mw-input h-10 px-3 pr-10 text-sm"
                         type={showPasswordConfirm ? "text" : "password"}
                         value={passwordConfirm}
-                        onChange={(event) => setPasswordConfirm(event.target.value)}
+                        onChange={(event) => handlePasswordConfirmChange(event.target.value)}
+                        onBlur={handlePasswordConfirmBlur}
                     />
                     <button
                         type="button"
@@ -304,9 +391,10 @@ export function SignupForm() {
                         {showPasswordConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                 </div>
+                {passwordConfirmError && <span className="text-xs text-[#c86f67]">{passwordConfirmError}</span>}
             </label>
 
-            {error && <p className="text-sm text-[#e6a1a1]">{error}</p>}
+            {error && <p className="text-sm text-[#c86f67]">{error}</p>}
 
             <button type="submit" disabled={isSubmitting} className="mw-button-solid mt-2 h-10 rounded-[8px] px-3 text-sm disabled:opacity-50">
                 회원가입

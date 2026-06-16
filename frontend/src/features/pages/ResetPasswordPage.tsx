@@ -283,7 +283,7 @@ export function ResetPasswordPage() {
                   />
                 </label>
 
-                {error && <p className="text-sm text-[#e6a1a1]">{error}</p>}
+                {error && <p className="text-sm text-[#c86f67]">{error}</p>}
 
                 <button
                   type="submit"
@@ -326,7 +326,7 @@ export function ResetPasswordPage() {
                     ))}
                   </div>
                   <p
-                    className={`text-xs ${isCodeExpired ? "text-[#e6a1a1]" : "text-[#5a4632]/55"
+                    className={`text-xs ${isCodeExpired ? "text-[#c86f67]" : "text-[#5a4632]/55"
                       }`}
                     role="status"
                   >
@@ -336,7 +336,7 @@ export function ResetPasswordPage() {
                   </p>
                 </div>
 
-                {error && <p className="text-sm text-[#e6a1a1]">{error}</p>}
+                {error && <p className="text-sm text-[#c86f67]">{error}</p>}
 
                 <button
                   type="submit"
@@ -407,7 +407,7 @@ export function ResetPasswordPage() {
                   </div>
                 </label>
 
-                {error && <p className="text-sm text-[#e6a1a1]">{error}</p>}
+                {error && <p className="text-sm text-[#c86f67]">{error}</p>}
 
                 <button
                   type="submit"

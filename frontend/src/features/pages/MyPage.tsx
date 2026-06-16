@@ -390,8 +390,9 @@ function MyPage() {
 
   const ProfileNoticeIcon = profileNotice?.tone === "error" ? CircleAlert : CheckCircle2;
   const profileNoticeIconClass = profileNotice?.tone === "error"
-    ? "border-[#b36a5e]/30 bg-[#f4dfd9] text-[#b36a5e]"
+    ? "border-[#b36a5e]/30 bg-[#f4dfd9] text-[#c86f67]"
     : "border-[#7c9b78]/30 bg-[#edf5e7] text-[#5f875b]";
+  const profileNoticeMessageClass = profileNotice?.tone === "error" ? "text-[#c86f67]" : "";
 
   return (
     <div className="mw-app min-h-screen flex flex-col select-none">
@@ -403,7 +404,7 @@ function MyPage() {
             <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-md border ${profileNoticeIconClass}`}>
               <ProfileNoticeIcon size={17} />
             </span>
-            <p className="min-w-0 flex-1 text-sm leading-5">{profileNotice.message}</p>
+            <p className={`min-w-0 flex-1 text-sm leading-5 ${profileNoticeMessageClass}`}>{profileNotice.message}</p>
             <button
               type="button"
               onClick={closeProfileNotice}

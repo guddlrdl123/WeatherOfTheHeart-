@@ -87,7 +87,7 @@ export function LoginForm() {
         </div>
       </label>
 
-      {error && <p className="text-sm text-[#e6a1a1]">{error}</p>}
+      {error && <p className="text-sm text-[#c86f67]">{error}</p>}
 
       <button type="submit" disabled={isSubmitting} className="mw-button-solid mt-2 h-10 rounded-[8px] px-3 text-sm disabled:opacity-50">
         로그인

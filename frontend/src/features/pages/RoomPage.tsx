@@ -542,7 +542,7 @@ function RoomPage() {
                                     <h2 className="text-lg font-normal text-[#5a4632]">
                                         기록을 불러오지 못했습니다.
                                     </h2>
-                                    <p className="mt-3 text-sm leading-7 text-[#5a4632]/60">
+                                    <p className="mt-3 text-sm leading-7 text-[#c86f67]">
                                         {memoryLoadError}
                                     </p>
                                 </section>

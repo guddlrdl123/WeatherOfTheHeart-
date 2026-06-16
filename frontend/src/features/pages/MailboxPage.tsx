@@ -444,7 +444,7 @@ function MailboxPage() {
             </section>
 
             {error && (
-              <div className="rounded-xl border border-[#a76c5d]/25 bg-[#a76c5d]/10 px-4 py-3 text-sm text-[#8a564a]">
+              <div className="rounded-xl border border-[#a76c5d]/25 bg-[#a76c5d]/10 px-4 py-3 text-sm text-[#c86f67]">
                 {error}
               </div>
             )}

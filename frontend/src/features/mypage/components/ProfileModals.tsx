@@ -25,6 +25,19 @@ export type AccountWithdrawalValue = {
 };
 
 const EMAIL_VERIFICATION_CODE_TTL_SECONDS = 10 * 60;
+const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
+const PASSWORD_SPECIAL_CHARACTER_PATTERN = /[^A-Za-z0-9]/;
+const EMAIL_FORMAT_ERROR_MESSAGE = "올바른 이메일 형식으로 입력해주세요.";
+const PASSWORD_FORMAT_ERROR_MESSAGE = "새 비밀번호는 8자 이상이고 특수문자를 포함해야 합니다.";
+const PASSWORD_CONFIRM_ERROR_MESSAGE = "새 비밀번호 확인이 일치하지 않습니다.";
+
+function isValidEmailFormat(value: string) {
+  return EMAIL_PATTERN.test(value.trim());
+}
+
+function isValidPasswordFormat(value: string) {
+  return value.length >= 8 && PASSWORD_SPECIAL_CHARACTER_PATTERN.test(value);
+}
 
 function formatVerificationTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
@@ -274,6 +287,8 @@ export function EmailEditModal({ currentEmail, isSaving, onClose, onCancel, onSe
   const [sentEmail, setSentEmail] = useState("");
   const [remainingVerificationSeconds, setRemainingVerificationSeconds] = useState(0);
   const [isVerificationExpired, setIsVerificationExpired] = useState(false);
+  const [hasNewEmailBlurred, setHasNewEmailBlurred] = useState(false);
+  const [newEmailError, setNewEmailError] = useState("");
 
   useEffect(() => {
     if (!isVerificationSent || isVerificationExpired) {
@@ -314,8 +329,32 @@ export function EmailEditModal({ currentEmail, isSaving, onClose, onCancel, onSe
     });
   }
 
+  function getNewEmailFormatError(nextEmail: string) {
+    return nextEmail.trim() && !isValidEmailFormat(nextEmail) ? EMAIL_FORMAT_ERROR_MESSAGE : "";
+  }
+
+  function handleNewEmailChange(nextEmail: string) {
+    updateValue("newEmail", nextEmail);
+
+    if (hasNewEmailBlurred) {
+      setNewEmailError(getNewEmailFormatError(nextEmail));
+    }
+  }
+
+  function handleNewEmailBlur() {
+    setHasNewEmailBlurred(true);
+    setNewEmailError(getNewEmailFormatError(value.newEmail));
+  }
+
   async function handleSendCode() {
     const nextEmail = value.newEmail.trim();
+
+    if (!isValidEmailFormat(nextEmail)) {
+      setHasNewEmailBlurred(true);
+      setNewEmailError(EMAIL_FORMAT_ERROR_MESSAGE);
+      return;
+    }
+
     const didSend = await onSendCode({
       currentPassword: value.currentPassword,
       newEmail: nextEmail,
@@ -334,6 +373,23 @@ export function EmailEditModal({ currentEmail, isSaving, onClose, onCancel, onSe
     setIsVerificationSent(true);
     setRemainingVerificationSeconds(EMAIL_VERIFICATION_CODE_TTL_SECONDS);
     setIsVerificationExpired(false);
+    setNewEmailError("");
+  }
+
+  function handleSubmitEmailEdit() {
+    const nextEmail = value.newEmail.trim();
+
+    if (!isValidEmailFormat(nextEmail)) {
+      setHasNewEmailBlurred(true);
+      setNewEmailError(EMAIL_FORMAT_ERROR_MESSAGE);
+      return;
+    }
+
+    if (!isVerificationSent || sentEmail !== nextEmail || isVerificationExpired) {
+      return;
+    }
+
+    onSave(value);
   }
 
   const canSubmit = isVerificationSent && sentEmail === value.newEmail.trim() && !isVerificationExpired;
@@ -352,7 +408,7 @@ export function EmailEditModal({ currentEmail, isSaving, onClose, onCancel, onSe
         onMouseDown={(event) => event.stopPropagation()}
         onSubmit={(event) => {
           event.preventDefault();
-          onSave(value);
+          handleSubmitEmailEdit();
         }}
       >
         <div className="mb-6 flex items-start justify-between gap-4">
@@ -409,7 +465,8 @@ export function EmailEditModal({ currentEmail, isSaving, onClose, onCancel, onSe
                 className="mw-input h-10 min-w-0 flex-1 px-3 text-sm"
                 placeholder={currentEmail || "현재 이메일 정보 없음"}
                 value={value.newEmail}
-                onChange={(event) => updateValue("newEmail", event.target.value)}
+                onChange={(event) => handleNewEmailChange(event.target.value)}
+                onBlur={handleNewEmailBlur}
                 disabled={isSaving}
                 autoComplete="email"
               />
@@ -422,8 +479,10 @@ export function EmailEditModal({ currentEmail, isSaving, onClose, onCancel, onSe
                 {isVerificationSent && !isVerificationExpired ? "재전송" : "인증"}
               </button>
             </div>
-            {isVerificationSent && (
-              <span className={isVerificationExpired ? "text-xs text-[#b36a5e]" : "text-xs text-[#9b6b54]/80"}>
+            {newEmailError ? (
+              <span className="text-xs text-[#c86f67]">{newEmailError}</span>
+            ) : isVerificationSent && (
+              <span className={isVerificationExpired ? "text-xs text-[#c86f67]" : "text-xs text-[#9b6b54]/80"}>
                 {isVerificationExpired ? "인증번호가 만료되었습니다." : `인증번호가 발송되었습니다. ${formatVerificationTime(remainingVerificationSeconds)}`}
               </span>
             )}
@@ -483,12 +542,69 @@ export function PasswordEditModal({ isSaving, onClose, onCancel, onSave }: Passw
     newPassword: "",
     newPasswordConfirm: "",
   });
+  const [hasNewPasswordBlurred, setHasNewPasswordBlurred] = useState(false);
+  const [hasNewPasswordConfirmBlurred, setHasNewPasswordConfirmBlurred] = useState(false);
+  const [newPasswordError, setNewPasswordError] = useState("");
+  const [newPasswordConfirmError, setNewPasswordConfirmError] = useState("");
 
   function updateValue(key: keyof PasswordEditValue, nextValue: string) {
     setValue((previousValue) => ({
       ...previousValue,
       [key]: nextValue,
     }));
+  }
+
+  function getNewPasswordFormatError(nextPassword: string) {
+    return nextPassword && !isValidPasswordFormat(nextPassword) ? PASSWORD_FORMAT_ERROR_MESSAGE : "";
+  }
+
+  function getNewPasswordConfirmError(nextPassword: string, nextPasswordConfirm: string) {
+    return nextPasswordConfirm && nextPassword !== nextPasswordConfirm ? PASSWORD_CONFIRM_ERROR_MESSAGE : "";
+  }
+
+  function handleNewPasswordChange(nextPassword: string) {
+    updateValue("newPassword", nextPassword);
+
+    if (hasNewPasswordBlurred) {
+      setNewPasswordError(getNewPasswordFormatError(nextPassword));
+    }
+
+    if (hasNewPasswordConfirmBlurred) {
+      setNewPasswordConfirmError(getNewPasswordConfirmError(nextPassword, value.newPasswordConfirm));
+    }
+  }
+
+  function handleNewPasswordBlur() {
+    setHasNewPasswordBlurred(true);
+    setNewPasswordError(getNewPasswordFormatError(value.newPassword));
+  }
+
+  function handleNewPasswordConfirmChange(nextPasswordConfirm: string) {
+    updateValue("newPasswordConfirm", nextPasswordConfirm);
+
+    if (hasNewPasswordConfirmBlurred) {
+      setNewPasswordConfirmError(getNewPasswordConfirmError(value.newPassword, nextPasswordConfirm));
+    }
+  }
+
+  function handleNewPasswordConfirmBlur() {
+    setHasNewPasswordConfirmBlurred(true);
+    setNewPasswordConfirmError(getNewPasswordConfirmError(value.newPassword, value.newPasswordConfirm));
+  }
+
+  function handleSubmitPasswordEdit() {
+    const nextNewPasswordError = getNewPasswordFormatError(value.newPassword);
+    const nextNewPasswordConfirmError = getNewPasswordConfirmError(value.newPassword, value.newPasswordConfirm);
+
+    if (nextNewPasswordError || nextNewPasswordConfirmError) {
+      setHasNewPasswordBlurred(true);
+      setHasNewPasswordConfirmBlurred(true);
+      setNewPasswordError(nextNewPasswordError);
+      setNewPasswordConfirmError(nextNewPasswordConfirmError);
+      return;
+    }
+
+    onSave(value);
   }
 
   return (
@@ -505,7 +621,7 @@ export function PasswordEditModal({ isSaving, onClose, onCancel, onSave }: Passw
         onMouseDown={(event) => event.stopPropagation()}
         onSubmit={(event) => {
           event.preventDefault();
-          onSave(value);
+          handleSubmitPasswordEdit();
         }}
       >
         <div className="mb-6 flex items-start justify-between gap-4">
@@ -557,7 +673,8 @@ export function PasswordEditModal({ isSaving, onClose, onCancel, onSave }: Passw
                 className="mw-input h-10 px-3 pr-10 text-sm"
                 type={showNewPassword ? "text" : "password"}
                 value={value.newPassword}
-                onChange={(event) => updateValue("newPassword", event.target.value)}
+                onChange={(event) => handleNewPasswordChange(event.target.value)}
+                onBlur={handleNewPasswordBlur}
                 disabled={isSaving}
                 autoComplete="new-password"
               />
@@ -572,6 +689,7 @@ export function PasswordEditModal({ isSaving, onClose, onCancel, onSave }: Passw
                 {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+            {newPasswordError && <span className="mt-2 block text-xs text-[#c86f67]">{newPasswordError}</span>}
           </label>
           <label className="block">
             <span className="mb-2 block text-xs text-[#5a4632]/55">새 비밀번호 확인</span>
@@ -580,7 +698,8 @@ export function PasswordEditModal({ isSaving, onClose, onCancel, onSave }: Passw
                 className="mw-input h-10 px-3 pr-10 text-sm"
                 type={showNewPasswordConfirm ? "text" : "password"}
                 value={value.newPasswordConfirm}
-                onChange={(event) => updateValue("newPasswordConfirm", event.target.value)}
+                onChange={(event) => handleNewPasswordConfirmChange(event.target.value)}
+                onBlur={handleNewPasswordConfirmBlur}
                 disabled={isSaving}
                 autoComplete="new-password"
               />
@@ -595,6 +714,7 @@ export function PasswordEditModal({ isSaving, onClose, onCancel, onSave }: Passw
                 {showNewPasswordConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+            {newPasswordConfirmError && <span className="mt-2 block text-xs text-[#c86f67]">{newPasswordConfirmError}</span>}
           </label>
         </div>
 

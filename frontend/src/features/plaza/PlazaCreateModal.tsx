@@ -92,7 +92,7 @@ export function PlazaCreateModal({ onCreate, onClose }: Props) {
               }
             }}
           />
-          {topicError && <span className="text-xs text-[#b65f55]">{topicError}</span>}
+          {topicError && <span className="text-xs text-[#c86f67]">{topicError}</span>}
         </label>
 
         <label className="flex flex-col gap-2 text-sm text-[#5a4632]">

@@ -34,7 +34,7 @@ export function isAuthenticated() {
     const token = getAccessToken();
     const expiresAt = getSessionValue(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
 
-    if (!token || getSessionValue(AUTH_STORAGE_KEY) !== "true" || !Boolean(getSessionValue(USER_ID_STORAGE_KEY))) {
+    if (!token || getSessionValue(AUTH_STORAGE_KEY) !== "true" || !getSessionValue(USER_ID_STORAGE_KEY)) {
         return false;
     }
 

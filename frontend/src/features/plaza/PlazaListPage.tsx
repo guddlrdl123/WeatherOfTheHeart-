@@ -175,7 +175,7 @@ export function PlazaListPage({ plazas, currentGuestId, isRefreshing = false, on
                 setCurrentPage(1);
               }}
             />
-            <span className="min-w-[150px] text-right text-xs text-[#b65f55]">
+            <span className="min-w-[150px] text-right text-xs text-[#c86f67]">
               {inviteError}
             </span>
             <div className="flex items-center gap-2 border-l border-[#5a4632]/15 pl-3">
