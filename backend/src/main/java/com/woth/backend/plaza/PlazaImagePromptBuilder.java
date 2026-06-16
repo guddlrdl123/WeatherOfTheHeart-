@@ -77,36 +77,35 @@ public class PlazaImagePromptBuilder {
         // [추가] backgroundMood는 배경 날씨 키를 영어 감성 표현으로 한 번 풀어준 보조 힌트입니다.
         // 단, 너무 강하게 먹지 않도록 "참고용" 흐름 안에만 넣었습니다.
         return """
-       Create one beautiful high-resolution illustration of a finished emotional plaza.
-       Imagine that the objects placed by different participants have quietly gathered and formed one warm shared space.
-       The scene may become a cozy private room, a peaceful outdoor plaza, or a gentle space somewhere between the two.
-       Choose the setting naturally based on the placed objects.
+       Please create one polished high-resolution illustration of a completed emotional plaza.
+       It should look like a cozy room or an outdoor plaza created by the objects placed by the participants.
+       As much as possible, please draw the room or outdoor plaza using only the placed objects.
+       If there are more objects that naturally belong indoors, please make it a room, and if there are more objects that naturally belong outdoors, please make it an outdoor plaza.
 
-       The image should carry the atmosphere of the Korean app "Weather of the Heart":
-       warm, quiet, poetic, comforting, and softly emotional.
-       Use a cozy hand-painted style with soft pastel colors, gentle light, and a calm diary-like mood.
-       The scene should feel intimate, nostalgic, and emotionally safe.
+       Please preserve the atmosphere of the Korean app "Weather of the Heart":
+       a warm, quiet, poetic scene with soft lighting.
+       A cozy hand-painted illustration style.
+       Soft pastel colors.
+       An emotional atmosphere like a diary.
 
-       Use the placed objects as the heart of the image.
-       They should feel like small traces of people's feelings left in the plaza.
-       Do not arrange them like a catalog, sticker sheet, or item inventory.
-       Reinterpret them as part of one complete emotional place.
-       Keep enough breathing room between objects so each important object can still be understood.
+       Please make the placed objects the center of the scene.
+       Please make sure it does not look like an object list or a sticker collection.
+       Please reinterpret it naturally as one complete emotional space.
+       Please place the objects with enough space so that they do not blend together too much.
 
-       The position and roughPosition values are only loose composition hints.
-       They do not need to be copied exactly.
-       The visualMood value is only a gentle emotional guide.
-       The final image should feel natural, poetic, and complete rather than technically exact.
+       The position and roughPosition values are not exact coordinates, but only references for the approximate layout.
+       The visualMood value is only a reference to help guide the overall atmosphere gently.
+       Please prioritize a natural and emotional finished image over an exact copy.
 
-       Avoid adding large unrelated focal objects that overpower the placed objects.
-       You may add simple environmental elements such as floor, wall, sky, soft light, shadow, distant background, and atmosphere if they help the scene feel complete.
+       Please do not add too many large new objects.
+       However, you may naturally add basic background elements that complete the scene, such as the floor, walls, sky, lighting, shadows, and atmosphere.
 
-       Do not include usernames, people, human faces, logos, UI elements, captions, or watermarks.
-       Do not include readable text, Korean letters, English letters, numbers, symbols, labels, or text-like marks.
-       Any signs, papers, books, posters, boards, packages, or object surfaces should remain blank or abstract and unreadable.
+       Do not include user names, human faces, logos, UI, captions, or watermarks.
+       Do not include any readable text in the image, including Korean, English, numbers, or symbols.
+       Do not put readable text or text-like patterns on signs, paper, book covers, wall decorations, or object surfaces.
 
-       If the background type is weather, express the weather through the sky, light, air, color, and atmosphere rather than through icons.
-       If the background type is color, let that color gently influence the whole palette and lighting.
+       If the background type is weather, clearly reflect the weather of the background weather key in the background, lighting, sky, and atmosphere of the scene.
+       If the background type is color, naturally reflect the background color in the main color tone and lighting mood of the scene.
 
        Plaza title: %s
        Plaza topic: %s
@@ -126,6 +125,7 @@ public class PlazaImagePromptBuilder {
                 objects
         );
     }
+
     private String summarize(String content) {
         if (content == null || content.isBlank()) {
             return "조용한 감정 메모";
