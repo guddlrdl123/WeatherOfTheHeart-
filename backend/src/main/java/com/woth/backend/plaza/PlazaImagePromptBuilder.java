@@ -11,16 +11,19 @@ public class PlazaImagePromptBuilder {
 
     private static final int MAX_TOTAL_OBJECTS = 30;
 
-    // [수정] 오브젝트가 많을 때 대표 오브젝트를 12개까지 크게 잡으면 뭉개질 수 있어서,
-    //        13개 이상일 때는 대표 오브젝트를 8개로 줄여 장면 안정성을 높였습니다.
-    //        단, 전체 오브젝트가 12개 이하라면 모두 MAIN으로 처리해서 1개짜리 광장도 자연스럽게 완성됩니다.
-    private static final int MAX_MAIN_VISIBLE_OBJECTS_WHEN_MANY = 8;
+    // [수정] 오브젝트가 12개 이하이면 전부 필수 오브젝트로 처리합니다.
+//        지금처럼 광장에 12개를 직접 배치한 경우,
+//        AI가 하나라도 임의로 생략하거나 다른 물건으로 대체하지 않게 하기 위한 기준입니다.
+    private static final int STRICT_LAYOUT_OBJECT_LIMIT = 12;
 
-    // [수정] 보조 오브젝트도 너무 많으면 장면이 복잡해져서 12개에서 10개로 줄였습니다.
+    // [수정] 오브젝트가 13개 이상일 때만 대표 오브젝트를 제한합니다.
+//        30개 전체를 모두 크게 그리라고 하면 뭉개짐이 심해지기 때문입니다.
+    private static final int MAX_MAIN_VISIBLE_OBJECTS_WHEN_MANY = 10;
+
     private static final int MAX_SUPPORTING_OBJECTS = 10;
 
-    // [추가] positionX/Y가 픽셀값일 때 기준으로 삼을 캔버스 크기입니다.
-    //        프론트 광장 캔버스가 1024x768이 아니면 이 값만 실제 크기에 맞게 바꾸면 됩니다.
+    // [유지] 프론트 광장 캔버스 크기와 맞춰야 합니다.
+//        현재 캔버스가 1024x768이 아니면 여기 값을 실제 광장 캔버스 크기로 바꾸세요.
     private static final double ASSUMED_CANVAS_WIDTH = 1024.0;
     private static final double ASSUMED_CANVAS_HEIGHT = 768.0;
 
@@ -31,9 +34,13 @@ public class PlazaImagePromptBuilder {
                 .limit(MAX_TOTAL_OBJECTS)
                 .collect(Collectors.toList());
 
-        // [추가] 전체 오브젝트가 12개 이하라면 모두 대표 오브젝트로 처리합니다.
-        //        그래서 오브젝트 1개, 3개, 7개짜리 광장도 억지로 보조/배경으로 밀리지 않습니다.
-        int mainObjectLimit = safeEntries.size() <= 12
+        // [추가] 오브젝트가 12개 이하이면 "엄격한 배치 재구성 모드"로 처리합니다.
+        //        지금 문제처럼 사용자가 12개 PNG를 직접 배치한 상황에서는
+        //        AI가 새 방을 창작하지 말고, 기존 오브젝트 캔버스를 완성 이미지처럼 다듬어야 합니다.
+        boolean strictLayoutMode = !safeEntries.isEmpty()
+                && safeEntries.size() <= STRICT_LAYOUT_OBJECT_LIMIT;
+
+        int mainObjectLimit = strictLayoutMode
                 ? safeEntries.size()
                 : MAX_MAIN_VISIBLE_OBJECTS_WHEN_MANY;
 
@@ -41,31 +48,39 @@ public class PlazaImagePromptBuilder {
                 .limit(mainObjectLimit)
                 .collect(Collectors.toList());
 
-        List<PlazaEntry> supportingEntries = safeEntries.stream()
+        List<PlazaEntry> supportingEntries = strictLayoutMode
+                ? List.of()
+                : safeEntries.stream()
                 .skip(mainObjectLimit)
                 .limit(MAX_SUPPORTING_OBJECTS)
                 .collect(Collectors.toList());
 
-        List<PlazaEntry> backgroundEntries = safeEntries.stream()
+        List<PlazaEntry> backgroundEntries = strictLayoutMode
+                ? List.of()
+                : safeEntries.stream()
                 .skip(mainObjectLimit + MAX_SUPPORTING_OBJECTS)
                 .collect(Collectors.toList());
 
         String mainObjects = buildObjectSection(
                 mainEntries,
-                PromptRole.MAIN,
+                strictLayoutMode ? PromptRole.MANDATORY : PromptRole.MAIN,
                 "None. No footprint objects are provided. Do not add intentional objects."
         );
 
         String supportingObjects = buildObjectSection(
                 supportingEntries,
                 PromptRole.SUPPORTING,
-                "None. Do not add extra supporting footprint objects."
+                strictLayoutMode
+                        ? "None. Strict layout mode is active. Do not add supporting footprint objects."
+                        : "None. Do not add extra supporting footprint objects."
         );
 
         String backgroundDetails = buildObjectSection(
                 backgroundEntries,
                 PromptRole.BACKGROUND,
-                "None. Do not add extra background footprint objects."
+                strictLayoutMode
+                        ? "None. Strict layout mode is active. Do not add background footprint objects."
+                        : "None. Do not add extra background footprint objects."
         );
 
         String backgroundType = plaza == null ? "" : safe(plaza.getBackgroundType());
@@ -76,166 +91,175 @@ public class PlazaImagePromptBuilder {
                 ? "soft emotional weather"
                 : toWeatherPrompt(plaza.getBackgroundKey());
 
-        // [수정] plazaTitle, plazaTopic, totalFootprints를 프롬프트에 직접 넣지 않도록 제거했습니다.
-        //        제목/주제/숫자가 프롬프트에 들어가면 이미지 안에 글자나 숫자 비슷한 흔적이 생길 확률이 올라갑니다.
-        //        UI에서는 제목/주제/발자취 수를 따로 보여주고, 이미지 생성 프롬프트에는 분위기만 전달하는 편이 안전합니다.
+        String sceneStructure = toSceneStructurePrompt(backgroundType);
 
-        // [수정] 아래 return 프롬프트에서 보완한 핵심:
-        //        1. 제목, 주제, 발자취 숫자를 프롬프트에서 제거
-        //        2. 오브젝트 추가 금지와 배경 구조 허용 범위를 분리
-        //        3. 고정된 3/4 탑다운 구도를 추가해 positionX/Y 반영 안정성 강화
-        //        4. 다수 오브젝트가 있을 때 일부는 작게/부분적으로 보여도 된다고 명시
-        //        5. 텍스트, 숫자, 기호 금지 규칙을 유지하되 평면 오브젝트 관련 지시를 더 명확하게 정리
+        // [수정] 제목, 주제, 발자취 숫자는 프롬프트에서 제거했습니다.
+        //        이유: 이미지 안에 글자나 숫자 비슷한 흔적이 생기는 원인이 될 수 있습니다.
+        //        화면 UI에는 그대로 표시하고, 이미지 생성에는 넘기지 않는 편이 안전합니다.
+
+        // [수정] strictLayoutMode일 때는 "새로운 감성 방을 창작"하는 프롬프트가 아니라
+        //        "사용자가 배치한 오브젝트 캔버스를 완성 일러스트로 재해석"하는 프롬프트를 사용합니다.
+        //        이전 결과처럼 라디오, 기타, 화로 같은 엉뚱한 오브젝트가 추가되는 문제를 줄이기 위한 수정입니다.
+        String layoutModeRule = strictLayoutMode
+                ? """
+              Strict placed-object reconstruction mode:
+              The listed mandatory objects are the user's actual placed plaza objects.
+              Include every mandatory object.
+              Do not omit any mandatory object.
+              Do not replace mandatory objects with unrelated objects.
+              Do not transform animals into furniture or props.
+              Do not transform props into unrelated indoor objects.
+              The final image should look like a polished illustration based on the user's existing object canvas.
+              Do not redesign the scene into a completely different room.
+              """
+                : """
+              Atmospheric plaza summary mode:
+              There are many footprint objects.
+              Make the main visible objects recognizable.
+              Supporting objects may be smaller.
+              Background details may be subtle.
+              The goal is a coherent emotional plaza, not a perfect inventory image.
+              """;
+
         return """
-                Create one finished high-resolution illustration for an emotional plaza scene.
+            Create one finished high-resolution illustration based on the user's placed-object plaza canvas.
 
-                Core concept:
-                This image is for a Korean emotional memo web app called "Weather of the Heart".
-                The app turns quiet personal feelings into weather, objects, and a shared cozy plaza.
-                The image should feel warm, quiet, poetic, soft, nostalgic, and emotionally safe.
+            Core concept:
+            This image is for a Korean emotional memo web app called "Weather of the Heart".
+            The app turns quiet personal feelings into weather, objects, and a shared cozy plaza.
+            The image should feel warm, quiet, poetic, soft, nostalgic, and emotionally safe.
 
-                Important:
-                This is not an inventory image.
-                This is not a sticker sheet.
-                This is not a UI screenshot.
-                This must be one coherent place where the provided footprint objects naturally belong.
+            Most important direction:
+            Do not create a new unrelated room scene.
+            Do not ignore the user's placed objects.
+            Reinterpret the user's existing object layout as a polished cozy illustration.
+            Keep the same rough object placement and object identity.
+            The result should feel like a cleaned-up final illustration of the current plaza canvas.
 
-                Scene direction:
-                Create a cozy emotional plaza scene.
-                The scene may feel like a small outdoor plaza, a private room, or a gentle hybrid space between the two.
-                Choose the space type naturally based on the provided footprint objects.
-                Make the scene feel like a completed shared memory space made from quiet feelings.
+            Scene structure:
+            %s
 
-                Camera and layout:
-                Use a fixed three-quarter top-down diorama view.
-                Use a wide landscape composition.
-                The camera should look slightly down at the plaza so object positions can be understood spatially.
-                Keep enough empty breathing space around the main objects.
-                Do not crop the main visible objects.
+            Layout mode:
+            %s
 
-                Object count rule:
-                Use only the listed footprint objects as intentional placed objects.
-                The plaza can be completed with only one footprint object.
-                If there is only one footprint object, create a complete emotional scene centered around that single object.
-                If there are no footprint objects, create a quiet empty emotional plaza with only simple environment, weather, light, floor, wall, sky, and atmosphere.
-                Do not invent extra footprint objects.
-                Do not add extra animals, furniture, plants, props, food, signs, books, posters, boards, letters, or decorative objects unless they are listed below.
-                The environment may include only simple structural and atmospheric elements such as floor, wall, window, sky, ground, path, soft light, shadow, rain, snow, mist, and air.
+            Camera and layout:
+            Use a wide landscape composition.
+            Use a gentle front-facing plaza view with slight depth.
+            Preserve the feeling of a broad canvas with sky or open background above and object area below.
+            Keep the main objects fully visible.
+            Do not crop the main objects.
+            Keep enough breathing space between objects.
 
-                Visual style:
-                Hand-painted cozy illustration.
-                Soft pastel colors.
-                Warm gentle lighting.
-                Clean readable silhouettes.
-                Gentle shadows.
-                Calm Korean diary mood.
-                No harsh contrast.
-                No realistic photography.
-                No 3D render.
-                No anime character style.
-                No comic panel style.
+            Object count rule:
+            Use only the listed footprint objects as intentional placed objects.
+            Do not invent extra animals.
+            Do not invent extra furniture.
+            Do not invent extra plants.
+            Do not invent extra props.
+            Do not invent extra food.
+            Do not invent extra signs.
+            Do not invent extra books.
+            Do not invent extra posters.
+            Do not invent extra boards.
+            Do not invent extra letters.
+            Do not add unrelated indoor objects such as a radio, guitar, fireplace, pumpkin, open book, table, cup, or basket unless that exact object is listed below.
+            The environment may include only simple structural and atmospheric elements such as sky, clouds, horizon, ground, floor plane, wall plane, soft light, shadow, air, rain, snow, mist, and weather atmosphere.
 
-                Composition rules:
-                Use foreground, middle ground, and background.
-                Keep the scene visually organized.
-                Avoid clutter.
-                Avoid overlapping too many animals or props.
-                Do not make every object equally large.
-                Make the main visible objects clearly recognizable.
-                Supporting objects should appear only when they are listed in the Supporting objects section.
-                Background footprint details should appear only when they are listed in the Background details section.
-                If there are many footprint objects, supporting or background objects may be smaller, partially visible, or softly blended into the scene.
-                The goal is an emotionally coherent plaza, not exact object counting.
+            Visual style:
+            Hand-painted cozy illustration.
+            Soft pastel colors.
+            Warm gentle lighting.
+            Clean readable silhouettes.
+            Gentle shadows.
+            Calm Korean diary mood.
+            No harsh contrast.
+            No realistic photography.
+            No 3D render.
+            No anime character style.
+            No comic panel style.
 
-                Object separation rules:
-                Keep animals separated enough so they do not merge into each other.
-                Keep furniture and props separated enough so they do not become one melted shape.
-                Do not merge multiple objects into one unclear blob.
-                Prefer simple readable silhouettes over excessive detail.
-                Each main visible object should have a clear outline and recognizable shape.
+            Object clarity rules:
+            Keep animals separated enough so they do not merge into each other.
+            Keep furniture and props separated enough so they do not become one melted shape.
+            Do not merge multiple objects into one unclear blob.
+            Prefer simple readable silhouettes over excessive detail.
+            Each mandatory object should have a clear recognizable shape.
+            If an object is small in the layout, keep it small but still recognizable.
 
-                Object placement rules:
-                Each object has an approximate placement area based on the user's plaza layout.
-                Follow the placement area as much as possible.
-                foreground left means lower-left area.
-                foreground center means lower-center area.
-                foreground right means lower-right area.
-                middle ground left means center-left area.
-                middle ground center means center area.
-                middle ground right means center-right area.
-                background left means upper-left or far-left background.
-                background center means upper-center or far background.
-                background right means upper-right or far-right background.
-                Do not place all objects in the center.
-                Do not randomly scatter objects.
-                Keep the user's rough layout while making the scene natural and beautiful.
+            Object placement rules:
+            Each object has an approximate placement area based on the user's plaza layout.
+            Follow the placement area as much as possible.
+            foreground left means lower-left area.
+            foreground center means lower-center area.
+            foreground right means lower-right area.
+            middle ground left means center-left area.
+            middle ground center means center area.
+            middle ground right means center-right area.
+            background left means upper-left or far-left background.
+            background center means upper-center or far background.
+            background right means upper-right or far-right background.
+            Do not place all objects in the center.
+            Do not randomly scatter objects.
+            Keep the user's rough layout while making the scene natural and beautiful.
 
-                Main visible objects:
-                %s
+            Mandatory main objects:
+            %s
 
-                Supporting objects:
-                %s
+            Supporting objects:
+            %s
 
-                Background details:
-                %s
+            Background footprint details:
+            %s
 
-                Weather and atmosphere:
-                Background type: %s
-                Background color: %s
-                Background weather mood: %s
-                Reflect the weather through the sky, window view, light, air, shadows, floor reflections, and overall atmosphere.
-                Do not draw weather icons.
-                Do not draw UI symbols.
+            Weather and atmosphere:
+            Background type: %s
+            Background color: %s
+            Background weather mood: %s
+            Reflect the weather through the sky, light, air, shadows, floor reflections, and overall atmosphere.
+            Do not draw weather icons.
+            Do not draw UI symbols.
 
-                Emotional theme:
-                A quiet shared memory space where small personal feelings gather softly.
-                Do not write this theme inside the image.
+            Absolute text and number ban:
+            Do not include any readable text.
+            Do not include any letters.
+            Do not include Korean letters.
+            Do not include English letters.
+            Do not include numbers.
+            Do not include symbols.
+            Do not include punctuation marks.
+            Do not include labels.
+            Do not include captions.
+            Do not include signs with text.
+            Do not include logos.
+            Do not include UI elements.
+            Do not include watermarks.
+            Do not include book titles.
+            Do not include poster text.
+            Do not include calendar numbers.
+            Do not include clock numbers.
+            Do not include mailbox text.
+            Do not include street sign text.
+            Do not include product labels.
+            Do not include letter-like shapes.
 
-                Absolute text and number ban:
-                Do not include any readable text.
-                Do not include any letters.
-                Do not include Korean letters.
-                Do not include English letters.
-                Do not include numbers.
-                Do not include symbols.
-                Do not include punctuation marks.
-                Do not include labels.
-                Do not include captions.
-                Do not include signs with text.
-                Do not include logos.
-                Do not include UI elements.
-                Do not include watermarks.
-                Do not include book titles.
-                Do not include poster text.
-                Do not include calendar numbers.
-                Do not include clock numbers.
-                Do not include mailbox text.
-                Do not include street sign text.
-                Do not include product labels.
-                Do not include letter-like shapes.
+            Blank surface rules:
+            If any flat surface appears, keep it blank.
+            If a listed object has a surface, keep the surface blank or use only soft abstract marks that cannot be read as text, letters, numbers, or symbols.
 
-                Blank surface rules:
-                If any flat surface appears, keep it blank.
-                Posters must not appear unless they are listed as footprint objects.
-                Books must not appear unless they are listed as footprint objects.
-                Signs must not appear unless they are listed as footprint objects.
-                Papers must not appear unless they are listed as footprint objects.
-                Letters must not appear unless they are listed as footprint objects.
-                Boards must not appear unless they are listed as footprint objects.
-                If a listed object has a surface, keep the surface blank or use only soft abstract marks that cannot be read as text, letters, numbers, or symbols.
+            Human and privacy rules:
+            Do not include people.
+            Do not include human faces.
+            Do not include usernames.
+            Do not include profile images.
+            Do not include any personal information.
 
-                Human and privacy rules:
-                Do not include people.
-                Do not include human faces.
-                Do not include usernames.
-                Do not include profile images.
-                Do not include any personal information.
-
-                Final goal:
-                A single beautiful emotional plaza illustration.
-                It should look cozy, quiet, complete, and emotionally meaningful.
-                The final image should feel like small feelings have gathered into one gentle place.
-                """.formatted(
+            Final goal:
+            A single beautiful emotional plaza illustration.
+            It should look like a polished version of the user's placed-object plaza.
+            It should look cozy, quiet, complete, and emotionally meaningful.
+            """.formatted(
+                sceneStructure,
+                layoutModeRule,
                 mainObjects,
                 supportingObjects,
                 backgroundDetails,
@@ -260,30 +284,69 @@ public class PlazaImagePromptBuilder {
         String positionLabel = toPositionLabel(entry.getPositionX(), entry.getPositionY());
         String moodPrompt = toMoodPrompt(entry.getMoodKey());
 
-        // [수정] entry별 weatherPrompt를 오브젝트마다 넣지 않도록 제거했습니다.
-        //        오브젝트 20~30개가 서로 다른 weather를 들고 있으면 비/눈/햇빛/안개가 한 프롬프트 안에서 충돌합니다.
-        //        날씨는 plaza.getBackgroundKey() 기준의 전체 분위기로만 반영하는 편이 더 안정적입니다.
+        // [수정] entry별 weatherKey는 제거했습니다.
+        //        각 오브젝트마다 날씨가 다르게 들어가면 AI가 장면을 비/눈/맑음/안개가 섞인 이상한 공간으로 해석할 수 있습니다.
+        //        날씨는 plaza.getBackgroundKey() 하나로 전체 장면에만 반영합니다.
         return switch (role) {
+            case MANDATORY -> String.format(
+                    "- Mandatory object: %s. Approximate user placement: %s. This object must appear near that area. Do not omit it. Do not replace it with another object. Emotional mood: %s.",
+                    objectDescription,
+                    positionLabel,
+                    moodPrompt
+            );
+
             case MAIN -> String.format(
-                    "- %s. Approximate user placement: %s. Keep this object near that area. Make it clearly recognizable. Emotional mood: %s.",
+                    "- Main object: %s. Approximate user placement: %s. Keep this object near that area. Make it clearly recognizable. Emotional mood: %s.",
                     objectDescription,
                     positionLabel,
                     moodPrompt
             );
 
             case SUPPORTING -> String.format(
-                    "- %s. Approximate user placement: %s. Keep it as a smaller supporting detail near that area. Emotional mood: %s.",
+                    "- Supporting object: %s. Approximate user placement: %s. Keep it as a smaller supporting detail near that area. Emotional mood: %s.",
                     objectDescription,
                     positionLabel,
                     moodPrompt
             );
 
             case BACKGROUND -> String.format(
-                    "- %s. Approximate user placement: %s. Use it only as a subtle background detail near that area. Do not make it large.",
+                    "- Background detail: %s. Approximate user placement: %s. Use it only as a subtle background detail near that area. Do not make it large.",
                     objectDescription,
                     positionLabel
             );
         };
+    }
+
+    private String toSceneStructurePrompt(Object backgroundType) {
+        String key = safe(backgroundType).toLowerCase(Locale.ROOT);
+
+        // [추가] backgroundType이 weather라면 실내 방으로 바꾸지 말고,
+        //        현재 PNG처럼 하늘과 바닥이 있는 열린 광장 구조를 우선하게 합니다.
+        if (key.equals("weather")) {
+            return """
+                Use an open outdoor emotional plaza structure.
+                Keep a clear sky or weather atmosphere in the upper area.
+                Keep a simple ground or plaza floor in the lower area.
+                Do not turn the scene into a closed indoor room.
+                Do not add random indoor furniture unless it is listed as a footprint object.
+                """;
+        }
+
+        // [추가] color 배경은 실내/야외 둘 다 가능하지만,
+        //        그래도 사용자가 배치한 오브젝트 캔버스 느낌은 유지하게 합니다.
+        if (key.equals("color")) {
+            return """
+                Use a simple cozy emotional space based on the provided background color.
+                It may be an indoor room or a quiet plaza, but it must preserve the user's placed-object layout.
+                Do not redesign it into a new unrelated room.
+                """;
+        }
+
+        return """
+            Use a simple cozy emotional plaza structure.
+            Preserve the user's placed-object layout.
+            Keep the background simple and do not add unrelated objects.
+            """;
     }
 
     private String toPositionLabel(Object xValue, Object yValue) {
@@ -626,6 +689,7 @@ public class PlazaImagePromptBuilder {
     }
 
     private enum PromptRole {
+        MANDATORY,
         MAIN,
         SUPPORTING,
         BACKGROUND
