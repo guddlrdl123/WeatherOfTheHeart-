@@ -142,7 +142,7 @@ public class EmailVerificationService {
                     <td align="center" style="padding-bottom:34px;">
                       <table role="presentation" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:12px auto 0;">
                         <tr>
-                          <td align="center" valign="middle" style="width:48px;height:48px;border-radius:14px;background-color:#dff4cf;">
+                          <td align="center" valign="middle" style="width:48px;height:48px;border-radius:14px;background-color:#121212;">
                             <img src="cid:%s" width="34" height="34" alt="" style="display:block;width:34px;height:34px;border:0;outline:none;">
                           </td>
                           <td valign="middle" style="padding-left:12px;font-size:24px;font-weight:700;color:#18181b;">마음의 날씨</td>
@@ -159,7 +159,7 @@ public class EmailVerificationService {
                   </tr>
                   <tr>
                     <td align="center" style="padding:34px 0 30px;">
-                      <div style="display:inline-block;padding:18px 34px;border-radius:18px;background-color:#dff4cf;font-size:36px;line-height:1.2;letter-spacing:6px;font-weight:600;color:#3f3f46;">%s</div>
+                      <div style="font-size:36px;line-height:1.2;letter-spacing:6px;font-weight:600;color:#3f3f46;">%s</div>
                     </td>
                   </tr>
                   <tr>
