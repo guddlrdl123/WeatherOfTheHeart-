@@ -26,7 +26,11 @@ public class EmailVerificationService {
 
   private static final int CODE_BOUND = 1_000_000;
   private static final int CODE_EXPIRES_MINUTES = 10;
-  private static final String EMAIL_LOGO_CONTENT_ID = "weatherLogo";
+  // [수정] 라이트/다크 테마별 아이콘 전환을 위해 Content-ID를 2종으로 분리
+  // - 라이트(흰 배경)용: 검은색 아이콘 (weather-logo-white.png) → 기본값
+  // - 다크 배경용: 흰색 아이콘 (weather-logo-dark.png)
+  private static final String EMAIL_LOGO_LIGHT_CONTENT_ID = "weatherLogoWhite";
+  private static final String EMAIL_LOGO_DARK_CONTENT_ID = "weatherLogoDark";
 
   private final EmailVerificationRepository emailVerificationRepository;
   private final UserRepository userRepository;
@@ -127,9 +131,14 @@ public class EmailVerificationService {
       helper.setTo(email);
       helper.setSubject(subject);
       helper.setText(plainText, htmlText);
+      // [수정] 라이트/다크 테마 대응을 위해 아이콘 이미지 2종을 함께 임베드
+      // 메일 클라이언트가 prefers-color-scheme에 따라 둘 중 하나만 표시
       helper.addInline(
-          EMAIL_LOGO_CONTENT_ID,
-          new ClassPathResource("static/email/weather-logo.png"));
+          EMAIL_LOGO_LIGHT_CONTENT_ID,
+          new ClassPathResource("static/email/weather-logo-white.png"));
+      helper.addInline(
+          EMAIL_LOGO_DARK_CONTENT_ID,
+          new ClassPathResource("static/email/weather-logo-dark.png"));
 
       mailSender.send(mimeMessage);
     } catch (Exception e) {
@@ -163,8 +172,29 @@ public class EmailVerificationService {
 
   private String buildCodeEmailHtml(String code, String description, String guide, String footer) {
     return """
-        <div style="margin:0;padding:0;background-color:#ffffff;font-family:Arial,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#3f3f46;">
-          <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background-color:#ffffff;">
+        <!DOCTYPE html>
+        <html lang="ko">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <meta name="color-scheme" content="light dark">
+          <meta name="supported-color-schemes" content="light dark">
+          <style>
+            /* 기본(라이트/흰 배경): 검은색 아이콘 노출, 흰색 아이콘 숨김 */
+            .woth-logo-dark { display: none; }
+            /* 다크 모드: 배경/글자색과 아이콘을 함께 전환 */
+            @media (prefers-color-scheme: dark) {
+              .woth-body { background-color: #18181b !important; }
+              .woth-title { color: #f4f4f5 !important; }
+              .woth-text { color: #d4d4d8 !important; }
+              .woth-code { color: #f4f4f5 !important; }
+              .woth-logo-light { display: none !important; }
+              .woth-logo-dark { display: inline-block !important; }
+            }
+          </style>
+        </head>
+        <body class="woth-body" style="margin:0;padding:0;background-color:#ffffff;font-family:Arial,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#3f3f46;">
+          <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" class="woth-body" style="border-collapse:collapse;background-color:#ffffff;">
             <tr>
               <td align="center" style="padding:48px 20px;">
                 <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;max-width:520px;">
@@ -172,16 +202,17 @@ public class EmailVerificationService {
                     <td align="center" style="padding-bottom:34px;">
                       <table role="presentation" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:12px auto 0;">
                         <tr>
-                          <td align="center" valign="middle" style="width:48px;height:48px;border-radius:14px;">
-                            <img src="cid:%s" width="34" height="34" alt="" style="display:block;width:34px;height:34px;border:0;outline:none;">
+                          <td align="center" valign="middle" style="width:48px;height:48px;">
+                            <img class="woth-logo-light" src="cid:%s" width="34" height="34" alt="마음의 날씨" style="display:inline-block;width:34px;height:34px;border:0;outline:none;">
+                            <img class="woth-logo-dark" src="cid:%s" width="34" height="34" alt="마음의 날씨" style="display:none;width:34px;height:34px;border:0;outline:none;mso-hide:all;">
                           </td>
-                          <td valign="middle" style="padding-left:12px;font-size:24px;font-weight:700;color:#18181b;">마음의 날씨</td>
+                          <td valign="middle" class="woth-title" style="padding-left:12px;font-size:24px;font-weight:700;color:#18181b;">마음의 날씨</td>
                         </tr>
                       </table>
                     </td>
                   </tr>
                   <tr>
-                    <td style="font-size:16px;line-height:1.7;color:#52525b;text-align:left;">
+                    <td class="woth-text" style="font-size:16px;line-height:1.7;color:#52525b;text-align:left;">
                       <p style="margin:0 0 16px;">안녕하세요.</p>
                       <p style="margin:0 0 16px;">%s</p>
                       <p style="margin:0;">%s</p>
@@ -189,7 +220,7 @@ public class EmailVerificationService {
                   </tr>
                   <tr>
                     <td align="center" style="padding:34px 0 30px;">
-                      <div style="font-size:36px;line-height:1.2;letter-spacing:6px;font-weight:600;color:#3f3f46;">%s</div>
+                      <div class="woth-code" style="font-size:36px;line-height:1.2;letter-spacing:6px;font-weight:600;color:#3f3f46;">%s</div>
                     </td>
                   </tr>
                   <tr>
@@ -201,8 +232,9 @@ public class EmailVerificationService {
               </td>
             </tr>
           </table>
-        </div>
+        </body>
+        </html>
         """
-        .formatted(EMAIL_LOGO_CONTENT_ID, description, guide, code, footer);
+        .formatted(EMAIL_LOGO_LIGHT_CONTENT_ID, EMAIL_LOGO_DARK_CONTENT_ID, description, guide, code, footer);
   }
 }
