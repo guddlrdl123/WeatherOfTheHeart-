@@ -4,11 +4,6 @@ import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
 import com.woth.backend.user.User;
 import com.woth.backend.user.UserRepository;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeMessage;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,22 +23,19 @@ public class PasswordResetService {
 
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final UserRepository userRepository;
-    private final JavaMailSender mailSender;
     private final PasswordEncoder passwordEncoder;
-
-    @Value("${spring.mail.username:}")
-    private String mailUsername;
+    private final EmailVerificationService emailVerificationService;
 
     public PasswordResetService(
             PasswordResetTokenRepository passwordResetTokenRepository,
             UserRepository userRepository,
-            JavaMailSender mailSender,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            EmailVerificationService emailVerificationService
     ) {
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.userRepository = userRepository;
-        this.mailSender = mailSender;
         this.passwordEncoder = passwordEncoder;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @Transactional
@@ -63,7 +55,7 @@ public class PasswordResetService {
                 LocalDateTime.now().plusMinutes(RESET_TOKEN_EXPIRES_MINUTES)
         ));
 
-        sendMail(resetEmail, token);
+        emailVerificationService.sendPasswordResetCode(resetEmail, token);
     }
 
     @Transactional(readOnly = true)
@@ -98,28 +90,5 @@ public class PasswordResetService {
 
     private String generateToken() {
         return String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
-    }
-
-    private void sendMail(String email, String token) {
-        if (mailUsername == null || mailUsername.isBlank()) {
-            throw new CustomException(ErrorCode.EMAIL_SEND_FAILED);
-        }
-
-        try {
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, false, "UTF-8");
-
-            helper.setFrom(new InternetAddress(mailUsername, "마음의 날씨"));
-            helper.setTo(email);
-            helper.setSubject("[마음의 날씨] 비밀번호 재설정 인증코드");
-            helper.setText(
-                    "비밀번호 재설정 인증코드는 " + token + " 입니다. 10분 안에 입력해 주세요.",
-                    false
-            );
-
-            mailSender.send(mimeMessage);
-        } catch (Exception e) {
-            throw new CustomException(ErrorCode.EMAIL_SEND_FAILED);
-        }
     }
 }

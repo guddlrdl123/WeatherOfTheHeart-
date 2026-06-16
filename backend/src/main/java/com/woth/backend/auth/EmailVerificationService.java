@@ -92,35 +92,32 @@ public class EmailVerificationService {
     emailVerificationRepository.deleteByEmail(email);
   }
 
+  public void sendPasswordResetCode(String email, String code) {
+    sendMail(
+        email,
+        "[마음의 날씨] 비밀번호 재설정 인증코드",
+        "비밀번호 재설정 인증번호는 " + code + " 입니다. 10분 안에 입력해주세요.",
+        buildPasswordResetEmailHtml(code));
+  }
+
   private String generateCode() {
     return String.format("%06d", secureRandom.nextInt(CODE_BOUND));
   }
 
-  private void sendMail(String email, String code) {
+  private void sendMail(String email, String subject, String plainText, String htmlText) {
     if (mailUsername == null || mailUsername.isBlank()) {
       throw new CustomException(ErrorCode.EMAIL_SEND_FAILED);
     }
 
-    // [수정] SimpleMailMessage 대신 MimeMessageHelper를 사용해서
-    // 발신자 표시 이름을 "마음의 날씨"로 설정할 수 있도록 변경
     try {
       MimeMessage mimeMessage = mailSender.createMimeMessage();
 
-      // [수정] UTF-8 인코딩을 사용해 한글 표시 이름이 깨지지 않도록 설정
       MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-      // [수정] 실제 로그인 계정(mailUsername)은 유지하고,
-      // 수신자에게 보이는 발신자 이름만 "마음의 날씨"로 설정
       helper.setFrom(new InternetAddress(mailUsername, "마음의 날씨"));
-
       helper.setTo(email);
-
-      // [수정] 제목 문구를 조금 더 간결하게 조정
-      helper.setSubject("[마음의 날씨] 인증코드");
-
-      helper.setText(
-          "인증번호는 " + code + " 입니다. 10분 안에 입력해주세요.",
-          buildVerificationEmailHtml(code));
+      helper.setSubject(subject);
+      helper.setText(plainText, htmlText);
       helper.addInline(
           EMAIL_LOGO_CONTENT_ID,
           new ClassPathResource("static/email/weather-logo.png"));
@@ -131,7 +128,31 @@ public class EmailVerificationService {
     }
   }
 
+  private void sendMail(String email, String code) {
+    sendMail(
+        email,
+        "[마음의 날씨] 회원가입 인증코드",
+        "회원가입 인증번호는 " + code + " 입니다. 10분 안에 입력해주세요.",
+        buildVerificationEmailHtml(code));
+  }
+
   private String buildVerificationEmailHtml(String code) {
+    return buildCodeEmailHtml(
+        code,
+        "마음의 날씨 회원가입을 위한 인증번호입니다.",
+        "아래 인증번호를 입력해주세요.",
+        "이 인증번호는 10분 동안 유효합니다.<br>본인이 요청하지 않았다면 이 메일을 무시해주세요.");
+  }
+
+  private String buildPasswordResetEmailHtml(String code) {
+    return buildCodeEmailHtml(
+        code,
+        "마음의 날씨 비밀번호 재설정을 위한 인증번호입니다.",
+        "아래 인증번호를 입력해 새 비밀번호를 설정해주세요.",
+        "이 인증번호는 10분 동안 유효합니다.<br>비밀번호 재설정을 요청하지 않았다면 이 메일을 무시해주세요.");
+  }
+
+  private String buildCodeEmailHtml(String code, String description, String guide, String footer) {
     return """
         <div style="margin:0;padding:0;background-color:#ffffff;font-family:Arial,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#3f3f46;">
           <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background-color:#ffffff;">
@@ -153,8 +174,8 @@ public class EmailVerificationService {
                   <tr>
                     <td style="font-size:16px;line-height:1.7;color:#52525b;text-align:left;">
                       <p style="margin:0 0 16px;">안녕하세요.</p>
-                      <p style="margin:0 0 16px;">마음의 날씨 회원가입을 위한 인증번호입니다.</p>
-                      <p style="margin:0;">아래 인증번호를 입력해주세요.</p>
+                      <p style="margin:0 0 16px;">%s</p>
+                      <p style="margin:0;">%s</p>
                     </td>
                   </tr>
                   <tr>
@@ -164,8 +185,7 @@ public class EmailVerificationService {
                   </tr>
                   <tr>
                     <td align="center" style="font-size:13px;line-height:1.6;color:#a1a1aa;">
-                      이 인증번호는 10분 동안 유효합니다.<br>
-                      본인이 요청하지 않았다면 이 메일을 무시해주세요.
+                      %s
                     </td>
                   </tr>
                 </table>
@@ -174,6 +194,6 @@ public class EmailVerificationService {
           </table>
         </div>
         """
-        .formatted(EMAIL_LOGO_CONTENT_ID, code);
+        .formatted(EMAIL_LOGO_CONTENT_ID, description, guide, code, footer);
   }
 }
