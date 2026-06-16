@@ -10,27 +10,44 @@ import java.util.stream.Collectors;
 public class PlazaImagePromptBuilder {
 
     private static final int MAX_TOTAL_OBJECTS = 30;
-    private static final int MAX_MAIN_VISIBLE_OBJECTS = 12;
-    private static final int MAX_SUPPORTING_OBJECTS = 12;
+
+    // [수정] 오브젝트가 많을 때 대표 오브젝트를 12개까지 크게 잡으면 뭉개질 수 있어서,
+    //        13개 이상일 때는 대표 오브젝트를 8개로 줄여 장면 안정성을 높였습니다.
+    //        단, 전체 오브젝트가 12개 이하라면 모두 MAIN으로 처리해서 1개짜리 광장도 자연스럽게 완성됩니다.
+    private static final int MAX_MAIN_VISIBLE_OBJECTS_WHEN_MANY = 8;
+
+    // [수정] 보조 오브젝트도 너무 많으면 장면이 복잡해져서 12개에서 10개로 줄였습니다.
+    private static final int MAX_SUPPORTING_OBJECTS = 10;
+
+    // [추가] positionX/Y가 픽셀값일 때 기준으로 삼을 캔버스 크기입니다.
+    //        프론트 광장 캔버스가 1024x768이 아니면 이 값만 실제 크기에 맞게 바꾸면 됩니다.
+    private static final double ASSUMED_CANVAS_WIDTH = 1024.0;
+    private static final double ASSUMED_CANVAS_HEIGHT = 768.0;
 
     public String build(Plaza plaza, List<PlazaEntry> entries) {
         List<PlazaEntry> safeEntries = entries == null
                 ? List.of()
                 : entries.stream()
-                  .limit(MAX_TOTAL_OBJECTS)
-                  .collect(Collectors.toList());
+                .limit(MAX_TOTAL_OBJECTS)
+                .collect(Collectors.toList());
+
+        // [추가] 전체 오브젝트가 12개 이하라면 모두 대표 오브젝트로 처리합니다.
+        //        그래서 오브젝트 1개, 3개, 7개짜리 광장도 억지로 보조/배경으로 밀리지 않습니다.
+        int mainObjectLimit = safeEntries.size() <= 12
+                ? safeEntries.size()
+                : MAX_MAIN_VISIBLE_OBJECTS_WHEN_MANY;
 
         List<PlazaEntry> mainEntries = safeEntries.stream()
-                .limit(MAX_MAIN_VISIBLE_OBJECTS)
+                .limit(mainObjectLimit)
                 .collect(Collectors.toList());
 
         List<PlazaEntry> supportingEntries = safeEntries.stream()
-                .skip(MAX_MAIN_VISIBLE_OBJECTS)
+                .skip(mainObjectLimit)
                 .limit(MAX_SUPPORTING_OBJECTS)
                 .collect(Collectors.toList());
 
         List<PlazaEntry> backgroundEntries = safeEntries.stream()
-                .skip(MAX_MAIN_VISIBLE_OBJECTS + MAX_SUPPORTING_OBJECTS)
+                .skip(mainObjectLimit + MAX_SUPPORTING_OBJECTS)
                 .collect(Collectors.toList());
 
         String mainObjects = buildObjectSection(
@@ -59,11 +76,16 @@ public class PlazaImagePromptBuilder {
                 ? "soft emotional weather"
                 : toWeatherPrompt(plaza.getBackgroundKey());
 
-        String plazaTitle = plaza == null ? "" : safe(plaza.getTitle());
-        String plazaTopic = plaza == null ? "" : safe(plaza.getTopic());
+        // [수정] plazaTitle, plazaTopic, totalFootprints를 프롬프트에 직접 넣지 않도록 제거했습니다.
+        //        제목/주제/숫자가 프롬프트에 들어가면 이미지 안에 글자나 숫자 비슷한 흔적이 생길 확률이 올라갑니다.
+        //        UI에서는 제목/주제/발자취 수를 따로 보여주고, 이미지 생성 프롬프트에는 분위기만 전달하는 편이 안전합니다.
 
-        int totalFootprints = entries == null ? 0 : entries.size();
-
+        // [수정] 아래 return 프롬프트에서 보완한 핵심:
+        //        1. 제목, 주제, 발자취 숫자를 프롬프트에서 제거
+        //        2. 오브젝트 추가 금지와 배경 구조 허용 범위를 분리
+        //        3. 고정된 3/4 탑다운 구도를 추가해 positionX/Y 반영 안정성 강화
+        //        4. 다수 오브젝트가 있을 때 일부는 작게/부분적으로 보여도 된다고 명시
+        //        5. 텍스트, 숫자, 기호 금지 규칙을 유지하되 평면 오브젝트 관련 지시를 더 명확하게 정리
         return """
                 Create one finished high-resolution illustration for an emotional plaza scene.
 
@@ -76,22 +98,29 @@ public class PlazaImagePromptBuilder {
                 This is not an inventory image.
                 This is not a sticker sheet.
                 This is not a UI screenshot.
-                This must be one coherent place where objects naturally belong together.
+                This must be one coherent place where the provided footprint objects naturally belong.
 
                 Scene direction:
                 Create a cozy emotional plaza scene.
                 The scene may feel like a small outdoor plaza, a private room, or a gentle hybrid space between the two.
-                Choose the space type naturally based on the provided objects.
-                Make it look like a completed shared memory space made from people's feelings.
+                Choose the space type naturally based on the provided footprint objects.
+                Make the scene feel like a completed shared memory space made from quiet feelings.
+
+                Camera and layout:
+                Use a fixed three-quarter top-down diorama view.
+                Use a wide landscape composition.
+                The camera should look slightly down at the plaza so object positions can be understood spatially.
+                Keep enough empty breathing space around the main objects.
+                Do not crop the main visible objects.
 
                 Object count rule:
-                Use only the provided footprint objects as intentional objects.
+                Use only the listed footprint objects as intentional placed objects.
                 The plaza can be completed with only one footprint object.
-                If there is only one footprint object, create a complete emotional plaza scene centered around that single object.
+                If there is only one footprint object, create a complete emotional scene centered around that single object.
                 If there are no footprint objects, create a quiet empty emotional plaza with only simple environment, weather, light, floor, wall, sky, and atmosphere.
                 Do not invent extra footprint objects.
-                Do not add animals, furniture, plants, props, food, or outdoor objects unless they are listed below.
-                The environment may still include simple floor, wall, sky, window light, weather, shadows, air, and atmosphere.
+                Do not add extra animals, furniture, plants, props, food, signs, books, posters, boards, letters, or decorative objects unless they are listed below.
+                The environment may include only simple structural and atmospheric elements such as floor, wall, window, sky, ground, path, soft light, shadow, rain, snow, mist, and air.
 
                 Visual style:
                 Hand-painted cozy illustration.
@@ -112,27 +141,34 @@ public class PlazaImagePromptBuilder {
                 Avoid clutter.
                 Avoid overlapping too many animals or props.
                 Do not make every object equally large.
-                Make only the main visible objects clearly recognizable.
+                Make the main visible objects clearly recognizable.
                 Supporting objects should appear only when they are listed in the Supporting objects section.
                 Background footprint details should appear only when they are listed in the Background details section.
-                It is acceptable if not every footprint object is fully visible when there are many objects.
+                If there are many footprint objects, supporting or background objects may be smaller, partially visible, or softly blended into the scene.
                 The goal is an emotionally coherent plaza, not exact object counting.
+
+                Object separation rules:
+                Keep animals separated enough so they do not merge into each other.
+                Keep furniture and props separated enough so they do not become one melted shape.
+                Do not merge multiple objects into one unclear blob.
+                Prefer simple readable silhouettes over excessive detail.
+                Each main visible object should have a clear outline and recognizable shape.
 
                 Object placement rules:
                 Each object has an approximate placement area based on the user's plaza layout.
                 Follow the placement area as much as possible.
-                If an object is marked as foreground left, place it near the lower-left area.
-                If an object is marked as foreground center, place it near the lower-center area.
-                If an object is marked as foreground right, place it near the lower-right area.
-                If an object is marked as middle ground left, place it around the center-left area.
-                If an object is marked as middle ground center, place it around the center area.
-                If an object is marked as middle ground right, place it around the center-right area.
-                If an object is marked as background left, place it near the upper-left or far-left background.
-                If an object is marked as background center, place it near the upper-center or far background.
-                If an object is marked as background right, place it near the upper-right or far-right background.
+                foreground left means lower-left area.
+                foreground center means lower-center area.
+                foreground right means lower-right area.
+                middle ground left means center-left area.
+                middle ground center means center area.
+                middle ground right means center-right area.
+                background left means upper-left or far-left background.
+                background center means upper-center or far background.
+                background right means upper-right or far-right background.
                 Do not place all objects in the center.
                 Do not randomly scatter objects.
-                Keep the user's rough object layout while making the scene natural and beautiful.
+                Keep the user's rough layout while making the scene natural and beautiful.
 
                 Main visible objects:
                 %s
@@ -151,16 +187,11 @@ public class PlazaImagePromptBuilder {
                 Do not draw weather icons.
                 Do not draw UI symbols.
 
-                Plaza context:
-                Plaza title, used only as emotional context: "%s"
-                Plaza topic, used only as emotional context: "%s"
-                Total user footprints, used only as emotional context: %d
+                Emotional theme:
+                A quiet shared memory space where small personal feelings gather softly.
+                Do not write this theme inside the image.
 
                 Absolute text and number ban:
-                Do not write the plaza title in the image.
-                Do not write the plaza topic in the image.
-                Do not write user memos in the image.
-                Do not write the total footprint number in the image.
                 Do not include any readable text.
                 Do not include any letters.
                 Do not include Korean letters.
@@ -184,17 +215,14 @@ public class PlazaImagePromptBuilder {
                 Do not include letter-like shapes.
 
                 Blank surface rules:
-                Posters must be blank or have only abstract shapes.
-                Books must have blank covers and blank spines.
-                Signs must be blank.
-                Papers must be blank.
-                Letters must be blank.
-                Boards must be blank.
-                Labels must be blank.
-                Clocks must not show numbers.
-                Calendars must not show numbers.
-                Mailboxes must not show letters or numbers.
-                If a surface needs detail, use only soft abstract marks that cannot be read as text, letters, numbers, or symbols.
+                If any flat surface appears, keep it blank.
+                Posters must not appear unless they are listed as footprint objects.
+                Books must not appear unless they are listed as footprint objects.
+                Signs must not appear unless they are listed as footprint objects.
+                Papers must not appear unless they are listed as footprint objects.
+                Letters must not appear unless they are listed as footprint objects.
+                Boards must not appear unless they are listed as footprint objects.
+                If a listed object has a surface, keep the surface blank or use only soft abstract marks that cannot be read as text, letters, numbers, or symbols.
 
                 Human and privacy rules:
                 Do not include people.
@@ -213,10 +241,7 @@ public class PlazaImagePromptBuilder {
                 backgroundDetails,
                 backgroundType,
                 backgroundColor,
-                backgroundWeather,
-                plazaTitle,
-                plazaTopic,
-                totalFootprints
+                backgroundWeather
         );
     }
 
@@ -234,15 +259,16 @@ public class PlazaImagePromptBuilder {
         String objectDescription = toEnglishObjectDescription(entry.getObjectKey());
         String positionLabel = toPositionLabel(entry.getPositionX(), entry.getPositionY());
         String moodPrompt = toMoodPrompt(entry.getMoodKey());
-        String weatherPrompt = toWeatherPrompt(entry.getWeatherKey());
 
+        // [수정] entry별 weatherPrompt를 오브젝트마다 넣지 않도록 제거했습니다.
+        //        오브젝트 20~30개가 서로 다른 weather를 들고 있으면 비/눈/햇빛/안개가 한 프롬프트 안에서 충돌합니다.
+        //        날씨는 plaza.getBackgroundKey() 기준의 전체 분위기로만 반영하는 편이 더 안정적입니다.
         return switch (role) {
             case MAIN -> String.format(
-                    "- %s. Approximate user placement: %s. Keep this object near that area. Make it clearly recognizable. Emotional mood: %s. Weather feeling: %s.",
+                    "- %s. Approximate user placement: %s. Keep this object near that area. Make it clearly recognizable. Emotional mood: %s.",
                     objectDescription,
                     positionLabel,
-                    moodPrompt,
-                    weatherPrompt
+                    moodPrompt
             );
 
             case SUPPORTING -> String.format(
@@ -310,9 +336,9 @@ public class PlazaImagePromptBuilder {
             return number;
         }
 
-        // positionX/Y가 픽셀값으로 들어오는 경우를 위한 대략적인 보정값입니다.
-        // 실제 광장 캔버스 크기가 다르면 이 값을 프론트 기준에 맞춰 수정하세요.
-        double assumedMax = xAxis ? 1024.0 : 768.0;
+        // [수정] 기존에는 1024x768이 메서드 안에 직접 박혀 있었는데,
+        //        상수로 빼서 프론트 캔버스 크기가 바뀌어도 수정하기 쉽게 만들었습니다.
+        double assumedMax = xAxis ? ASSUMED_CANVAS_WIDTH : ASSUMED_CANVAS_HEIGHT;
         double percent = (number / assumedMax) * 100.0;
 
         if (percent < 0) {
@@ -358,6 +384,30 @@ public class PlazaImagePromptBuilder {
     private String toEnglishObjectDescription(Object objectKey) {
         String key = safe(objectKey).toLowerCase(Locale.ROOT);
 
+        // [추가] 고양이1, 햄스터1처럼 숫자가 붙은 오브젝트는 공백/언더바/하이픈이 섞여 들어올 수 있어서
+        //        compactKey로 한 번 더 보정합니다.
+        //        예: "고양이 1", "고양이_1", "cat-1" 모두 같은 오브젝트로 처리 가능.
+        String compactKey = key
+                .replaceAll("[\\s_\\-]", "");
+
+        // [추가] 숫자형 식별자가 붙은 신규 동물은 switch 전에 먼저 처리합니다.
+        //        프롬프트에는 cat1, hamster1 같은 숫자 이름을 직접 노출하지 않고 외형 묘사만 넣습니다.
+        if (compactKey.equals("고양이1") || compactKey.equals("cat1")) {
+            return "a small cozy cream-colored cat sitting calmly, soft rounded body, gentle expression";
+        }
+
+        if (compactKey.equals("고양이2") || compactKey.equals("cat2")) {
+            return "a small cozy gray-and-white cat resting quietly, soft rounded body, calm expression";
+        }
+
+        if (compactKey.equals("햄스터1") || compactKey.equals("hamster1")) {
+            return "a small cozy cream and beige hamster sitting upright, tiny rounded ears, soft fluffy body";
+        }
+
+        if (compactKey.equals("햄스터2") || compactKey.equals("hamster2")) {
+            return "a small cozy warm-brown hamster crawling softly, belly close to the ground, tiny paws forward";
+        }
+
         return switch (key) {
             // 동물
             case "수달", "otter" -> "a cute otter resting near a small water area";
@@ -371,11 +421,7 @@ public class PlazaImagePromptBuilder {
             case "앉아있는 삼색 고양이", "calico cat" -> "a sitting calico cat";
             case "여우", "fox" -> "a quiet small fox";
             case "펭귄", "penguin" -> "a small cute penguin";
-            case "고양이1", "cat1", "cat_1" -> "a small cozy cream-colored cat sitting calmly, soft rounded body, gentle expression";
-            case "고양이2", "cat2", "cat_2" -> "a small cozy gray-and-white cat resting quietly, soft rounded body, calm expression";
             case "레서판다", "lesser panda", "red panda" -> "a cute red panda sitting gently, fluffy ringed tail, round ears, warm reddish-brown fur";
-            case "햄스터1", "hamster1", "hamster_1" -> "a small cozy cream and beige hamster sitting upright, tiny rounded ears, soft fluffy body";
-            case "햄스터2", "hamster2", "hamster_2" -> "a small cozy warm-brown hamster crawling softly, belly close to the ground, tiny paws forward";
 
             // 가구
             case "사이드 테이블" -> "a small side table";
@@ -562,9 +608,10 @@ public class PlazaImagePromptBuilder {
             case "얼음 디딤돌" -> "shiny ice stepping stones";
             case "구멍 튜브" -> "a small swimming tube with no letters, no numbers, and no pattern that looks like text";
 
-            default -> key.isBlank()
-                    ? "a small cozy object with no text, no letters, no numbers, and no symbols"
-                    : "a small cozy object matching this object name: " + key + ". Do not draw any text, letters, numbers, or symbols on it";
+            // [수정] 기존 default는 알 수 없는 objectKey를 프롬프트에 그대로 붙였습니다.
+            //        objectKey가 한국어/숫자/기호를 포함하면 이미지 안에 글자 비슷한 흔적이 생길 수 있어서,
+            //        이제는 원본 key를 노출하지 않고 안전한 일반 오브젝트 묘사로 처리합니다.
+            default -> "a small unspecified cozy object from the user's placed object library, with no text, no letters, no numbers, and no symbols";
         };
     }
 
