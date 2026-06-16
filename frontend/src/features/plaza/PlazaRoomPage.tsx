@@ -70,7 +70,7 @@ type PlazaConfirmModalProps = {
 const getEntryLayer = (entry: PlazaEntry) => entry.layer ?? OBJECT_LAYER_MIN;
 const PLAZA_LAYOUT_WIDTH = 1460;
 const PLAZA_LAYOUT_HEIGHT = 650;
-const PLAZA_COMPLETION_NOTICE = "\uAD11\uC7A5\uC774 \uC885\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uC6B0\uD3B8\uD568\uC73C\uB85C \uC0AC\uC9C4\uC774 \uBC1C\uC1A1\uB429\uB2C8\uB2E4.";
+const PLAZA_COMPLETION_NOTICE = "광장이 종료되었습니다. 우편함으로 사진이 발송됩니다.";
 
 function PlazaConfirmModal({ action, onCancel, onConfirm }: PlazaConfirmModalProps) {
   const isDelete = action === "delete";
@@ -614,10 +614,12 @@ export function PlazaRoomPage({
       {completionNotice && (
         <div className="fixed left-1/2 top-6 z-[120] w-[min(420px,calc(100vw-32px))] -translate-x-1/2">
           <div className="mw-surface flex items-start gap-3 rounded-xl bg-[#fffbf6f2] px-4 py-3 text-[#5a4632] shadow-xl backdrop-blur-sm">
-            <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-md border border-[#7c9b78]/30 bg-[#edf5e7] text-[#5f875b]">
-              <CheckCircle2 size={17} />
-            </span>
-            <p className="min-w-0 flex-1 text-sm leading-6">{completionNotice}</p>
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-[#7c9b78]/30 bg-[#edf5e7] text-[#5f875b]">
+                <CheckCircle2 size={17} />
+              </span>
+              <p className="min-w-0 flex-1 text-sm leading-6">{completionNotice}</p>
+            </div>
             <button
               type="button"
               onClick={() => setCompletionNotice(null)}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CheckCircle2, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppHeader } from "../../components/layout/AppHeader";
 import { completeBackendPlaza, createBackendPlazaEntry, createBackendPlazaWithFirstEntry, deleteBackendPlaza, deleteBackendPlazaEntry, fetchPlazas, toggleBackendPlazaEntryLike, updateBackendPlazaEntry, updateBackendPlazaEntryPosition } from "../../services/plazaService";
@@ -9,6 +10,9 @@ import { PlazaListPage } from "../plaza/PlazaListPage";
 import { PlazaRoomPage } from "../plaza/PlazaRoomPage";
 import type { PlazaWriteValue } from "../plaza/PlazaWriteModal";
 import { canCreatePlazaToday, normalizePlaza } from "../plaza/plazaHelpers";
+
+const PLAZA_DELETE_NOTICE = "광장이 삭제되었습니다.";
+
 function createDraftPlazaId() {
   return `draft-plaza-${crypto.randomUUID()}`;
 }
@@ -22,7 +26,9 @@ function PlazaPage() {
   const [draftPlaza, setDraftPlaza] = useState<Plaza | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [topNotice, setTopNotice] = useState<string | null>(null);
   const isFinalizingDraftRef = useRef(false);
+  const topNoticeTimerRef = useRef<number | null>(null);
 
   const normalizedPlazas = useMemo(() => plazas.map(normalizePlaza), [plazas]);
   const selectedSavedPlaza = plazaId ? normalizedPlazas.find((plaza) => plaza.id === plazaId) ?? null : null;
@@ -75,6 +81,27 @@ function PlazaPage() {
       window.clearTimeout(loadTimerId);
     };
   }, [loadPlazaList]);
+
+  useEffect(() => {
+    return () => {
+      if (topNoticeTimerRef.current !== null) {
+        window.clearTimeout(topNoticeTimerRef.current);
+      }
+    };
+  }, []);
+
+  function showTopNotice(nextNotice: string) {
+    setTopNotice(nextNotice);
+
+    if (topNoticeTimerRef.current !== null) {
+      window.clearTimeout(topNoticeTimerRef.current);
+    }
+
+    topNoticeTimerRef.current = window.setTimeout(() => {
+      setTopNotice(null);
+      topNoticeTimerRef.current = null;
+    }, 3500);
+  }
 
   function persistPlazas(updater: (current: Plaza[]) => Plaza[]) {
     setPlazas((current) => {
@@ -148,6 +175,7 @@ function PlazaPage() {
     await deleteBackendPlaza(plazaId);
     persistPlazas((current) => current.filter((plaza) => plaza.id !== plazaId));
     navigate("/plaza", { replace: true });
+    showTopNotice(PLAZA_DELETE_NOTICE);
   }
 
   async function handleCompletePlaza(plazaId: string) {
@@ -157,6 +185,28 @@ function PlazaPage() {
   return (
     <div className="mw-app flex min-h-screen flex-col select-none">
       <AppHeader />
+
+      {topNotice && (
+        <div className="fixed left-1/2 top-6 z-[120] w-[min(420px,calc(100vw-32px))] -translate-x-1/2">
+          <div className="mw-surface flex items-start gap-3 rounded-xl bg-[#fffbf6f2] px-4 py-3 text-[#5a4632] shadow-xl backdrop-blur-sm">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-[#7c9b78]/30 bg-[#edf5e7] text-[#5f875b]">
+                <CheckCircle2 size={17} />
+              </span>
+              <p className="min-w-0 flex-1 text-sm leading-6">{topNotice}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setTopNotice(null)}
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-[#5a4632]/55 hover:bg-[#5a4632]/10 hover:text-[#5a4632]"
+              aria-label="안내 메시지 닫기"
+              title="안내 메시지 닫기"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {selectedPlaza ? (
         <PlazaRoomPage
