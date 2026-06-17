@@ -36,7 +36,10 @@ public enum ErrorCode {
     OAUTH_CONFIG_MISSING("OAUTH_001", "소셜 로그인 설정이 누락되었습니다."),
     OAUTH_LOGIN_FAILED("OAUTH_002", "소셜 로그인 인증 정보를 확인하지 못했습니다."),
     OAUTH_EMAIL_MISSING("OAUTH_003", "소셜 계정의 이메일 제공 동의가 필요합니다."),
-    INVALID_INPUT("GLOBAL_001", "입력값이 올바르지 않습니다.");
+    INVALID_INPUT("GLOBAL_001", "입력값이 올바르지 않습니다."),
+    FORBIDDEN("GLOBAL_002", "접근 권한이 없습니다."),
+    INQUIRY_NOT_FOUND("INQUIRY_001", "존재하지 않는 문의입니다."),
+    NOTICE_NOT_FOUND("NOTICE_001", "존재하지 않는 공지입니다.");
 
     private final String code;
     private final String message;

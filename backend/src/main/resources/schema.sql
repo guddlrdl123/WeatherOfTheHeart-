@@ -199,3 +199,35 @@ CREATE TABLE password_reset_tokens (
                                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                        INDEX idx_password_reset_tokens_email_created_at (email, created_at)
 );
+
+--13. 1:1 문의 테이블
+-- 사용자가 남긴 1:1 문의를 저장합니다. 목록은 모두에게 보이되 내용은 관리자만 조회합니다.
+CREATE TABLE inquiries (
+                           id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                           author_id BIGINT NULL,
+                           author_nickname VARCHAR(20) NULL,
+                           author_email VARCHAR(100) NULL,
+                           title VARCHAR(100) NOT NULL,
+                           content TEXT NOT NULL,
+                           answer TEXT NULL,
+                           answerer_nickname VARCHAR(20) NULL,
+                           answered_at DATETIME NULL,
+                           created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                           updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                           CONSTRAINT fk_inquiries_author FOREIGN KEY (author_id) REFERENCES users(id),
+                           INDEX idx_inquiries_created_at (created_at)
+);
+
+--14. 공지사항 테이블
+-- 관리자가 작성하는 공지사항. 모든 사용자가 열람하고, 작성/수정/삭제는 관리자만 가능합니다.
+CREATE TABLE notices (
+                         id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                         author_id BIGINT NULL,
+                         author_nickname VARCHAR(20) NULL,
+                         title VARCHAR(100) NOT NULL,
+                         content TEXT NOT NULL,
+                         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                         CONSTRAINT fk_notices_author FOREIGN KEY (author_id) REFERENCES users(id),
+                         INDEX idx_notices_created_at (created_at)
+);

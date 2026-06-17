@@ -12,6 +12,7 @@ import MyPage from "../features/pages/MyPage";
 import PlazaPage from "../features/pages/PlazaPage";
 import MailboxPage from "../features/pages/MailboxPage";
 import QnaPage from "../features/pages/QnaPage";
+import NoticePage from "../features/pages/NoticePage";
 
 type RouteGuardProps = {
   children: ReactNode;
@@ -154,6 +155,15 @@ function App() {
         element={
           <ProtectedRoute authenticated={authenticated}>
             <QnaPage />
+          </ProtectedRoute>
+        }
+      />
+      {/* 공지사항: 관리자가 작성하고 모든 사용자가 열람합니다. */}
+      <Route
+        path="/notices"
+        element={
+          <ProtectedRoute authenticated={authenticated}>
+            <NoticePage />
           </ProtectedRoute>
         }
       />

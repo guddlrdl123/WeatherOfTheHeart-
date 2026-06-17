@@ -1,4 +1,4 @@
-import { House, Home, Inbox, LogOut, UserRound, CastleIcon, MessageCircleQuestion } from "lucide-react";
+import { House, Home, Inbox, LogOut, UserRound, CastleIcon, MessageCircleQuestion, Megaphone } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { fetchMailboxUnreadCount, MAILBOX_CHANGED_EVENT } from "../../services/mailboxService";
@@ -109,15 +109,38 @@ export function AppHeader() {
                                 </span>
                             )}
                         </Link>
-                        {/* 상담 · QnA: 우편함과 로그아웃 사이에 위치합니다. */}
-                        <Link
-                            to="/qna"
-                            className="p-2 rounded-md border border-[#5a4632]/20 hover:bg-[#5a4632]/10 text-[#5a4632]/80"
-                            title="상담 · QnA"
-                            aria-label="상담 · QnA"
-                        >
-                            <MessageCircleQuestion size={14} />
-                        </Link>
+                        {/* 상담·공지: 마우스를 올리면 두 메뉴가 펼쳐집니다. (우편함과 로그아웃 사이) */}
+                        <div className="group relative">
+                            <button
+                                type="button"
+                                className="p-2 rounded-md border border-[#5a4632]/20 hover:bg-[#5a4632]/10 group-hover:bg-[#5a4632]/10 text-[#5a4632]/80"
+                                title="문의 · 공지"
+                                aria-label="문의 · 공지"
+                                aria-haspopup="menu"
+                            >
+                                <MessageCircleQuestion size={14} />
+                            </button>
+
+                            {/* hover 또는 포커스 시 표시되는 드롭다운 메뉴 */}
+                            <div className="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-opacity duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                                <div className="min-w-[168px] overflow-hidden rounded-md border border-[#5a4632]/15 bg-[#fffbf6] py-1 shadow-lg">
+                                    <Link
+                                        to="/qna"
+                                        className="flex items-center gap-2 px-3 py-2 text-xs text-[#5a4632]/85 hover:bg-[#5a4632]/10"
+                                    >
+                                        <MessageCircleQuestion size={14} className="shrink-0 text-[#9b6b54]" />
+                                        상담 및 QnA
+                                    </Link>
+                                    <Link
+                                        to="/notices"
+                                        className="flex items-center gap-2 px-3 py-2 text-xs text-[#5a4632]/85 hover:bg-[#5a4632]/10"
+                                    >
+                                        <Megaphone size={14} className="shrink-0 text-[#9b6b54]" />
+                                        공지사항
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
                         <button
                             type="button"
                             onClick={handleLogout}
