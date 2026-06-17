@@ -10,6 +10,8 @@ export type AuthResponse = {
   accessTokenExpiresAt?: string;
 };
 
+export type SocialProvider = "google" | "kakao" | "naver";
+
 type LoginRequest = {
   email: string;
   password: string;
@@ -36,6 +38,16 @@ type PasswordResetConfirmRequest = PasswordResetCodeRequest & {
 type ApiErrorResponse = {
   code?: string;
   message?: string;
+};
+
+type OAuthAuthorizeResponse = {
+  authorizationUrl: string;
+};
+
+type OAuthLoginRequest = {
+  code: string;
+  redirectUri: string;
+  state: string;
 };
 
 export class AuthApiError extends Error {
@@ -95,12 +107,40 @@ async function postAuth<TResponse>(path: string, body: object, errorMessage: str
   return readApiData<TResponse>(response);
 }
 
+async function getAuth<TResponse>(path: string, errorMessage: string) {
+  const response = await fetch(toApiUrl(path));
+
+  if (!response.ok) {
+    const body = await readJsonResponse<ApiErrorResponse>(response).catch(() => null);
+    throw new AuthApiError(getAuthErrorMessage(body, errorMessage), getErrorCode(body));
+  }
+
+  return readApiData<TResponse>(response);
+}
+
 export function login(value: LoginRequest) {
   return postAuth<AuthResponse>("/api/auth/login", value, "로그인에 실패했습니다.");
 }
 
 export function signup(value: SignupRequest) {
   return postAuth<AuthResponse>("/api/auth/signup", value, "회원가입에 실패했습니다.");
+}
+
+export function getSocialAuthorizeUrl(provider: SocialProvider, redirectUri: string, state: string) {
+  const params = new URLSearchParams({ redirectUri, state });
+
+  return getAuth<OAuthAuthorizeResponse>(
+    `/api/auth/oauth/${provider}/authorize?${params.toString()}`,
+    "소셜 로그인 주소를 가져오지 못했습니다.",
+  );
+}
+
+export function socialLogin(provider: SocialProvider, value: OAuthLoginRequest) {
+  return postAuth<AuthResponse>(
+    `/api/auth/oauth/${provider}/login`,
+    value,
+    "소셜 로그인에 실패했습니다.",
+  );
 }
 
 export async function sendEmailVerification(email: string) {

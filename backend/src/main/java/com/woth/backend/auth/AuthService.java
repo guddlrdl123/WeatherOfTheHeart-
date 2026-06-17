@@ -7,6 +7,8 @@ import com.woth.backend.user.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 /*
     * 인증 관련 비즈니스 로직을 처리하는 서비스 클래스
     * 로그인과 회원가입 기능을 담당하며, 관리자 계정에 대한 특별한 처리를 포함
@@ -80,6 +82,37 @@ public class AuthService {
         User savedUser = userRepository.save(user);
         emailVerificationService.clear(email);
         return savedUser;
+    }
+
+    @Transactional
+    public User loginWithOAuth(OAuthProfile profile) {
+        if (profile.email() == null || profile.email().isBlank()) {
+            throw new CustomException(ErrorCode.OAUTH_EMAIL_MISSING);
+        }
+
+        String email = profile.email().trim();
+
+        return userRepository.findByEmailAndIsDeletedFalse(email)
+                .map(user -> {
+                    user.linkOAuth(profile.provider().key(), profile.providerId());
+                    return user;
+                })
+                .orElseGet(() -> {
+                    if (userRepository.existsByEmail(email)) {
+                        throw new CustomException(ErrorCode.USER_WITHDRAWN);
+                    }
+
+                    User user = User.builder()
+                            .email(email)
+                            .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                            .nickname(resolveNickname(profile.nickname()))
+                            .isAdmin(false)
+                            .authProvider(profile.provider().key())
+                            .authProviderId(profile.providerId())
+                            .build();
+
+                    return userRepository.save(user);
+                });
     }
 
     private User createAdminUser(String email, String password) {

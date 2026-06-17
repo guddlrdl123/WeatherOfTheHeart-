@@ -4,13 +4,16 @@ CREATE TABLE users (
                        email VARCHAR(100) NOT NULL UNIQUE,
                        password VARCHAR(255) NOT NULL,
                        nickname VARCHAR(10) NOT NULL,
+                       auth_provider VARCHAR(20) NOT NULL DEFAULT 'LOCAL',
+                       auth_provider_id VARCHAR(255) NULL,
                        is_admin TINYINT(1) NOT NULL DEFAULT 0,
     -- [수정] 회원 탈퇴를 hard delete가 아닌 soft delete로 처리하기 위한 상태값
                        is_deleted TINYINT(1) NOT NULL DEFAULT 0,
     -- [수정] 회원 탈퇴 시각 저장
                        deleted_at DATETIME NULL,
                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                       updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                       updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                       INDEX idx_users_auth_provider_id (auth_provider, auth_provider_id)
 );
 
 --2. 나만의 방 정보 테이블

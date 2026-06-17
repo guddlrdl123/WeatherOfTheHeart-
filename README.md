@@ -130,6 +130,14 @@ AWS_REGION=ap-northeast-2
 AWS_S3_BUCKET_NAME=your_bucket_name
 AWS_S3_PUBLIC_BASE_URL=https://your_bucket_name.s3.ap-northeast-2.amazonaws.com
 AWS_S3_RAG_BUCKET_NAME=your_rag_bucket_name
+
+GOOGLE_OAUTH_CLIENT_ID=your_google_client_id
+GOOGLE_OAUTH_CLIENT_SECRET=your_google_client_secret
+KAKAO_REST_API_KEY=your_kakao_rest_api_key
+KAKAO_CLIENT_SECRET=your_kakao_client_secret
+NAVER_CLIENT_ID=your_naver_client_id
+NAVER_CLIENT_SECRET=your_naver_client_secret
+OAUTH_ALLOWED_REDIRECT_URIS=http://localhost:5173/oauth/callback/google,http://localhost:5173/oauth/callback/kakao,http://localhost:5173/oauth/callback/naver,http://localhost:5174/oauth/callback/google,http://localhost:5174/oauth/callback/kakao,http://localhost:5174/oauth/callback/naver
 ```
 
 프론트엔드는 `frontend/.env`에 API 주소를 설정할 수 있습니다.
@@ -145,6 +153,8 @@ VITE_S3_ASSET_BASE_URL=https://your_bucket_name.s3.ap-northeast-2.amazonaws.com
 | --- | --- | --- | --- |
 | Auth | POST | `/api/auth/signup` | 회원가입 |
 | Auth | POST | `/api/auth/login` | 로그인 |
+| Auth | GET | `/api/auth/oauth/{provider}/authorize` | 소셜 로그인 인가 URL 생성 |
+| Auth | POST | `/api/auth/oauth/{provider}/login` | 소셜 로그인 code 교환 및 회원가입/로그인 |
 | Auth | POST | `/api/auth/email/send` | 이메일 인증 코드 발송 |
 | Auth | POST | `/api/auth/email/verify` | 이메일 인증 코드 확인 |
 | AI | POST | `/api/ai/analyze` | 감정 분석 |

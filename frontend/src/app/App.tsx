@@ -5,6 +5,7 @@ import LoginPage from "../features/pages/LoginPage";
 import { SignupPage } from "../features/pages/SignupPage";
 import { ResetPasswordPage } from "../features/pages/ResetPasswordPage";
 import { LandingPage } from "../features/pages/LandingPage";
+import { OAuthCallbackPage } from "../features/pages/OAuthCallbackPage";
 import { AUTH_SESSION_CHANGED_EVENT, isAuthenticated } from "../utils/authSession";
 import "../styles/App.css";
 import MyPage from "../features/pages/MyPage";
@@ -107,6 +108,10 @@ function App() {
       <Route
         path="/reset-password"
         element={authenticated ? <Navigate to="/room" replace /> : <ResetPasswordPage />}
+      />
+      <Route
+        path="/oauth/callback/:provider"
+        element={authenticated ? <Navigate to="/room" replace /> : <OAuthCallbackPage />}
       />
       <Route
         path="/mypage"

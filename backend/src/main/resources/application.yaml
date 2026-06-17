@@ -53,6 +53,18 @@ spring:
 openai:
   api-key: ${OPENAI_API_KEY:}
 
+oauth:
+  allowed-redirect-uris: ${OAUTH_ALLOWED_REDIRECT_URIS:http://localhost:5173/oauth/callback/google,http://localhost:5173/oauth/callback/kakao,http://localhost:5173/oauth/callback/naver,http://127.0.0.1:5173/oauth/callback/google,http://127.0.0.1:5173/oauth/callback/kakao,http://127.0.0.1:5173/oauth/callback/naver,http://localhost:5174/oauth/callback/google,http://localhost:5174/oauth/callback/kakao,http://localhost:5174/oauth/callback/naver,http://127.0.0.1:5174/oauth/callback/google,http://127.0.0.1:5174/oauth/callback/kakao,http://127.0.0.1:5174/oauth/callback/naver,https://weatheroftheheart.shop/oauth/callback/google,https://weatheroftheheart.shop/oauth/callback/kakao,https://weatheroftheheart.shop/oauth/callback/naver,https://www.weatheroftheheart.shop/oauth/callback/google,https://www.weatheroftheheart.shop/oauth/callback/kakao,https://www.weatheroftheheart.shop/oauth/callback/naver}
+  google:
+    client-id: ${GOOGLE_OAUTH_CLIENT_ID:529655310996-aj7i7oainhbit8rp5iggenvh1no7qd1a.apps.googleusercontent.com}
+    client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET:}
+  kakao:
+    rest-api-key: ${KAKAO_REST_API_KEY:ddbb906b45fd613a4e25cde0463df439}
+    client-secret: ${KAKAO_CLIENT_SECRET:}
+  naver:
+    client-id: ${NAVER_CLIENT_ID:1LrLV1d4R0ubSOcg8Ir3}
+    client-secret: ${NAVER_CLIENT_SECRET:}
+
 # AWS S3 이미지 저장 설정
 aws:
   region: ${AWS_REGION:ap-northeast-2}

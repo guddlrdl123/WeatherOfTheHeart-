@@ -29,6 +29,13 @@ public class User {
     @Column(nullable = false, length = 10) // 화면에 노출될 유저의 닉네임
     private String nickname;
 
+    @Column(name = "auth_provider", nullable = false, length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'LOCAL'")
+    @Builder.Default
+    private String authProvider = "LOCAL";
+
+    @Column(name = "auth_provider_id", length = 255)
+    private String authProviderId;
+
     @Column(name = "is_admin", nullable = false)
     @Builder.Default
     private Boolean isAdmin = false; // 관리자 여부 (기본값 false)
@@ -51,6 +58,9 @@ public class User {
     // 데이터가 처음 저장(Insert)되기 직전에 실행되어 시간을 채워줌
     @PrePersist
     protected void onCreate() {
+        if (this.authProvider == null) {
+            this.authProvider = "LOCAL";
+        }
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
@@ -79,6 +89,11 @@ public class User {
     // [수정] 새 이메일 인증이 완료된 뒤 실제 이메일 주소를 반영
     public void updateEmail(String email) {
         this.email = email;
+    }
+
+    public void linkOAuth(String authProvider, String authProviderId) {
+        this.authProvider = authProvider;
+        this.authProviderId = authProviderId;
     }
 
     // [수정] 회원 탈퇴 시 soft delete 처리

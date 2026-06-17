@@ -3,8 +3,8 @@ import { LoginForm } from "../../components/auth/LoginForm";
 
 export default function LoginPage() {
   return (
-    <div className="mw-app h-[100dvh] overflow-hidden">
-      <main className="flex h-full -translate-y-8 items-center justify-center px-5">
+    <div className="mw-app min-h-[100dvh] overflow-y-auto">
+      <main className="flex min-h-[100dvh] items-center justify-center px-5 py-10">
         <div className="w-full max-w-[420px]">
           <Link
             to="/"

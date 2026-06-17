@@ -7,7 +7,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,17 +25,20 @@ public class AuthController {
     private final EmailVerificationService emailVerificationService;
     private final PasswordResetService passwordResetService;
     private final AuthTokenService authTokenService;
+    private final SocialAuthService socialAuthService;
 
     public AuthController(
             AuthService authService,
             EmailVerificationService emailVerificationService,
             PasswordResetService passwordResetService,
-            AuthTokenService authTokenService
+            AuthTokenService authTokenService,
+            SocialAuthService socialAuthService
     ) {
         this.authService = authService;
         this.emailVerificationService = emailVerificationService;
         this.passwordResetService = passwordResetService;
         this.authTokenService = authTokenService;
+        this.socialAuthService = socialAuthService;
     }
 
     @PostMapping("/login")
@@ -44,6 +50,26 @@ public class AuthController {
     @PostMapping("/signup")
     public ApiResponse<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
         var user = authService.signup(request.email(), request.password(), request.nickname());
+        return ApiResponse.success(toResponse(user));
+    }
+
+    @GetMapping("/oauth/{provider}/authorize")
+    public ApiResponse<OAuthAuthorizeResponse> getOAuthAuthorizeUrl(
+            @PathVariable String provider,
+            @RequestParam String redirectUri,
+            @RequestParam String state
+    ) {
+        return ApiResponse.success(new OAuthAuthorizeResponse(
+                socialAuthService.createAuthorizationUrl(provider, redirectUri, state)
+        ));
+    }
+
+    @PostMapping("/oauth/{provider}/login")
+    public ApiResponse<AuthResponse> oauthLogin(
+            @PathVariable String provider,
+            @Valid @RequestBody OAuthLoginRequest request
+    ) {
+        var user = socialAuthService.login(provider, request.code(), request.redirectUri(), request.state());
         return ApiResponse.success(toResponse(user));
     }
 
@@ -99,6 +125,16 @@ public class AuthController {
             @NotBlank @Size(min = 8) @Pattern(regexp = ".*[^A-Za-z0-9].*") String password,
             @Size(max = 10) String nickname
     ) {
+    }
+
+    public record OAuthLoginRequest(
+            @NotBlank String code,
+            @NotBlank String redirectUri,
+            @NotBlank String state
+    ) {
+    }
+
+    public record OAuthAuthorizeResponse(String authorizationUrl) {
     }
 
     public record EmailCodeSendRequest(@NotBlank @Email String email) {
