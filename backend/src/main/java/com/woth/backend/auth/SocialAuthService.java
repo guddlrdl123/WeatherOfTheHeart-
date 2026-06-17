@@ -1,6 +1,7 @@
 package com.woth.backend.auth;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
 import com.woth.backend.user.User;
@@ -37,6 +38,7 @@ public class SocialAuthService {
 
     private final AuthService authService;
     private final WebClient webClient;
+    private final ObjectMapper objectMapper;
     private final Set<String> allowedRedirectUris;
     private final String googleClientId;
     private final String googleClientSecret;
@@ -48,6 +50,7 @@ public class SocialAuthService {
     public SocialAuthService(
             AuthService authService,
             WebClient.Builder webClientBuilder,
+            ObjectMapper objectMapper,
             @Value("${oauth.allowed-redirect-uris:${OAUTH_ALLOWED_REDIRECT_URIS:}}") String allowedRedirectUris,
             @Value("${oauth.google.client-id:${GOOGLE_OAUTH_CLIENT_ID:}}") String googleClientId,
             @Value("${oauth.google.client-secret:${GOOGLE_OAUTH_CLIENT_SECRET:}}") String googleClientSecret,
@@ -58,6 +61,7 @@ public class SocialAuthService {
     ) {
         this.authService = authService;
         this.webClient = webClientBuilder.build();
+        this.objectMapper = objectMapper;
         this.allowedRedirectUris = parseAllowedRedirectUris(allowedRedirectUris);
         this.googleClientId = googleClientId;
         this.googleClientSecret = googleClientSecret;
@@ -209,13 +213,14 @@ public class SocialAuthService {
 
     private JsonNode postForm(String url, MultiValueMap<String, String> form) {
         try {
-            JsonNode response = webClient.post()
+            String responseBody = webClient.post()
                     .uri(url)
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                     .body(BodyInserters.fromFormData(form))
                     .retrieve()
-                    .bodyToMono(JsonNode.class)
+                    .bodyToMono(String.class)
                     .block();
+            JsonNode response = parseJson(responseBody);
 
             if (response == null || response.has("error")) {
                 log.warn("OAuth token request failed. url={}, response={}", url, response);
@@ -236,12 +241,13 @@ public class SocialAuthService {
 
     private JsonNode getBearer(String url, String accessToken) {
         try {
-            JsonNode response = webClient.get()
+            String responseBody = webClient.get()
                     .uri(url)
                     .headers(headers -> headers.setBearerAuth(accessToken))
                     .retrieve()
-                    .bodyToMono(JsonNode.class)
+                    .bodyToMono(String.class)
                     .block();
+            JsonNode response = parseJson(responseBody);
 
             if (response == null || response.has("error") || response.has("error_description")) {
                 log.warn("OAuth userinfo request failed. url={}, response={}", url, response);
@@ -265,6 +271,19 @@ public class SocialAuthService {
                 .map(String::trim)
                 .filter(uri -> !uri.isBlank())
                 .collect(Collectors.toUnmodifiableSet());
+    }
+
+    private JsonNode parseJson(String body) {
+        try {
+            if (!hasText(body)) {
+                return null;
+            }
+
+            return objectMapper.readTree(body);
+        } catch (Exception e) {
+            log.warn("OAuth response JSON parsing failed. body={}", body);
+            throw new CustomException(ErrorCode.OAUTH_LOGIN_FAILED);
+        }
     }
 
     private void validateRedirectUri(String redirectUri) {
