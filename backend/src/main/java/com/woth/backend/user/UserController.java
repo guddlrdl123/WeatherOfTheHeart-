@@ -164,6 +164,7 @@ public class UserController {
                 user.getEmail(),
                 user.getNickname(),
                 user.getIsAdmin(),
+                user.getAuthProvider(),
                 user.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                 user.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
         );
@@ -248,6 +249,7 @@ public class UserController {
             String email,
             String nickname,
             Boolean isAdmin,
+            String authProvider,
             String joinedAt,
             String updatedAt
     ) {

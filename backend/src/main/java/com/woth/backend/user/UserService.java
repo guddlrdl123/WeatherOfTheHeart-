@@ -22,6 +22,7 @@ public class UserService {
 
     private static final String WITHDRAWN_NICKNAME = "withdrawn";
     private static final String WITHDRAWN_USER_EMAIL = "withdrawn-user@maeum.weather";
+    private static final String LOCAL_AUTH_PROVIDER = "LOCAL";
 
     private static final String DEFAULT_NICKNAME = "나그네";
 
@@ -91,6 +92,7 @@ public class UserService {
     @Transactional
     public void sendEmailChangeCode(Long userId, String currentPassword, String newEmail) {
         User user = getUser(userId);
+        validateLocalEmailChangeAllowed(user);
 
         if (!hasText(currentPassword) || !hasText(newEmail)) {
             throw new CustomException(ErrorCode.INVALID_INPUT);
@@ -118,6 +120,7 @@ public class UserService {
     @Transactional
     public User updateEmail(Long userId, String newEmail, String code) {
         User user = getUser(userId);
+        validateLocalEmailChangeAllowed(user);
 
         if (!hasText(newEmail) || !hasText(code)) {
             throw new CustomException(ErrorCode.INVALID_INPUT);
@@ -197,6 +200,14 @@ public class UserService {
                 .ifPresent(existingUser -> {
                     throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
                 });
+    }
+
+    private void validateLocalEmailChangeAllowed(User user) {
+        String authProvider = user.getAuthProvider();
+
+        if (authProvider != null && !LOCAL_AUTH_PROVIDER.equalsIgnoreCase(authProvider)) {
+            throw new CustomException(ErrorCode.SOCIAL_EMAIL_CHANGE_FORBIDDEN);
+        }
     }
 
     private String createWithdrawnEmail(Long userId) {

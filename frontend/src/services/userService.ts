@@ -5,6 +5,7 @@ export type UserProfile = {
   email: string;
   nickname: string;
   isAdmin?: boolean;
+  authProvider?: string | null;
   joinedAt: string;
   updatedAt?: string;
 };

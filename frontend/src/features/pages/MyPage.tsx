@@ -52,6 +52,16 @@ const MYPAGE_PAGE_PADDING_X = 128;
 const MYPAGE_PAGE_PADDING_Y = 64;
 const PASSWORD_MIN_LENGTH = 8;
 const PROFILE_NOTICE_DURATION_MS = 3500;
+const LOCAL_AUTH_PROVIDER = "LOCAL";
+const SOCIAL_EMAIL_CHANGE_BLOCK_MESSAGE = "소셜로그인 이용자는 이메일 수정이 불가능합니다.";
+
+type MyPageProfile = {
+  email: string;
+  nickname: string;
+  joinedAt: string;
+  isAdmin?: boolean;
+  authProvider?: string | null;
+};
 
 function hasRequiredPasswordSpecialCharacter(value: string) {
   return /[^A-Za-z0-9]/.test(value);
@@ -66,6 +76,7 @@ function MyPage() {
   const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
   const [joinedAt, setJoinedAt] = useState("");
+  const [authProvider, setAuthProvider] = useState(LOCAL_AUTH_PROVIDER);
   const [activeProfileModal, setActiveProfileModal] = useState<ProfileModalKind | null>(null);
   const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
@@ -86,11 +97,13 @@ function MyPage() {
   });
   const stageScale = stageWidth / MYPAGE_LAYOUT_WIDTH;
   const stageHeight = MYPAGE_LAYOUT_HEIGHT * stageScale;
+  const isSocialLoginUser = authProvider.trim().toUpperCase() !== LOCAL_AUTH_PROVIDER;
 
-  function applyProfile(profile: { email: string; nickname: string; joinedAt: string; isAdmin?: boolean }) {
+  function applyProfile(profile: MyPageProfile) {
     setNickname(profile.nickname);
     setEmail(profile.email);
     setJoinedAt(profile.joinedAt);
+    setAuthProvider(profile.authProvider ?? LOCAL_AUTH_PROVIDER);
     setProfileNickname(profile.nickname);
     setProfileEmail(profile.email);
     setCurrentUserIsAdmin(profile.isAdmin);
@@ -216,6 +229,11 @@ function MyPage() {
   }
 
   function handleOpenProfileModal(kind: ProfileModalKind) {
+    if (kind === "email" && isSocialLoginUser) {
+      showProfileNotice(SOCIAL_EMAIL_CHANGE_BLOCK_MESSAGE, "error");
+      return;
+    }
+
     closeProfileNotice();
     setActiveProfileModal(kind);
   }

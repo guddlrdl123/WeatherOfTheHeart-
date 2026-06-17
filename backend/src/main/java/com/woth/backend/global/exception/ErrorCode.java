@@ -10,6 +10,7 @@ public enum ErrorCode {
     USER_ALREADY_EXISTS("USER_002", "이미 등록된 이메일입니다."),
     USER_PASSWORD_MISMATCH("USER_003", "현재 비밀번호가 일치하지 않습니다."),
     USER_WITHDRAWN("USER_004", "탈퇴한 회원입니다."),
+    SOCIAL_EMAIL_CHANGE_FORBIDDEN("USER_005", "소셜로그인 이용자는 이메일 수정이 불가능합니다."),
     AUTH_REQUIRED("AUTH_001", "로그인이 필요합니다."),
     AUTH_INVALID("AUTH_002", "인증 정보가 올바르지 않습니다."),
     AUTH_EXPIRED("AUTH_003", "인증 시간이 만료되었습니다."),
