@@ -19,6 +19,7 @@ public class AuthService {
     private static final String ADMIN_EMAIL = "admin@maeum.weather";
     private static final String ADMIN_PASSWORD = "admin1234";
     private static final String DEFAULT_NICKNAME = "나그네";
+    private static final int NICKNAME_MAX_LENGTH = 10;
 
     private final UserRepository userRepository;
     private final EmailVerificationService emailVerificationService;
@@ -150,6 +151,12 @@ public class AuthService {
             return DEFAULT_NICKNAME;
         }
 
-        return nickname.trim();
+        String trimmedNickname = nickname.trim();
+
+        if (trimmedNickname.length() <= NICKNAME_MAX_LENGTH) {
+            return trimmedNickname;
+        }
+
+        return trimmedNickname.substring(0, NICKNAME_MAX_LENGTH);
     }
 }

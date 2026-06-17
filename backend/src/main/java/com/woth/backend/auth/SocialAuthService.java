@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
 import com.woth.backend.user.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class SocialAuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(SocialAuthService.class);
 
     private static final String GOOGLE_AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth";
     private static final String GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -205,27 +209,53 @@ public class SocialAuthService {
 
     private JsonNode postForm(String url, MultiValueMap<String, String> form) {
         try {
-            return webClient.post()
+            JsonNode response = webClient.post()
                     .uri(url)
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                     .body(BodyInserters.fromFormData(form))
                     .retrieve()
                     .bodyToMono(JsonNode.class)
                     .block();
+
+            if (response == null || response.has("error")) {
+                log.warn("OAuth token request failed. url={}, response={}", url, response);
+                throw new CustomException(ErrorCode.OAUTH_LOGIN_FAILED);
+            }
+
+            return response;
         } catch (WebClientResponseException e) {
+            log.warn(
+                    "OAuth token request failed. url={}, status={}, body={}",
+                    url,
+                    e.getStatusCode(),
+                    e.getResponseBodyAsString()
+            );
             throw new CustomException(ErrorCode.OAUTH_LOGIN_FAILED);
         }
     }
 
     private JsonNode getBearer(String url, String accessToken) {
         try {
-            return webClient.get()
+            JsonNode response = webClient.get()
                     .uri(url)
                     .headers(headers -> headers.setBearerAuth(accessToken))
                     .retrieve()
                     .bodyToMono(JsonNode.class)
                     .block();
+
+            if (response == null || response.has("error") || response.has("error_description")) {
+                log.warn("OAuth userinfo request failed. url={}, response={}", url, response);
+                throw new CustomException(ErrorCode.OAUTH_LOGIN_FAILED);
+            }
+
+            return response;
         } catch (WebClientResponseException e) {
+            log.warn(
+                    "OAuth userinfo request failed. url={}, status={}, body={}",
+                    url,
+                    e.getStatusCode(),
+                    e.getResponseBodyAsString()
+            );
             throw new CustomException(ErrorCode.OAUTH_LOGIN_FAILED);
         }
     }

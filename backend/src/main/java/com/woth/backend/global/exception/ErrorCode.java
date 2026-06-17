@@ -33,9 +33,9 @@ public enum ErrorCode {
     ROOM_NOT_FOUND("ROOM_001", "존재하지 않는 방입니다."),
     AI_API_KEY_MISSING("AI_001", "OpenAI API 키가 설정되지 않았습니다."),
     AI_API_ERROR("AI_002", "OpenAI API 호출에 실패했습니다."),
-    OAUTH_CONFIG_MISSING("OAUTH_001", "Social login config is missing."),
-    OAUTH_LOGIN_FAILED("OAUTH_002", "Social login failed."),
-    OAUTH_EMAIL_MISSING("OAUTH_003", "Social login email permission is required."),
+    OAUTH_CONFIG_MISSING("OAUTH_001", "소셜 로그인 설정이 누락되었습니다."),
+    OAUTH_LOGIN_FAILED("OAUTH_002", "소셜 로그인 인증 정보를 확인하지 못했습니다."),
+    OAUTH_EMAIL_MISSING("OAUTH_003", "소셜 계정의 이메일 제공 동의가 필요합니다."),
     INVALID_INPUT("GLOBAL_001", "입력값이 올바르지 않습니다.");
 
     private final String code;
