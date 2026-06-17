@@ -1,14 +1,30 @@
 import { Mail, UserRound } from "lucide-react";
 import { trimTrailingDatePeriod } from "../../../utils/date";
+import googleIcon from "../../../assets/google.png";
+import kakaoIcon from "../../../assets/kakao1.png";
+import naverIcon from "../../../assets/naver3.png";
 
 type MyPageProfileSummaryProps = {
   nickname: string;
   email: string;
+  authProvider: string;
   joinedAt: string;
   isProfileLoading: boolean;
   isSavingProfile: boolean;
   onEditProfile: () => void;
   onLogout: () => void;
+};
+
+const AUTH_PROVIDER_LABELS: Record<string, string> = {
+  google: "Google 계정",
+  kakao: "Kakao 계정",
+  naver: "Naver 계정",
+};
+
+const AUTH_PROVIDER_ICONS: Record<string, string> = {
+  google: googleIcon,
+  kakao: kakaoIcon,
+  naver: naverIcon,
 };
 
 function formatJoinedAt(value: string) {
@@ -25,15 +41,31 @@ function formatJoinedAt(value: string) {
   }).format(date));
 }
 
+function getSocialAuthProviderLabel(authProvider: string) {
+  const normalizedProvider = authProvider.trim().toLowerCase();
+
+  return AUTH_PROVIDER_LABELS[normalizedProvider] ?? null;
+}
+
+function getSocialAuthProviderIcon(authProvider: string) {
+  const normalizedProvider = authProvider.trim().toLowerCase();
+
+  return AUTH_PROVIDER_ICONS[normalizedProvider] ?? null;
+}
+
 export function MyPageProfileSummary({
   nickname,
   email,
+  authProvider,
   joinedAt,
   isProfileLoading,
   isSavingProfile,
   onEditProfile,
   onLogout,
 }: MyPageProfileSummaryProps) {
+  const socialAuthProviderLabel = getSocialAuthProviderLabel(authProvider);
+  const socialAuthProviderIcon = getSocialAuthProviderIcon(authProvider);
+
   return (
     <section className="mw-surface h-[132px] rounded-xl p-6">
       <div className="flex items-start justify-between gap-6">
@@ -46,12 +78,18 @@ export function MyPageProfileSummary({
             <h1 className="mt-2 truncate text-2xl font-normal text-[#5a4632]">
               {isProfileLoading ? "프로필을 불러오는 중" : `${nickname || "나그네"}님의 마음 기록`}
             </h1>
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[#5a4632]/58">
-              <span className="inline-flex items-center gap-1.5">
+            <div className="mt-3 flex flex-wrap items-center gap-1 text-sm text-[#5a4632]/58">
+              <span className="inline-flex items-center gap-2">
                 <Mail size={14} />
                 {email || "이메일 정보 없음"}
               </span>
-              <span className="h-3 w-px bg-[#5a4632]/18" />
+              {socialAuthProviderLabel ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#9b6b54]/20 bg-white/35 px-2 py-0.5 text-[11px] leading-4 text-[#5a4632]/62">
+                  {socialAuthProviderIcon ? <img src={socialAuthProviderIcon} alt="" className="h-3.5 w-3.5 shrink-0 rounded-full" /> : null}
+                  {socialAuthProviderLabel}
+                </span>
+              ) : null}
+              <span className="ml-2 h-3 w-px bg-[#5a4632]/18" />
               <span>가입일 {joinedAt ? formatJoinedAt(joinedAt) : "정보 없음"}</span>
             </div>
           </div>

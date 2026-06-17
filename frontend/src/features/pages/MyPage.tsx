@@ -53,7 +53,7 @@ const MYPAGE_PAGE_PADDING_Y = 64;
 const PASSWORD_MIN_LENGTH = 8;
 const PROFILE_NOTICE_DURATION_MS = 3500;
 const LOCAL_AUTH_PROVIDER = "LOCAL";
-const SOCIAL_EMAIL_CHANGE_BLOCK_MESSAGE = "소셜로그인 이용자는 이메일 수정이 불가능합니다.";
+const SOCIAL_ACCOUNT_CHANGE_BLOCK_MESSAGE = "소셜로그인 이용자는 이메일/비밀번호 수정이 불가능합니다.";
 
 type MyPageProfile = {
   email: string;
@@ -65,6 +65,12 @@ type MyPageProfile = {
 
 function hasRequiredPasswordSpecialCharacter(value: string) {
   return /[^A-Za-z0-9]/.test(value);
+}
+
+function normalizeAuthProvider(value?: string | null) {
+  const normalizedValue = value?.trim();
+
+  return normalizedValue ? normalizedValue : LOCAL_AUTH_PROVIDER;
 }
 
 function MyPage() {
@@ -97,13 +103,13 @@ function MyPage() {
   });
   const stageScale = stageWidth / MYPAGE_LAYOUT_WIDTH;
   const stageHeight = MYPAGE_LAYOUT_HEIGHT * stageScale;
-  const isSocialLoginUser = authProvider.trim().toUpperCase() !== LOCAL_AUTH_PROVIDER;
+  const isSocialLoginUser = normalizeAuthProvider(authProvider).toUpperCase() !== LOCAL_AUTH_PROVIDER;
 
   function applyProfile(profile: MyPageProfile) {
     setNickname(profile.nickname);
     setEmail(profile.email);
     setJoinedAt(profile.joinedAt);
-    setAuthProvider(profile.authProvider ?? LOCAL_AUTH_PROVIDER);
+    setAuthProvider(normalizeAuthProvider(profile.authProvider));
     setProfileNickname(profile.nickname);
     setProfileEmail(profile.email);
     setCurrentUserIsAdmin(profile.isAdmin);
@@ -229,8 +235,8 @@ function MyPage() {
   }
 
   function handleOpenProfileModal(kind: ProfileModalKind) {
-    if (kind === "email" && isSocialLoginUser) {
-      showProfileNotice(SOCIAL_EMAIL_CHANGE_BLOCK_MESSAGE, "error");
+    if ((kind === "email" || kind === "password") && isSocialLoginUser) {
+      showProfileNotice(SOCIAL_ACCOUNT_CHANGE_BLOCK_MESSAGE, "error");
       return;
     }
 
@@ -448,6 +454,7 @@ function MyPage() {
             <MyPageProfileSummary
               nickname={nickname}
               email={email}
+              authProvider={authProvider}
               joinedAt={joinedAt}
               isProfileLoading={isProfileLoading}
               isSavingProfile={isSavingProfile}

@@ -1,8 +1,8 @@
 import { getSocialAuthorizeUrl, type SocialProvider } from "../../services/authService";
 import { useState } from "react";
 import googleIcon from "../../assets/google.png";
-import naverIcon from "../../assets/naver2.png";
-import kakaoIcon from "../../assets/kakao1.png";
+import naverIcon from "../../assets/naver4.png";
+import kakaoIcon from "../../assets/kakao2.png";
 
 type SocialAuthButtonsProps = {
   disabled?: boolean;
@@ -41,13 +41,13 @@ const PROVIDERS: Array<{
     {
       provider: "kakao",
       label: "Kakao",
-      className: "border-[#dadce0] bg-white text-[#3c4043] hover:bg-[#f8fafd]",
+      className: "border-[#dadce0] bg-[#fee500] text-[#191919] hover:bg-[#f4dc00]",
       icon: kakaoIcon,
     },
     {
       provider: "naver",
       label: "Naver",
-      className: "border-[#dadce0] bg-white text-[#3c4043] hover:bg-[#f8fafd]",
+      className: "border-[#dadce0] bg-[#03c75a] text-white hover:bg-[#02b350]",
       icon: naverIcon,
     },
   ];
@@ -102,17 +102,17 @@ export function SocialAuthButtons({ disabled, onError }: SocialAuthButtonsProps)
     //   ))}
     // </div>
 
-    <div className="flex flex-col gap-2 grid grid-cols-3">
-      {PROVIDERS.map(({ provider, label, className, icon }) => (
+    <div className="flex justify-center gap-4">
+      {PROVIDERS.map(({ provider, className, icon }) => (
         <button
           key={provider}
           type="button"
           disabled={disabled || Boolean(pendingProvider)}
           onClick={() => void handleSocialLogin(provider)}
-          className={`flex flex-col items-center justify-center gap-1 rounded-[8px] border px-3 py-3 text-xs font-medium transition disabled:opacity-50 ${className}`}
+          className={`flex flex-col items-center justify-center gap-1 rounded-full border p-2 text-xs font-medium transition disabled:opacity-50 ${className}`}
         >
           {icon ? <img src={icon} alt="" className="h-5 w-5 shrink-0" /> : null}
-          {label}
+          {/* {label} */}
         </button>
       ))}
     </div>
