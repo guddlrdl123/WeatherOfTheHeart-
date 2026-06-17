@@ -83,12 +83,13 @@ public class PlazaImagePromptBuilder {
        If there are more objects that naturally belong indoors, please make it a room, and if there are more objects that naturally belong outdoors, please make it an outdoor plaza.
 
        Please preserve the atmosphere of the Korean app "Weather of the Heart":
-       a warm, quiet, poetic scene with soft lighting.
-       A cozy hand-painted illustration style.
-       Soft pastel colors.
-       An emotional atmosphere like a diary.
+       a warm, quiet, poetic scene with gentle but clear lighting.
+       A polished hand-painted storybook illustration style with clean painted edges and readable object shapes.
+       Soft muted pastel colors with clear value contrast, so that each object remains clearly visible.
+       A diary-like emotional atmosphere, while keeping the image clear, refined, and not blurry or washed out.
 
        Please make the placed objects the center of the scene.
+       Each placed object should have a clear silhouette, clean edges, and recognizable details.
        Please make sure it does not look like an object list or a sticker collection.
        Please reinterpret it naturally as one complete emotional space.
        Please place the objects with enough space so that they do not blend together too much.
@@ -98,7 +99,7 @@ public class PlazaImagePromptBuilder {
        Please prioritize a natural and emotional finished image over an exact copy.
 
        Please do not add too many large new objects.
-       However, you may naturally add basic background elements that complete the scene, such as the floor, walls, sky, lighting, shadows, and atmosphere.
+       However, you may naturally add basic background elements that complete the scene, such as the floor, walls, sky, lighting, shadows, and atmosphere, while keeping the placed objects clear and readable.
 
        Do not include user names, human faces, logos, UI, captions, or watermarks.
        Do not include any readable text in the image, including Korean, English, numbers, or symbols.
