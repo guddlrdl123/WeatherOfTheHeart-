@@ -11,6 +11,7 @@ import "../styles/App.css";
 import MyPage from "../features/pages/MyPage";
 import PlazaPage from "../features/pages/PlazaPage";
 import MailboxPage from "../features/pages/MailboxPage";
+import QnaPage from "../features/pages/QnaPage";
 
 type RouteGuardProps = {
   children: ReactNode;
@@ -144,6 +145,15 @@ function App() {
         element={
           <ProtectedRoute authenticated={authenticated}>
             <MailboxPage />
+          </ProtectedRoute>
+        }
+      />
+      {/* 상담 · QnA 화면: FAQ와 1:1 문의 폼을 제공합니다. */}
+      <Route
+        path="/qna"
+        element={
+          <ProtectedRoute authenticated={authenticated}>
+            <QnaPage />
           </ProtectedRoute>
         }
       />

@@ -1,4 +1,4 @@
-import { House, Home, Inbox, LogOut, UserRound, CastleIcon } from "lucide-react";
+import { House, Home, Inbox, LogOut, UserRound, CastleIcon, MessageCircleQuestion } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { fetchMailboxUnreadCount, MAILBOX_CHANGED_EVENT } from "../../services/mailboxService";
@@ -108,6 +108,15 @@ export function AppHeader() {
                                     {unreadMailboxCount > 99 ? "99+" : unreadMailboxCount}
                                 </span>
                             )}
+                        </Link>
+                        {/* 상담 · QnA: 우편함과 로그아웃 사이에 위치합니다. */}
+                        <Link
+                            to="/qna"
+                            className="p-2 rounded-md border border-[#5a4632]/20 hover:bg-[#5a4632]/10 text-[#5a4632]/80"
+                            title="상담 · QnA"
+                            aria-label="상담 · QnA"
+                        >
+                            <MessageCircleQuestion size={14} />
                         </Link>
                         <button
                             type="button"
