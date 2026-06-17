@@ -62,14 +62,6 @@ export function LoginForm() {
         <p className="mb-2 text-[0.68rem] tracking-[0.2em] text-[#e0d2ba]">LOGIN</p>
       </div>
 
-      <SocialAuthButtons disabled={isSubmitting} onError={setError} />
-
-      <div className="flex items-center gap-3 text-[0.68rem] text-white/32">
-        <span className="h-px flex-1 bg-white/15" />
-        <span>또는 이메일로 로그인</span>
-        <span className="h-px flex-1 bg-white/15" />
-      </div>
-
       <label className="flex flex-col gap-2 text-sm">
         이메일
         <input className="mw-input h-10 px-3 text-sm" value={email} onChange={(event) => setEmail(event.target.value)} />
@@ -101,6 +93,16 @@ export function LoginForm() {
       <button type="submit" disabled={isSubmitting} className="mw-button-solid mt-2 h-10 rounded-[8px] px-3 text-sm disabled:opacity-50">
         로그인
       </button>
+
+      <div className="my-2 flex items-center gap-3">
+        <div className="h-px flex-1 bg-gray-200" />
+        <span className="whitespace-nowrap text-xs">
+          또는 소셜 로그인
+        </span>
+        <div className="h-px flex-1 bg-gray-200" />
+      </div>
+
+      <SocialAuthButtons disabled={isSubmitting} onError={setError} />
 
       <div className="flex flex-col items-center gap-2">
         <div className="flex text-center text-xs text-white/38 gap-2">

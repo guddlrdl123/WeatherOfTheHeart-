@@ -4,7 +4,6 @@ import { Eye, EyeOff } from "lucide-react";
 import { AuthApiError, sendEmailVerification, signup, verifyEmail } from "../../services/authService";
 import { Link, useNavigate } from "react-router-dom";
 import { normalizeProfileNickname, PROFILE_NICKNAME_MAX_LENGTH, setAuthenticated, setCurrentUserId, setCurrentUserIsAdmin, setProfileEmail, setProfileNickname } from "../../utils/authSession";
-import { SocialAuthButtons } from "./SocialAuthButtons";
 // import { useAppStore } from "../../stores/AppStore";
 
 const VERIFICATION_CODE_TTL_SECONDS = 10 * 60;
@@ -268,14 +267,6 @@ export function SignupForm() {
         <form onSubmit={handleSubmit} className="mw-surface mx-auto flex w-full max-w-[440px] flex-col gap-4 rounded-xl p-8 select-none">
             <div>
                 <p className="mb-2 text-[0.68rem] tracking-[0.2em] text-[#e0d2ba]">SIGNUP</p>
-            </div>
-
-            <SocialAuthButtons disabled={isSubmitting} onError={setError} />
-
-            <div className="flex items-center gap-3 text-[0.68rem] text-white/32">
-                <span className="h-px flex-1 bg-white/15" />
-                <span>또는 이메일로 가입</span>
-                <span className="h-px flex-1 bg-white/15" />
             </div>
 
             <div className="flex flex-col gap-2 text-sm text-white/54">
