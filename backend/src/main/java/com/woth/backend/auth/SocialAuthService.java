@@ -73,7 +73,7 @@ public class SocialAuthService {
 
     public String createAuthorizationUrl(String providerKey, String redirectUri, String state) {
         OAuthProvider provider = OAuthProvider.from(providerKey);
-        validateRedirectUri(redirectUri);
+        validateRedirectUri(provider, redirectUri);
 
         return switch (provider) {
             case GOOGLE -> createGoogleAuthorizationUrl(redirectUri, state);
@@ -84,7 +84,7 @@ public class SocialAuthService {
 
     public User login(String providerKey, String code, String redirectUri, String state) {
         OAuthProvider provider = OAuthProvider.from(providerKey);
-        validateRedirectUri(redirectUri);
+        validateRedirectUri(provider, redirectUri);
 
         OAuthProfile profile = switch (provider) {
             case GOOGLE -> fetchGoogleProfile(code, redirectUri);
@@ -286,10 +286,39 @@ public class SocialAuthService {
         }
     }
 
-    private void validateRedirectUri(String redirectUri) {
-        if (!hasText(redirectUri) || !allowedRedirectUris.contains(redirectUri)) {
+    private void validateRedirectUri(OAuthProvider provider, String redirectUri) {
+        if (!hasText(redirectUri) || !isAllowedRedirectUri(provider, redirectUri)) {
             throw new CustomException(ErrorCode.INVALID_INPUT);
         }
+    }
+
+    private boolean isAllowedRedirectUri(OAuthProvider provider, String redirectUri) {
+        if (allowedRedirectUris.contains(redirectUri)) {
+            return true;
+        }
+
+        String callbackPath = "/oauth/callback/" + provider.key();
+        return allowedRedirectUris.stream()
+                .map(this::trimTrailingSlash)
+                .filter(this::isOriginOnly)
+                .map(origin -> origin + callbackPath)
+                .anyMatch(redirectUri::equals);
+    }
+
+    private boolean isOriginOnly(String value) {
+        if (!(value.startsWith("http://") || value.startsWith("https://"))) {
+            return false;
+        }
+
+        return !value.substring(value.indexOf("://") + 3).contains("/");
+    }
+
+    private String trimTrailingSlash(String value) {
+        if (value.endsWith("/") && value.length() > 1) {
+            return value.substring(0, value.length() - 1);
+        }
+
+        return value;
     }
 
     private void requireCredential(String value) {
