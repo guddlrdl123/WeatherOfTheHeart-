@@ -147,6 +147,64 @@ public class UserService {
         return user;
     }
 
+    private void validateSocialUserForWithdraw(User user) {
+        String authProvider = user.getAuthProvider();
+
+        if (authProvider == null || LOCAL_AUTH_PROVIDER.equalsIgnoreCase(authProvider)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+    }
+
+    @Transactional
+    public void sendSocialWithdrawEmailCode(Long userId) {
+        User user = getUser(userId);
+        validateSocialUserForWithdraw(user);
+
+        emailVerificationService.sendCodeForWithdraw(user.getEmail());
+    }
+
+
+    @Transactional
+    public void withdrawSocial(Long userId, String code) {
+        User user = getUser(userId);
+        validateSocialUserForWithdraw(user);
+
+        if (!hasText(code)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        emailVerificationService.verifyCode(user.getEmail(), code);
+
+        String originalEmail = user.getEmail();
+        User withdrawnOwner = getWithdrawnOwner();
+
+        objectLikeRepository.deleteByUserId(userId);
+        objectLikeRepository.deleteByPlazaOwnerId(userId);
+        objectLikeRepository.deleteByPlazaEntryOwnerId(userId);
+
+        plazaEntryRepository.deleteByPlazaOwnerId(userId);
+        plazaEntryRepository.deleteOpenByOwnerId(userId);
+        plazaEntryRepository.anonymizeCompletedOwnerByOwnerId(userId, withdrawnOwner);
+        plazaRepository.deleteByOwnerId(userId);
+
+        privateMemoryRepository.deleteByPrivateRoomUserId(userId);
+        privateRoomRepository.deleteByUserId(userId);
+
+        letterRepository.deleteByReceiverId(userId);
+        letterRepository.clearSenderByUserId(userId);
+        refreshTokenRepository.deleteByUserId(userId);
+        passwordResetTokenRepository.deleteByEmail(originalEmail);
+        emailVerificationService.clear(originalEmail);
+
+        user.updateNickname(WITHDRAWN_NICKNAME);
+        user.updatePassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.updateEmail(createWithdrawnEmail(userId));
+        user.withdraw();
+    }
+
+
+
+
     @Transactional
     public void withdraw(Long userId, String currentPassword) {
         User user = getUser(userId);

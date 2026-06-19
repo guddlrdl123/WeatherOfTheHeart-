@@ -44,6 +44,23 @@ public class UserController {
         return ApiResponse.success(toResponse(userService.getUser(userId)));
     }
 
+    @PostMapping("/me/social-withdraw/email/send")
+    public ApiResponse<Void> sendSocialWithdrawEmailCode(
+            @CurrentUser AuthenticatedUser currentUser
+    ) {
+        userService.sendSocialWithdrawEmailCode(currentUser.id());
+        return ApiResponse.success(null);
+    }
+
+    @DeleteMapping("/me/social-withdraw")
+    public ApiResponse<Void> withdrawSocialMe(
+            @CurrentUser AuthenticatedUser currentUser,
+            @Valid @RequestBody SocialWithdrawRequest request
+    ) {
+        userService.withdrawSocial(currentUser.id(), request.code());
+        return ApiResponse.success(null);
+    }
+
     @GetMapping("/me")
     public ApiResponse<UserProfileResponse> getMe(@CurrentUser AuthenticatedUser currentUser) {
         return ApiResponse.success(toResponse(userService.getUser(currentUser.id())));
@@ -243,6 +260,11 @@ public class UserController {
             @NotBlank String currentPassword
     ) {
     }
+    public record SocialWithdrawRequest(
+            @NotBlank @Pattern(regexp = "[0-9]{6}") String code
+    ) {
+    }
+
 
     public record UserProfileResponse(
             Long id,
