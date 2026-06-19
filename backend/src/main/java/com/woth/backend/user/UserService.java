@@ -147,14 +147,14 @@ public class UserService {
         return user;
     }
 
+    // [수정] 소셜 회원 여부 판단 시 공통 로컬 회원 판별 메서드를 재사용하도록 변경
     private void validateSocialUserForWithdraw(User user) {
-        String authProvider = user.getAuthProvider();
-
-        if (authProvider == null || LOCAL_AUTH_PROVIDER.equalsIgnoreCase(authProvider)) {
+        if (isLocalUser(user)) {
             throw new CustomException(ErrorCode.INVALID_INPUT);
         }
     }
 
+    // [추가] 소셜 로그인 회원 탈퇴 전 이메일 인증코드를 발송
     @Transactional
     public void sendSocialWithdrawEmailCode(Long userId) {
         User user = getUser(userId);
@@ -163,52 +163,29 @@ public class UserService {
         emailVerificationService.sendCodeForWithdraw(user.getEmail());
     }
 
-
+    // [수정] 소셜 회원 탈퇴는 이메일 인증코드 검증 후 공통 탈퇴 처리 메서드를 호출
     @Transactional
     public void withdrawSocial(Long userId, String code) {
         User user = getUser(userId);
+
         validateSocialUserForWithdraw(user);
+        validateWithdrawEmailCode(user, code);
 
-        if (!hasText(code)) {
-            throw new CustomException(ErrorCode.INVALID_INPUT);
-        }
-
-        emailVerificationService.verifyCode(user.getEmail(), code);
-
-        String originalEmail = user.getEmail();
-        User withdrawnOwner = getWithdrawnOwner();
-
-        objectLikeRepository.deleteByUserId(userId);
-        objectLikeRepository.deleteByPlazaOwnerId(userId);
-        objectLikeRepository.deleteByPlazaEntryOwnerId(userId);
-
-        plazaEntryRepository.deleteByPlazaOwnerId(userId);
-        plazaEntryRepository.deleteOpenByOwnerId(userId);
-        plazaEntryRepository.anonymizeCompletedOwnerByOwnerId(userId, withdrawnOwner);
-        plazaRepository.deleteByOwnerId(userId);
-
-        privateMemoryRepository.deleteByPrivateRoomUserId(userId);
-        privateRoomRepository.deleteByUserId(userId);
-
-        letterRepository.deleteByReceiverId(userId);
-        letterRepository.clearSenderByUserId(userId);
-        refreshTokenRepository.deleteByUserId(userId);
-        passwordResetTokenRepository.deleteByEmail(originalEmail);
-        emailVerificationService.clear(originalEmail);
-
-        user.updateNickname(WITHDRAWN_NICKNAME);
-        user.updatePassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-        user.updateEmail(createWithdrawnEmail(userId));
-        user.withdraw();
+        withdrawUser(user);
     }
 
-
-
-
+    // [수정] 일반 회원 탈퇴는 비밀번호 검증 후 공통 탈퇴 처리 메서드를 호출
     @Transactional
     public void withdraw(Long userId, String currentPassword) {
         User user = getUser(userId);
 
+        validateWithdrawPassword(user, currentPassword);
+
+        withdrawUser(user);
+    }
+
+    // [추가] 일반 회원 탈퇴 시 현재 비밀번호 검증 로직 분리
+    private void validateWithdrawPassword(User user, String currentPassword) {
         if (!hasText(currentPassword)) {
             throw new CustomException(ErrorCode.INVALID_INPUT);
         }
@@ -216,7 +193,20 @@ public class UserService {
         if (!matchesPassword(currentPassword, user.getPassword())) {
             throw new CustomException(ErrorCode.USER_PASSWORD_MISMATCH);
         }
+    }
 
+    // [추가] 소셜 회원 탈퇴 시 이메일 인증코드 검증 로직 분리
+    private void validateWithdrawEmailCode(User user, String code) {
+        if (!hasText(code)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        emailVerificationService.verifyCode(user.getEmail(), code);
+    }
+
+    // [추가] 일반 탈퇴와 소셜 탈퇴가 함께 사용하는 실제 탈퇴 처리 공통 메서드
+    private void withdrawUser(User user) {
+        Long userId = user.getId();
         String originalEmail = user.getEmail();
         User withdrawnOwner = getWithdrawnOwner();
 
@@ -296,6 +286,13 @@ public class UserService {
 
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    // [추가] authProvider 기준으로 일반 회원인지 확인하는 공통 메서드
+    private boolean isLocalUser(User user) {
+        String authProvider = user.getAuthProvider();
+
+        return authProvider == null || LOCAL_AUTH_PROVIDER.equalsIgnoreCase(authProvider);
     }
 
     private boolean matchesPassword(String rawPassword, String storedPassword) {
