@@ -244,7 +244,7 @@ public class UserService {
     }
 
     private void ensureEmailIsNotUsed(String email) {
-        userRepository.findByEmailAndIsDeletedFalse(email)
+        userRepository.findByEmailAndAuthProviderIgnoreCaseAndIsDeletedFalse(email, LOCAL_AUTH_PROVIDER)
                 .ifPresent(existingUser -> {
                     throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
                 });

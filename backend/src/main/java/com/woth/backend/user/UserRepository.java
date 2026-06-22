@@ -9,7 +9,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     Optional<User> findByEmailAndIsDeletedFalse(String email);
+    Optional<User> findByEmailAndAuthProviderIgnoreCaseAndIsDeletedFalse(String email, String authProvider);
+    Optional<User> findByAuthProviderIgnoreCaseAndAuthProviderIdAndIsDeletedFalse(String authProvider, String authProviderId);
     Optional<User> findByIdAndIsDeletedFalse(Long id);
     boolean existsByEmail(String email);
     boolean existsByEmailAndIsDeletedFalse(String email);
+    boolean existsByEmailAndAuthProviderIgnoreCase(String email, String authProvider);
+    boolean existsByEmailAndAuthProviderIgnoreCaseAndIsDeletedFalse(String email, String authProvider);
 }

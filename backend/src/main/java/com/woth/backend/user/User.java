@@ -20,7 +20,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // AUTO_INCREMENT 설정 적용
 
-    @Column(nullable = false, unique = true, length = 100) // NOT NULL, UNIQUE 제약조건
+    @Column(nullable = false, length = 100) // NOT NULL 제약조건
     private String email;
 
     @Column(nullable = false) // 로그인 비밀번호 (암호화되어 저장됨)

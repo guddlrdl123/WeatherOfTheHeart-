@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 public class PasswordResetService {
 
     private static final int RESET_TOKEN_EXPIRES_MINUTES = 10;
+    private static final String LOCAL_AUTH_PROVIDER = "LOCAL";
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final PasswordResetTokenRepository passwordResetTokenRepository;
@@ -40,7 +41,7 @@ public class PasswordResetService {
 
     @Transactional
     public void requestReset(String email) {
-        User user = userRepository.findByEmailAndIsDeletedFalse(email).orElse(null);
+        User user = userRepository.findByEmailAndAuthProviderIgnoreCaseAndIsDeletedFalse(email, LOCAL_AUTH_PROVIDER).orElse(null);
 
         if (user == null) {
             return;
@@ -66,7 +67,7 @@ public class PasswordResetService {
     @Transactional
     public void resetPassword(String email, String token, String newPassword) {
         PasswordResetToken resetToken = getValidResetToken(email, token);
-        User user = userRepository.findByEmailAndIsDeletedFalse(email)
+        User user = userRepository.findByEmailAndAuthProviderIgnoreCaseAndIsDeletedFalse(email, LOCAL_AUTH_PROVIDER)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         user.updatePassword(passwordEncoder.encode(newPassword));

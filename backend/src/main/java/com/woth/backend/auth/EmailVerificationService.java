@@ -31,6 +31,7 @@ public class EmailVerificationService {
   // - 다크 배경용: 흰색 아이콘 (weather-logo-dark.png)
   private static final String EMAIL_LOGO_LIGHT_CONTENT_ID = "weatherLogoWhite";
   private static final String EMAIL_LOGO_DARK_CONTENT_ID = "weatherLogoDark";
+  private static final String LOCAL_AUTH_PROVIDER = "LOCAL";
 
   private final EmailVerificationRepository emailVerificationRepository;
   private final UserRepository userRepository;
@@ -51,7 +52,7 @@ public class EmailVerificationService {
 
   @Transactional
   public void sendCode(String email) {
-    if (userRepository.existsByEmailAndIsDeletedFalse(email)) {
+    if (userRepository.existsByEmailAndAuthProviderIgnoreCaseAndIsDeletedFalse(email, LOCAL_AUTH_PROVIDER)) {
       throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
     }
 

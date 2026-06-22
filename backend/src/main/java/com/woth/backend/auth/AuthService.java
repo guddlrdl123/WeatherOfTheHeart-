@@ -18,6 +18,7 @@ public class AuthService {
 
     private static final String ADMIN_EMAIL = "admin@maeum.weather";
     private static final String ADMIN_PASSWORD = "admin1234";
+    private static final String LOCAL_AUTH_PROVIDER = "LOCAL";
     private static final String DEFAULT_NICKNAME = "나그네";
     private static final int NICKNAME_MAX_LENGTH = 10;
 
@@ -38,7 +39,7 @@ public class AuthService {
     @Transactional
     public User login(String email, String password) {
         if (ADMIN_EMAIL.equals(email) && ADMIN_PASSWORD.equals(password)) {
-            return userRepository.findByEmailAndIsDeletedFalse(email)
+            return userRepository.findByEmailAndAuthProviderIgnoreCaseAndIsDeletedFalse(email, LOCAL_AUTH_PROVIDER)
                     .map(user -> {
                         user.promoteToAdmin(passwordEncoder.encode(password));
                         return user;
@@ -46,9 +47,9 @@ public class AuthService {
                     .orElseGet(() -> createAdminUser(email, password));
         }
 
-        User user = userRepository.findByEmailAndIsDeletedFalse(email)
+        User user = userRepository.findByEmailAndAuthProviderIgnoreCaseAndIsDeletedFalse(email, LOCAL_AUTH_PROVIDER)
                 .orElseGet(() -> {
-                    if (userRepository.existsByEmail(email)) {
+                    if (userRepository.existsByEmailAndAuthProviderIgnoreCase(email, LOCAL_AUTH_PROVIDER)) {
                         throw new CustomException(ErrorCode.USER_WITHDRAWN);
                     }
                     throw new CustomException(ErrorCode.USER_NOT_FOUND);
@@ -64,8 +65,8 @@ public class AuthService {
 
     @Transactional
     public User signup(String email, String password, String nickname) {
-        if (userRepository.existsByEmail(email)) {
-            if (userRepository.existsByEmailAndIsDeletedFalse(email)) {
+        if (userRepository.existsByEmailAndAuthProviderIgnoreCase(email, LOCAL_AUTH_PROVIDER)) {
+            if (userRepository.existsByEmailAndAuthProviderIgnoreCaseAndIsDeletedFalse(email, LOCAL_AUTH_PROVIDER)) {
                 throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
             }
             throw new CustomException(ErrorCode.USER_WITHDRAWN);
@@ -78,6 +79,7 @@ public class AuthService {
                 .nickname(resolveNickname(nickname))
                 // 일반 회원가입 사용자는 관리자 권한 없이 생성
                 .isAdmin(false)
+                .authProvider(LOCAL_AUTH_PROVIDER)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -92,14 +94,20 @@ public class AuthService {
         }
 
         String email = profile.email().trim();
+        String authProvider = profile.provider().key();
 
-        return userRepository.findByEmailAndIsDeletedFalse(email)
+        return userRepository.findByAuthProviderIgnoreCaseAndAuthProviderIdAndIsDeletedFalse(authProvider, profile.providerId())
                 .map(user -> {
-                    user.linkOAuth(profile.provider().key(), profile.providerId());
+                    user.linkOAuth(authProvider, profile.providerId());
                     return user;
                 })
+                .or(() -> userRepository.findByEmailAndAuthProviderIgnoreCaseAndIsDeletedFalse(email, authProvider)
+                        .map(user -> {
+                            user.linkOAuth(authProvider, profile.providerId());
+                            return user;
+                        }))
                 .orElseGet(() -> {
-                    if (userRepository.existsByEmail(email)) {
+                    if (userRepository.existsByEmailAndAuthProviderIgnoreCase(email, authProvider)) {
                         throw new CustomException(ErrorCode.USER_WITHDRAWN);
                     }
 
@@ -108,7 +116,7 @@ public class AuthService {
                             .password(passwordEncoder.encode(UUID.randomUUID().toString()))
                             .nickname(resolveNickname(profile.nickname()))
                             .isAdmin(false)
-                            .authProvider(profile.provider().key())
+                            .authProvider(authProvider)
                             .authProviderId(profile.providerId())
                             .build();
 
@@ -122,6 +130,7 @@ public class AuthService {
                 .password(passwordEncoder.encode(password))
                 .nickname("Admin")
                 .isAdmin(true)
+                .authProvider(LOCAL_AUTH_PROVIDER)
                 .build();
 
         return userRepository.save(admin);
