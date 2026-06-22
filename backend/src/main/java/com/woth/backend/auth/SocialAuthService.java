@@ -104,6 +104,7 @@ public class SocialAuthService {
                 .queryParam("redirect_uri", redirectUri)
                 .queryParam("scope", "openid email profile")
                 .queryParam("state", state)
+                .queryParam("prompt", "select_account")
                 .build()
                 .toUriString();
     }
