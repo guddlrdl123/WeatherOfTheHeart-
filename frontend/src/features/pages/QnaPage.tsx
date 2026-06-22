@@ -18,7 +18,7 @@ const FAQ_ITEMS: FaqItem[] = [
   {
     question: "비밀번호를 잊어버렸어요.",
     answer:
-      "로그인 화면의 '비밀번호 재설정'을 눌러 가입한 이메일로 인증코드를 받으면, 코드 확인 후 새 비밀번호를 설정할 수 있습니다.",
+      "로그인 화면의 '비밀번호 찾기'를 눌러 가입한 이메일로 인증코드를 받으면, 코드 확인 후 새 비밀번호를 설정할 수 있습니다.",
   },
   {
     question: "광장은 무엇인가요?",
@@ -429,11 +429,10 @@ function QnaPage() {
                     onClick={() => setPage(index)}
                     disabled={isLoadingList}
                     aria-current={index === currentPage ? "page" : undefined}
-                    className={`h-8 min-w-8 rounded-md border px-2 text-sm transition-colors ${
-                      index === currentPage
-                        ? "border-[#9b6b54]/60 bg-[#9b6b54]/15 text-[#9b6b54]"
-                        : "border-[#5a4632]/20 text-[#5a4632]/80 hover:bg-[#5a4632]/10"
-                    }`}
+                    className={`h-8 min-w-8 rounded-md border px-2 text-sm transition-colors ${index === currentPage
+                      ? "border-[#9b6b54]/60 bg-[#9b6b54]/15 text-[#9b6b54]"
+                      : "border-[#5a4632]/20 text-[#5a4632]/80 hover:bg-[#5a4632]/10"
+                      }`}
                   >
                     {index + 1}
                   </button>

@@ -61,11 +61,27 @@ export type UserPlazaEntry = {
 };
 
 const PLAZA_WEATHER_KEYS = ["sunny", "rain", "cloud", "snow", "sunset", "night", "dawn", "cherry", "ocean"] as const satisfies readonly PlazaWeatherKey[];
+const PLAZA_ERROR_MESSAGE_BY_CODE: Record<string, string> = {
+  PLAZA_007: "광장 이미지 생성 중입니다. 우편함 도착 후 다시 삭제해주세요.",
+};
+
+function getApiErrorCode(message?: string | null) {
+  return message?.match(/\[Code:\s*([^\]]+)\]/)?.[1];
+}
+
+function removeApiErrorCode(message: string) {
+  return message.replace(/\s*\[Code:\s*[^\]]+\]\s*$/, "").trim();
+}
 
 async function readErrorMessage(response: Response, fallbackMessage: string) {
   const body = await readJsonResponse<ApiResponse<null>>(response).catch(() => null);
+  const code = getApiErrorCode(body?.message);
 
-  return body?.message || fallbackMessage;
+  if (code && PLAZA_ERROR_MESSAGE_BY_CODE[code]) {
+    return PLAZA_ERROR_MESSAGE_BY_CODE[code];
+  }
+
+  return body?.message ? removeApiErrorCode(body.message) || fallbackMessage : fallbackMessage;
 }
 
 function normalizePlazaWeatherKey(value?: string | null): PlazaWeatherKey {

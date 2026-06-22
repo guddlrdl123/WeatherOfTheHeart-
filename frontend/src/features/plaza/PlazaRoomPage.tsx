@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, CheckCircle2, Copy, Footprints, Heart, MapPinned, MoreHorizontal, Power, Trash2, X } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CircleAlert, Copy, Footprints, Heart, MapPinned, MoreHorizontal, Power, Trash2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
 import { useRoomObjectCatalog } from "../../hooks/useRoomObjectCatalog";
@@ -65,6 +65,11 @@ type PlazaConfirmModalProps = {
   action: PlazaConfirmAction;
   onCancel: () => void;
   onConfirm: () => void;
+};
+
+type PlazaNotice = {
+  message: string;
+  tone: "success" | "error";
 };
 
 const getEntryLayer = (entry: PlazaEntry) => entry.layer ?? OBJECT_LAYER_MIN;
@@ -177,7 +182,7 @@ export function PlazaRoomPage({
   const [likingEntryIds, setLikingEntryIds] = useState<Set<string>>(() => new Set());
   const [isManagementMenuOpen, setIsManagementMenuOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<PlazaConfirmAction | null>(null);
-  const [completionNotice, setCompletionNotice] = useState<string | null>(null);
+  const [plazaNotice, setPlazaNotice] = useState<PlazaNotice | null>(null);
 
   const plazaEnded = plaza.status === "closed" || isPlazaFull(plaza);
   const ownEntry = plaza.entries.find((entry) => entry.ownerId === currentGuestId) ?? null;
@@ -238,17 +243,30 @@ export function PlazaRoomPage({
     };
   }, []);
 
-  function showCompletionNotice() {
-    setCompletionNotice(PLAZA_COMPLETION_NOTICE);
+  function showPlazaNotice(message: string, tone: PlazaNotice["tone"] = "success") {
+    setPlazaNotice({ message, tone });
 
     if (noticeTimerRef.current !== null) {
       window.clearTimeout(noticeTimerRef.current);
     }
 
     noticeTimerRef.current = window.setTimeout(() => {
-      setCompletionNotice(null);
+      setPlazaNotice(null);
       noticeTimerRef.current = null;
     }, 3500);
+  }
+
+  function showCompletionNotice() {
+    showPlazaNotice(PLAZA_COMPLETION_NOTICE);
+  }
+
+  function closePlazaNotice() {
+    setPlazaNotice(null);
+
+    if (noticeTimerRef.current !== null) {
+      window.clearTimeout(noticeTimerRef.current);
+      noticeTimerRef.current = null;
+    }
   }
 
   function showEntryObject(entryId: string) {
@@ -527,8 +545,12 @@ export function PlazaRoomPage({
     try {
       await onDeletePlaza();
       setConfirmAction(null);
-    } catch {
-      window.alert("광장을 삭제하지 못했습니다. 잠시 후 다시 시도해주세요.");
+    } catch (caughtError) {
+      setConfirmAction(null);
+      showPlazaNotice(
+        caughtError instanceof Error ? caughtError.message : "광장을 삭제하지 못했습니다. 잠시 후 다시 시도해주세요.",
+        "error",
+      );
     }
   }
 
@@ -611,18 +633,21 @@ export function PlazaRoomPage({
 
   return (
     <main className="min-h-0 flex-1 overflow-auto px-6 py-6">
-      {completionNotice && (
+      {plazaNotice && (
         <div className="fixed left-1/2 top-6 z-[120] w-[min(420px,calc(100vw-32px))] -translate-x-1/2">
           <div className="mw-surface flex items-start gap-3 rounded-xl bg-[#fffbf6f2] px-4 py-3 text-[#5a4632] shadow-xl backdrop-blur-sm">
             <div className="flex min-w-0 flex-1 items-center gap-3">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-[#7c9b78]/30 bg-[#edf5e7] text-[#5f875b]">
-                <CheckCircle2 size={17} />
+              <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-md border ${plazaNotice.tone === "error"
+                ? "border-[#b36a5e]/30 bg-[#f4dfd9] text-[#c86f67]"
+                : "border-[#7c9b78]/30 bg-[#edf5e7] text-[#5f875b]"
+                }`}>
+                {plazaNotice.tone === "error" ? <CircleAlert size={17} /> : <CheckCircle2 size={17} />}
               </span>
-              <p className="min-w-0 flex-1 text-sm leading-6">{completionNotice}</p>
+              <p className={`min-w-0 flex-1 text-sm leading-6 ${plazaNotice.tone === "error" ? "text-[#c86f67]" : ""}`}>{plazaNotice.message}</p>
             </div>
             <button
               type="button"
-              onClick={() => setCompletionNotice(null)}
+              onClick={closePlazaNotice}
               className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-[#5a4632]/55 hover:bg-[#5a4632]/10 hover:text-[#5a4632]"
               aria-label="\uC548\uB0B4 \uBA54\uC2DC\uC9C0 \uB2EB\uAE30"
               title="\uC548\uB0B4 \uBA54\uC2DC\uC9C0 \uB2EB\uAE30"

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CircleAlert, X } from "lucide-react";
 import Room from "../room/Room"
 import RoomCalendarSidebar from "../calendar/RoomCalendarSidebar";
 import { RoomMemoryPanel } from "../memory/RoomMemoryPanel";
@@ -29,10 +30,16 @@ type EditingPlacement = {
     originalLayer: number;
 };
 
+type RoomNotice = {
+    message: string;
+};
+
 const DEFAULT_OBJECT_POSITION: RoomObjectPosition = { x: 24, y: 84 };
 const OBJECT_LAYER_MIN = 0;
 const ROOM_LAYOUT_WIDTH = 1460;
 const ROOM_LAYOUT_HEIGHT = 630;
+const ROOM_NOTICE_DURATION_MS = 3500;
+const DUPLICATE_MEMORY_DATE_NOTICE = "해당 날짜에는 이미 기록이 있어요. 다른 날짜를 선택해주세요.";
 
 const getMonthKey = (dateString: string) => {
     return dateString.slice(0, 7);
@@ -121,6 +128,8 @@ function RoomPage() {
     const [previewMemory, setPreviewMemory] = useState<Memory | null>(null);
     const bounceStartTimerRef = useRef<number | null>(null);
     const bounceEndTimerRef = useRef<number | null>(null);
+    const roomNoticeTimerRef = useRef<number | null>(null);
+    const [roomNotice, setRoomNotice] = useState<RoomNotice | null>(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -179,6 +188,29 @@ function RoomPage() {
         }));
     const isRoomLoading = isMemoryLoading || isObjectCatalogLoading;
     const roomMonthLabel = formatRoomMonthLabel(roomMonthKey);
+    const unavailableMemoryDates = useMemo(() => memories.map((memory) => memory.memoryDate), [memories]);
+
+    function showRoomNotice(message: string) {
+        setRoomNotice({ message });
+
+        if (roomNoticeTimerRef.current !== null) {
+            window.clearTimeout(roomNoticeTimerRef.current);
+        }
+
+        roomNoticeTimerRef.current = window.setTimeout(() => {
+            setRoomNotice(null);
+            roomNoticeTimerRef.current = null;
+        }, ROOM_NOTICE_DURATION_MS);
+    }
+
+    function closeRoomNotice() {
+        setRoomNotice(null);
+
+        if (roomNoticeTimerRef.current !== null) {
+            window.clearTimeout(roomNoticeTimerRef.current);
+            roomNoticeTimerRef.current = null;
+        }
+    }
 
     const getNextObjectLayer = (dateString: string) => {
         // 새 오브젝트는 현재 달의 가장 앞 레이어 다음에 배치합니다.
@@ -268,6 +300,7 @@ function RoomPage() {
     };
 
     const handleOpenWriteModal = () => {
+        closeRoomNotice();
         setActiveObjectId(null);
         setEditingPlacement(null);
         setIsWriteOpen(true);
@@ -281,6 +314,10 @@ function RoomPage() {
 
     useEffect(() => {
         return () => {
+            if (roomNoticeTimerRef.current !== null) {
+                window.clearTimeout(roomNoticeTimerRef.current);
+            }
+
             if (bounceStartTimerRef.current !== null) {
                 window.clearTimeout(bounceStartTimerRef.current);
             }
@@ -341,6 +378,11 @@ function RoomPage() {
 
         const { value, position, layer } = pendingPlacement;
 
+        if (memories.some((memory) => memory.memoryDate === value.memoryDate)) {
+            showRoomNotice(DUPLICATE_MEMORY_DATE_NOTICE);
+            return;
+        }
+
         try {
             setIsPlacementSaving(true);
             const savedMemory = await createMemory({
@@ -373,7 +415,7 @@ function RoomPage() {
             setRoomMonthKey(getMonthKey(savedMemory.memoryDate));
             setActiveObjectId(null);
         } catch (error) {
-            alert(error instanceof Error ? error.message : "기억 저장에 실패했습니다.");
+            showRoomNotice(error instanceof Error ? error.message : "기억 저장에 실패했습니다.");
         } finally {
             setIsPlacementSaving(false);
         }
@@ -492,6 +534,26 @@ function RoomPage() {
     return (
         <div className="mw-app min-h-screen flex flex-col select-none" onPointerDown={handlePagePointerDown}>
             <AppHeader />
+
+            {roomNotice && (
+                <div className="fixed left-1/2 top-6 z-[120] w-[min(420px,calc(100vw-32px))] -translate-x-1/2">
+                    <div className="mw-surface flex items-center gap-3 rounded-xl bg-[#fffbf6f2] px-4 py-3 text-[#5a4632] shadow-xl backdrop-blur-sm">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9] text-[#c86f67]">
+                            <CircleAlert size={17} />
+                        </span>
+                        <p className="min-w-0 flex-1 text-sm leading-5 text-[#c86f67]">{roomNotice.message}</p>
+                        <button
+                            type="button"
+                            onClick={closeRoomNotice}
+                            className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-[#5a4632]/55 hover:bg-[#5a4632]/10 hover:text-[#5a4632]"
+                            aria-label="안내 메시지 닫기"
+                            title="안내 메시지 닫기"
+                        >
+                            <X size={15} />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* <button
                 onClick={toggleWeather}
@@ -639,6 +701,8 @@ function RoomPage() {
                 <MemoryWriteModal
                     // mode="private"
                     initialDate={selectedDate || getTodayString()}
+                    unavailableDates={unavailableMemoryDates}
+                    onUnavailableDateSelect={() => showRoomNotice(DUPLICATE_MEMORY_DATE_NOTICE)}
                     onClose={() => setIsWriteOpen(false)}
                     onSave={(value) => {
                         // 바로 저장하지 않고 방 안에서 위치를 정하는 단계로 넘어갑니다.

@@ -51,7 +51,7 @@ type ObjectCatalogMode = "api" | "local" | "merge";
 const MISSING_ROOM_OBJECT_IMAGE = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2080%2080'%3E%3Crect%20x='10'%20y='10'%20width='60'%20height='60'%20rx='10'%20fill='%23f8f1e8'%20stroke='%239b6b54'%20stroke-opacity='.35'%20stroke-width='4'/%3E%3Cpath%20d='M25%2028h30M25%2040h30M25%2052h18'%20stroke='%239b6b54'%20stroke-opacity='.5'%20stroke-width='5'%20stroke-linecap='round'/%3E%3C/svg%3E";
 
 const ROOM_OBJECT_IMAGE_MODULES = import.meta.glob<RoomObjectImageModule>(
-    "../assets/{furniture-clean,room-objects}/*.png",
+    "../assets/{furniture-clean,room-objects,22}/*.png",
     { eager: true },
 );
 
@@ -167,6 +167,19 @@ const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     "bingsu": 95,
     "green-tea-bingsu": 95,
     "mango-bingsu": 95,
+    "종이배": 110,
+    "종이배2": 130,
+    "튜브": 150,
+    "튜브2": 150,
+    "칵테일": 40,
+    "칵테일2": 40,
+    "star2": 30,
+    "star3": 30,
+    "box": 70,
+    "box1": 70,
+    "box3": 70,
+    "box4": 70,
+    "umbrella": 120,
 };
 
 const CATEGORY_BY_KEY: Record<string, RoomObjectCategoryKey> = {

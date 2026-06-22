@@ -20,20 +20,27 @@ export type WriteModalValue = {
 type WriteDraftValue = Omit<WriteModalValue, "objectKey">;
 type MemoryWriteMode = "room" | "plaza";
 
+type MemoryWriteModalProps = {
+    mode?: MemoryWriteMode;
+    initialDate: string;
+    unavailableDates?: string[];
+    onClose: () => void;
+    onSave: (value: WriteModalValue) => void;
+    onUnavailableDateSelect?: (date: string) => void;
+};
+
 export function MemoryWriteModal({
     mode = "room",
     initialDate,
+    unavailableDates = [],
     onClose,
     onSave,
-}: {
-    mode?: MemoryWriteMode;
-    initialDate: string;
-    onClose: () => void;
-    onSave: (value: WriteModalValue) => void;
-}) {
+    onUnavailableDateSelect,
+}: MemoryWriteModalProps) {
     const today = useMemo(() => {
         return new Date().toISOString().split("T")[0];
     }, []);
+    const unavailableDateSet = useMemo(() => new Set(unavailableDates), [unavailableDates]);
 
     const [memoryDate, setMemoryDate] = useState(initialDate);
     const [title, setTitle] = useState("");
@@ -44,10 +51,26 @@ export function MemoryWriteModal({
     const [draftValue, setDraftValue] = useState<WriteDraftValue | null>(null);
     const selectedMood = MOOD_BY_KEY[moodKey];
     const showMoodSelector = mode !== "plaza";
-    const canGoNext = content.trim().length > 0;
+    const isSelectedDateUnavailable = mode === "room" && unavailableDateSet.has(memoryDate);
+    const canGoNext = content.trim().length > 0 && !isSelectedDateUnavailable;
+
+    const handleDateChange = (nextDate: string) => {
+        if (mode === "room" && unavailableDateSet.has(nextDate)) {
+            onUnavailableDateSelect?.(nextDate);
+            setMemoryDate(unavailableDateSet.has(initialDate) ? memoryDate : initialDate);
+            return;
+        }
+
+        setMemoryDate(nextDate);
+    };
 
     // 작성한 내용을 보관하고 오브젝트 선택 단계로 이동
     const handleNext = () => {
+        if (isSelectedDateUnavailable) {
+            onUnavailableDateSelect?.(memoryDate);
+            return;
+        }
+
         if (!canGoNext) {
             return;
         }
@@ -106,7 +129,7 @@ export function MemoryWriteModal({
                                 value={memoryDate}
                                 max={today}
                                 // disabled={mode === "plaza"}
-                                onChange={(event) => setMemoryDate(event.target.value)}
+                                onChange={(event) => handleDateChange(event.target.value)}
                             />
                         </label>
                         <label className="flex flex-col gap-2 text-sm text-[#5a4632]">
