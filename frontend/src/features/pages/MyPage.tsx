@@ -527,6 +527,7 @@ function MyPage() {
         <ProfileEditModal
           nickname={nickname}
           email={email}
+          authProvider={authProvider}
           isSaving={isSavingProfile}
           onClose={handleCloseProfileModal}
           onEditNickname={() => handleOpenProfileModal("nickname")}

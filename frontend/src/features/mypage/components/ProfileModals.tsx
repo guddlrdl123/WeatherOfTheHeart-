@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { CircleAlert, Eye, EyeOff, KeyRound, Mail, UserRound, X } from "lucide-react";
 import { PROFILE_NICKNAME_MAX_LENGTH } from "../../../utils/authSession";
+import googleIcon from "../../../assets/google.png";
+import kakaoIcon from "../../../assets/kakao1.png";
+import naverIcon from "../../../assets/naver3.png";
 
 export type ProfileModalKind = "menu" | "nickname" | "email" | "password";
 
@@ -28,6 +31,16 @@ export type AccountWithdrawalValue = {
 const EMAIL_VERIFICATION_CODE_TTL_SECONDS = 10 * 60;
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 const PASSWORD_SPECIAL_CHARACTER_PATTERN = /[^A-Za-z0-9]/;
+const AUTH_PROVIDER_LABELS: Record<string, string> = {
+  google: "Google 계정",
+  kakao: "Kakao 계정",
+  naver: "Naver 계정",
+};
+const AUTH_PROVIDER_ICONS: Record<string, string> = {
+  google: googleIcon,
+  kakao: kakaoIcon,
+  naver: naverIcon,
+};
 const EMAIL_FORMAT_ERROR_MESSAGE = "올바른 이메일 형식으로 입력해주세요.";
 const PASSWORD_FORMAT_ERROR_MESSAGE = "새 비밀번호는 8자 이상이고 특수문자를 포함해야 합니다.";
 const PASSWORD_CONFIRM_ERROR_MESSAGE = "새 비밀번호 확인이 일치하지 않습니다.";
@@ -40,6 +53,18 @@ function isValidPasswordFormat(value: string) {
   return value.length >= 8 && PASSWORD_SPECIAL_CHARACTER_PATTERN.test(value);
 }
 
+function getSocialAuthProviderLabel(authProvider: string) {
+  const normalizedProvider = authProvider.trim().toLowerCase();
+
+  return AUTH_PROVIDER_LABELS[normalizedProvider] ?? null;
+}
+
+function getSocialAuthProviderIcon(authProvider: string) {
+  const normalizedProvider = authProvider.trim().toLowerCase();
+
+  return AUTH_PROVIDER_ICONS[normalizedProvider] ?? null;
+}
+
 function formatVerificationTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
   const seconds = (totalSeconds % 60).toString().padStart(2, "0");
@@ -50,6 +75,7 @@ function formatVerificationTime(totalSeconds: number) {
 type ProfileEditModalProps = {
   nickname: string;
   email: string;
+  authProvider: string;
   isSaving: boolean;
   onClose: () => void;
   onEditNickname: () => void;
@@ -61,6 +87,7 @@ type ProfileEditModalProps = {
 export function ProfileEditModal({
   nickname,
   email,
+  authProvider,
   isSaving,
   onClose,
   onEditNickname,
@@ -68,6 +95,9 @@ export function ProfileEditModal({
   onEditPassword,
   onRequestWithdrawal,
 }: ProfileEditModalProps) {
+  const socialAuthProviderLabel = getSocialAuthProviderLabel(authProvider);
+  const socialAuthProviderIcon = getSocialAuthProviderIcon(authProvider);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-8 backdrop-blur-sm select-none"
@@ -122,13 +152,19 @@ export function ProfileEditModal({
 
           <div className="border-t border-[#b36a5e]/18 pt-5">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
+              <div className="min-w-0 flex items-center gap-3">
                 <Mail size={16} className="shrink-0 text-[#9b6b54]" />
                 <div className="min-w-0">
                   <p className="text-[11px] text-[#5a4632]/42">이메일</p>
                   <p className="truncate text-sm">{email || "이메일 정보 없음"}</p>
                 </div>
               </div>
+              {socialAuthProviderLabel ? (
+                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#9b6b54]/20 bg-white/35 px-2 py-0.5 text-[11px] leading-4 text-[#5a4632]/62">
+                  {socialAuthProviderIcon ? <img src={socialAuthProviderIcon} alt="" className="h-3.5 w-3.5 shrink-0 rounded-full" /> : null}
+                  {socialAuthProviderLabel}
+                </span>
+              ) : null}
               <button
                 type="button"
                 className="shrink-0 rounded-md border border-[#9b6b54]/30 px-2 py-1 text-xs hover:bg-[#9b6b54]/10 disabled:opacity-50"
