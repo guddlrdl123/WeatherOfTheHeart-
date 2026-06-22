@@ -62,20 +62,6 @@ public class PlazaImagePromptBuilder {
                 ? "soft emotional atmosphere"
                 : toWeatherPrompt(plaza.getBackgroundKey());
 
-        // [수정] 원본 프롬프트 구조를 최대한 유지했습니다.
-        // 이유: 실제 테스트에서 원본 코드가 가장 풍부하고 자연스럽게 나왔기 때문입니다.
-        //
-        // [추가] visualMood와 roughPosition을 오브젝트 메모에만 약하게 추가했습니다.
-        // 이유: mood/position 정보를 완전히 버리지는 않되, AI에게 강제 배치 명령처럼 느껴지지 않도록 하기 위함입니다.
-        //
-        // [주의] "반드시 모두 그려라", "절대 추가하지 마라", "정확히 좌표대로 배치해라" 같은 강한 문장은 넣지 않았습니다.
-        // 이유: 이전 테스트에서 이런 강한 지시가 들어갈수록 결과가 빈약해지거나 엉뚱한 장면으로 바뀌었습니다.
-        //
-        // [유지] objectKey는 영어로 강제 변환하지 않고 원본 그대로 전달합니다.
-        // 이유: 현재 서비스 오브젝트 이름이 한국어이고, 원본 프롬프트에서 이 방식이 더 풍부하게 나왔기 때문입니다.
-        //
-        // [추가] backgroundMood는 배경 날씨 키를 영어 감성 표현으로 한 번 풀어준 보조 힌트입니다.
-        // 단, 너무 강하게 먹지 않도록 "참고용" 흐름 안에만 넣었습니다.
         return """
        Please create one polished high-resolution illustration of a completed emotional plaza.
        It should look like a cozy room or an outdoor plaza created by the objects placed by the participants.
@@ -108,6 +94,41 @@ public class PlazaImagePromptBuilder {
        If the background type is weather, clearly reflect the weather of the background weather key in the background, lighting, sky, and atmosphere of the scene.
        If the background type is color, naturally reflect the background color in the main color tone and lighting mood of the scene.
 
+        [동물 표현 규칙]
+
+        광장에 동물이나 생물이 등장한다면 반드시 원래의 형태를 유지해주세요.
+
+        동물은 눈, 코, 입, 귀, 다리, 발, 꼬리 등 신체 구조가 자연스럽고 정확해야 합니다.
+
+        다음과 같은 모습은 절대 허용하지 않습니다.
+
+        - 얼굴이 찌그러진 모습
+        - 눈의 위치가 이상한 모습
+        - 코와 입이 비정상적으로 붙은 모습
+        - 다리가 너무 많거나 부족한 모습
+        - 몸이 녹은 것처럼 표현된 모습
+        - 다른 오브젝트와 몸이 합쳐진 모습
+        - 머리가 여러 개 생긴 모습
+        - 얼굴이 비대칭인 모습
+        - 기괴하거나 공포스러운 표정
+        - 해부학적으로 어색한 모습
+
+        동물은 귀엽고 건강하며 따뜻한 분위기로 표현해주세요.
+
+        동물이 여러 마리라면 서로 몸이 겹치거나 합쳐지지 않게 해주세요.
+
+        각 동물은 독립된 형태와 선명한 윤곽을 가져야 하며, 멀리서 보아도 어떤 동물인지 바로 알아볼 수 있어야 합니다.
+
+        감성적인 그림체는 유지하되, 동물의 원래 형태와 비율은 절대 변형하지 마세요.
+
+        다른 오브젝트와 동물을 합치거나 융합하지 마세요.
+
+        모든 오브젝트와 동물은 각각의 고유한 형태를 유지해야 합니다.
+        
+        동물과 다른 오브젝트를 서로 합치거나 융합하지 마세요.
+        동물의 형태를 변형하거나 찌그러뜨리지 마세요.
+        동물의 얼굴은 반드시 자연스럽고 좌우 대칭이어야 합니다.
+        동물은 실제 동물의 특징을 유지한 귀여운 동화책 스타일로 표현해주세요.
        Plaza title: %s
        Plaza topic: %s
        Background type: %s
