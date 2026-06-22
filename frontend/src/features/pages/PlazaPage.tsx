@@ -111,7 +111,7 @@ function PlazaPage() {
   }
 
   function handleCreatePlaza(plaza: Plaza) {
-    if (!canCreatePlazaToday(normalizedPlazas, currentUserId)) {
+    if (!canCreatePlazaToday(normalizedPlazas, currentUserId, currentUserIsAdmin)) {
       return;
     }
 
@@ -267,6 +267,7 @@ function PlazaPage() {
           <PlazaListPage
             plazas={normalizedPlazas}
             currentGuestId={currentUserId}
+            currentGuestIsAdmin={currentUserIsAdmin}
             isRefreshing={isLoading}
             onRefresh={() => loadPlazaList()}
             onCreate={(plaza) => void handleCreatePlaza(plaza)}

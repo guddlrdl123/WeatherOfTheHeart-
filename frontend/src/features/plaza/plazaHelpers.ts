@@ -57,7 +57,11 @@ export function getTodayOwnedPlazaCount(plazas: Plaza[], guestId: string) {
   )).length;
 }
 
-export function canCreatePlazaToday(plazas: Plaza[], guestId: string) {
+export function canCreatePlazaToday(plazas: Plaza[], guestId: string, canBypassLimit = false) {
+  if (canBypassLimit) {
+    return true;
+  }
+
   return getTodayOwnedPlazaCount(plazas, guestId) < DAILY_PLAZA_CREATE_LIMIT;
 }
 

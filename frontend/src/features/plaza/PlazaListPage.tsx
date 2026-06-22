@@ -20,6 +20,7 @@ import {
 type Props = {
   plazas: Plaza[];
   currentGuestId: string;
+  currentGuestIsAdmin?: boolean;
   isRefreshing?: boolean;
   onRefresh?: () => void;
   onCreate: (plaza: Plaza) => void;
@@ -73,7 +74,7 @@ function CreateLimitNoticeModal({ onClose }: CreateLimitNoticeModalProps) {
   );
 }
 
-export function PlazaListPage({ plazas, currentGuestId, isRefreshing = false, onRefresh, onCreate }: Props) {
+export function PlazaListPage({ plazas, currentGuestId, currentGuestIsAdmin = false, isRefreshing = false, onRefresh, onCreate }: Props) {
   const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");
   const [inviteCode, setInviteCode] = useState("");
@@ -81,7 +82,7 @@ export function PlazaListPage({ plazas, currentGuestId, isRefreshing = false, on
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreateLimitNoticeOpen, setIsCreateLimitNoticeOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const canCreatePlaza = canCreatePlazaToday(plazas, currentGuestId);
+  const canCreatePlaza = canCreatePlazaToday(plazas, currentGuestId, currentGuestIsAdmin);
 
   const visiblePlazas = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
