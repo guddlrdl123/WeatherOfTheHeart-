@@ -110,3 +110,13 @@ export async function deleteMailboxItem(letterId: string) {
 
   notifyMailboxChanged();
 }
+
+export async function downloadMailboxItemImage(letterId: string) {
+  const response = await authFetch(toApiUrl(`/api/mailbox/${encodeURIComponent(letterId)}/image`));
+
+  if (!response.ok) {
+    throw await readApiError(response, "이미지를 다운로드하지 못했습니다.");
+  }
+
+  return response.blob();
+}

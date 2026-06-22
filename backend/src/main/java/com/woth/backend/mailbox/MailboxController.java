@@ -3,9 +3,13 @@ package com.woth.backend.mailbox;
 import com.woth.backend.auth.AuthenticatedUser;
 import com.woth.backend.auth.CurrentUser;
 import com.woth.backend.global.dto.ApiResponse;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -55,6 +59,24 @@ public class MailboxController {
                                     @PathVariable Long letterId) {
         mailboxService.deleteLetter(currentUser.id(), letterId);
         return ApiResponse.success(null);
+    }
+
+    @GetMapping(value = "/{letterId}/image", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public ResponseEntity<byte[]> downloadImage(@CurrentUser AuthenticatedUser currentUser,
+                                                @PathVariable Long letterId) {
+        var image = mailboxService.downloadImage(currentUser.id(), letterId);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(image.contentType()))
+                .contentLength(image.bytes().length)
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment()
+                                .filename(image.fileName(), StandardCharsets.UTF_8)
+                                .build()
+                                .toString()
+                )
+                .body(image.bytes());
     }
 
     private MailboxItemResponse toResponse(MailboxService.MailboxItemView item) {

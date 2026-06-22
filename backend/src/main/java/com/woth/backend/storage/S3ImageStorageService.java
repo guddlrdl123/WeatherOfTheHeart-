@@ -5,9 +5,14 @@ import com.woth.backend.global.exception.ErrorCode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.UUID;
 
@@ -31,6 +36,48 @@ public class S3ImageStorageService {
             return null;
         }
 
+        StoredImage image = parseDataUrl(dataUrl);
+        String extension = resolveExtension(image.contentType());
+
+        String normalizedDirectory = normalizeDirectory(directory);
+        String key = normalizedDirectory + "/" + UUID.randomUUID() + extension;
+
+        PutObjectRequest request = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .contentType(image.contentType())
+                .contentLength((long) image.bytes().length)
+                .build();
+
+        s3Client.putObject(request, RequestBody.fromBytes(image.bytes()));
+
+        return publicBaseUrl.replaceAll("/+$", "") + "/" + key;
+    }
+
+    public StoredImage downloadImage(String imageDataOrUrl) {
+        if (imageDataOrUrl == null || imageDataOrUrl.isBlank()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        if (imageDataOrUrl.startsWith("data:image/")) {
+            return parseDataUrl(imageDataOrUrl);
+        }
+
+        String key = resolveKeyFromPublicUrl(imageDataOrUrl);
+        GetObjectRequest request = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .build();
+        ResponseBytes<GetObjectResponse> response = s3Client.getObjectAsBytes(request);
+        String contentType = response.response().contentType();
+
+        return new StoredImage(
+                response.asByteArray(),
+                contentType == null || contentType.isBlank() ? "application/octet-stream" : contentType
+        );
+    }
+
+    private StoredImage parseDataUrl(String dataUrl) {
         int commaIndex = dataUrl.indexOf(",");
 
         if (!dataUrl.startsWith("data:image/") || commaIndex < 0) {
@@ -39,31 +86,30 @@ public class S3ImageStorageService {
 
         String meta = dataUrl.substring("data:".length(), commaIndex);
         String base64 = dataUrl.substring(commaIndex + 1);
-
         String contentType = meta.split(";")[0];
-        String extension = resolveExtension(contentType);
-
-        byte[] imageBytes;
 
         try {
-            imageBytes = Base64.getDecoder().decode(base64);
+            return new StoredImage(Base64.getDecoder().decode(base64), contentType);
         } catch (IllegalArgumentException e) {
             throw new CustomException(ErrorCode.INVALID_INPUT);
         }
+    }
 
-        String normalizedDirectory = normalizeDirectory(directory);
-        String key = normalizedDirectory + "/" + UUID.randomUUID() + extension;
+    private String resolveKeyFromPublicUrl(String imageUrl) {
+        String normalizedBaseUrl = publicBaseUrl.replaceAll("/+$", "");
+        String normalizedImageUrl = imageUrl.trim();
 
-        PutObjectRequest request = PutObjectRequest.builder()
-                .bucket(bucketName)
-                .key(key)
-                .contentType(contentType)
-                .contentLength((long) imageBytes.length)
-                .build();
+        if (!normalizedImageUrl.startsWith(normalizedBaseUrl + "/")) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
 
-        s3Client.putObject(request, RequestBody.fromBytes(imageBytes));
+        String encodedKey = normalizedImageUrl.substring(normalizedBaseUrl.length() + 1);
+        int queryIndex = encodedKey.indexOf("?");
+        if (queryIndex >= 0) {
+            encodedKey = encodedKey.substring(0, queryIndex);
+        }
 
-        return publicBaseUrl.replaceAll("/+$", "") + "/" + key;
+        return URLDecoder.decode(encodedKey, StandardCharsets.UTF_8);
     }
 
     private String normalizeDirectory(String directory) {
@@ -81,5 +127,11 @@ public class S3ImageStorageService {
             case "image/webp" -> ".webp";
             default -> throw new CustomException(ErrorCode.INVALID_INPUT);
         };
+    }
+
+    public record StoredImage(
+            byte[] bytes,
+            String contentType
+    ) {
     }
 }

@@ -7,6 +7,7 @@ import com.woth.backend.plaza.Plaza;
 import com.woth.backend.plaza.PlazaEntry;
 import com.woth.backend.plaza.PlazaEntryRepository;
 import com.woth.backend.plaza.PlazaRepository;
+import com.woth.backend.storage.S3ImageStorageService;
 import com.woth.backend.user.User;
 import com.woth.backend.user.UserRepository;
 import org.springframework.stereotype.Service;
@@ -26,17 +27,20 @@ public class MailboxService {
     private final UserRepository userRepository;
     private final PlazaRepository plazaRepository;
     private final PlazaEntryRepository plazaEntryRepository;
+    private final S3ImageStorageService s3ImageStorageService;
 
     public MailboxService(
             LetterRepository letterRepository,
             UserRepository userRepository,
             PlazaRepository plazaRepository,
-            PlazaEntryRepository plazaEntryRepository
+            PlazaEntryRepository plazaEntryRepository,
+            S3ImageStorageService s3ImageStorageService
     ) {
         this.letterRepository = letterRepository;
         this.userRepository = userRepository;
         this.plazaRepository = plazaRepository;
         this.plazaEntryRepository = plazaEntryRepository;
+        this.s3ImageStorageService = s3ImageStorageService;
     }
 
     @Transactional(readOnly = true)
@@ -90,6 +94,19 @@ public class MailboxService {
                 .orElseThrow(() -> new CustomException(ErrorCode.MAILBOX_NOT_FOUND));
 
         letterRepository.delete(letter);
+    }
+
+    @Transactional(readOnly = true)
+    public MailboxImageDownload downloadImage(Long receiverId, Long letterId) {
+        Letter letter = letterRepository.findByIdAndReceiverId(letterId, receiverId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MAILBOX_NOT_FOUND));
+        S3ImageStorageService.StoredImage image = s3ImageStorageService.downloadImage(letter.getGeneratedImageData());
+
+        return new MailboxImageDownload(
+                image.bytes(),
+                image.contentType(),
+                buildImageFileName(letter, image.contentType())
+        );
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -167,6 +184,31 @@ public class MailboxService {
         );
     }
 
+    private String buildImageFileName(Letter letter, String contentType) {
+        String baseName = letter.getPlazaTitle() == null || letter.getPlazaTitle().isBlank()
+                ? letter.getTitle()
+                : letter.getPlazaTitle();
+        String safeBaseName = baseName == null || baseName.isBlank()
+                ? "mailbox-image"
+                : baseName.trim()
+                .replaceAll("[\\\\/:*?\"<>|]+", "-")
+                .replaceAll("\\s+", "-");
+
+        if (safeBaseName.length() > 80) {
+            safeBaseName = safeBaseName.substring(0, 80);
+        }
+
+        return safeBaseName + resolveImageExtension(contentType);
+    }
+
+    private String resolveImageExtension(String contentType) {
+        return switch (contentType) {
+            case "image/jpeg" -> ".jpg";
+            case "image/webp" -> ".webp";
+            default -> ".png";
+        };
+    }
+
     public record CompletionLetterReceiver(
             User receiver,
             String myObjectKey,
@@ -182,6 +224,13 @@ public class MailboxService {
             String myObjectKey,
             String myObjectTitle,
             String myObjectContent
+    ) {
+    }
+
+    public record MailboxImageDownload(
+            byte[] bytes,
+            String contentType,
+            String fileName
     ) {
     }
 }

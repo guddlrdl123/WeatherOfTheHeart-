@@ -7,7 +7,7 @@ import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock";
 import { useRoomObjectCatalog } from "../../hooks/useRoomObjectCatalog";
 import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
-import { deleteMailboxItem, fetchMailbox, markAllMailboxItemsAsRead, markMailboxItemAsRead } from "../../services/mailboxService";
+import { deleteMailboxItem, downloadMailboxItemImage, fetchMailbox, markAllMailboxItemsAsRead, markMailboxItemAsRead } from "../../services/mailboxService";
 import type { MailboxItem } from "../../types/mailbox";
 
 const MAILBOX_LAYOUT_WIDTH = 1460;
@@ -89,13 +89,7 @@ function MailboxDetailModal({
 
     try {
       setIsDownloadingImage(true);
-      const response = await fetch(item.generatedImageData);
-
-      if (!response.ok) {
-        throw new Error("image download failed");
-      }
-
-      const blob = await response.blob();
+      const blob = await downloadMailboxItemImage(item.id);
       const objectUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = objectUrl;
