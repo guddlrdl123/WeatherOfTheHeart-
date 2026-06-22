@@ -22,6 +22,7 @@ export type PasswordEditValue = {
 
 export type AccountWithdrawalValue = {
   currentPassword: string;
+  verificationCode: string;
 };
 
 const EMAIL_VERIFICATION_CODE_TTL_SECONDS = 10 * 60;
@@ -741,23 +742,87 @@ export function PasswordEditModal({ isSaving, onClose, onCancel, onSave }: Passw
 }
 
 type AccountWithdrawalModalProps = {
+  email: string;
   isDeleting: boolean;
+  isSendingCode: boolean;
+  isSocialLoginUser: boolean;
   onClose: () => void;
+  onSendCode: () => Promise<boolean>;
   onConfirm: (value: AccountWithdrawalValue) => void;
 };
 
-export function AccountWithdrawalModal({ isDeleting, onClose, onConfirm }: AccountWithdrawalModalProps) {
+export function AccountWithdrawalModal({
+  email,
+  isDeleting,
+  isSendingCode,
+  isSocialLoginUser,
+  onClose,
+  onSendCode,
+  onConfirm,
+}: AccountWithdrawalModalProps) {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [value, setValue] = useState<AccountWithdrawalValue>({
     currentPassword: "",
+    verificationCode: "",
   });
+  const [isVerificationSent, setIsVerificationSent] = useState(false);
+  const [remainingVerificationSeconds, setRemainingVerificationSeconds] = useState(0);
+  const [isVerificationExpired, setIsVerificationExpired] = useState(false);
+
+  useEffect(() => {
+    if (!isVerificationSent || isVerificationExpired) {
+      return;
+    }
+
+    const timerId = window.setInterval(() => {
+      setRemainingVerificationSeconds((seconds) => {
+        if (seconds <= 1) {
+          setIsVerificationExpired(true);
+          return 0;
+        }
+
+        return seconds - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timerId);
+  }, [isVerificationSent, isVerificationExpired]);
 
   function updateValue(key: keyof AccountWithdrawalValue, nextValue: string) {
     setValue((previousValue) => ({
       ...previousValue,
-      [key]: nextValue,
+      [key]: key === "verificationCode" ? nextValue.replace(/\D/g, "").slice(0, 6) : nextValue,
     }));
   }
+
+  async function handleSendCode() {
+    const didSend = await onSendCode();
+
+    if (!didSend) {
+      return;
+    }
+
+    setValue((previousValue) => ({
+      ...previousValue,
+      verificationCode: "",
+    }));
+    setIsVerificationSent(true);
+    setRemainingVerificationSeconds(EMAIL_VERIFICATION_CODE_TTL_SECONDS);
+    setIsVerificationExpired(false);
+  }
+
+  function handleSubmit() {
+    if (isSocialLoginUser && (!isVerificationSent || isVerificationExpired || value.verificationCode.length !== 6)) {
+      return;
+    }
+
+    onConfirm(value);
+  }
+
+  const isPending = isDeleting || isSendingCode;
+  const canSubmit = isSocialLoginUser
+    ? isVerificationSent && !isVerificationExpired && value.verificationCode.length === 6
+    : true;
 
   return (
     <div
@@ -773,7 +838,7 @@ export function AccountWithdrawalModal({ isDeleting, onClose, onConfirm }: Accou
         onMouseDown={(event) => event.stopPropagation()}
         onSubmit={(event) => {
           event.preventDefault();
-          onConfirm(value);
+          handleSubmit();
         }}
       >
         <div className="mb-5 flex items-start justify-between gap-4">
@@ -784,7 +849,7 @@ export function AccountWithdrawalModal({ isDeleting, onClose, onConfirm }: Accou
             type="button"
             className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#5a4632]/10 text-[#5a4632] hover:bg-black/5 disabled:opacity-50"
             onClick={onClose}
-            disabled={isDeleting}
+            disabled={isPending}
             aria-label="닫기"
             title="닫기"
           >
@@ -799,37 +864,77 @@ export function AccountWithdrawalModal({ isDeleting, onClose, onConfirm }: Accou
         </div>
 
         <div className="grid gap-4">
-          <label className="block">
-            <span className="mb-2 block text-xs text-[#5a4632]/55">현재 비밀번호</span>
-            <div className="relative">
-              <input
-                className="mw-input h-10 px-3 pr-10 text-sm"
-                type={showCurrentPassword ? "text" : "password"}
-                value={value.currentPassword}
-                onChange={(event) => updateValue("currentPassword", event.target.value)}
-                disabled={isDeleting}
-                autoComplete="current-password"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={() => setShowCurrentPassword((current) => !current)}
-                className="absolute right-3 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center text-[#5a4632]/60 hover:text-[#5a4632] disabled:opacity-50"
-                disabled={isDeleting}
-                aria-label={showCurrentPassword ? "현재 비밀번호 숨기기" : "현재 비밀번호 보기"}
-                title={showCurrentPassword ? "현재 비밀번호 숨기기" : "현재 비밀번호 보기"}
-              >
-                {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </label>
+          {isSocialLoginUser ? (
+            <>
+              <div className="rounded-lg border border-[#b36a5e]/18 bg-white/25 px-4 py-3 text-sm text-[#5a4632]">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Mail size={15} className="shrink-0 text-[#9b6b54]" />
+                  <p className="min-w-0 break-all">{email || "계정 이메일 정보 없음"}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 text-sm text-[#5a4632]">
+                <span className="block text-xs text-[#5a4632]/55">이메일 인증번호</span>
+                <div className="flex gap-2">
+                  <input
+                    className="mw-input h-10 min-w-0 flex-1 px-3 text-sm"
+                    value={value.verificationCode}
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="숫자 6자리"
+                    onChange={(event) => updateValue("verificationCode", event.target.value)}
+                    disabled={isPending || !isVerificationSent}
+                    autoFocus={isVerificationSent}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleSendCode()}
+                    disabled={isPending}
+                    className="mw-button h-10 shrink-0 rounded-md px-3 text-sm disabled:opacity-50"
+                  >
+                    {isVerificationSent && !isVerificationExpired ? "재전송" : "인증번호 발송"}
+                  </button>
+                </div>
+                {isVerificationSent && (
+                  <span className={isVerificationExpired ? "text-xs text-[#c86f67]" : "text-xs text-[#9b6b54]/80"}>
+                    {isVerificationExpired ? "인증번호가 만료되었습니다." : `인증번호가 발송되었습니다. ${formatVerificationTime(remainingVerificationSeconds)}`}
+                  </span>
+                )}
+              </div>
+            </>
+          ) : (
+            <label className="block">
+              <span className="mb-2 block text-xs text-[#5a4632]/55">현재 비밀번호</span>
+              <div className="relative">
+                <input
+                  className="mw-input h-10 px-3 pr-10 text-sm"
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={value.currentPassword}
+                  onChange={(event) => updateValue("currentPassword", event.target.value)}
+                  disabled={isDeleting}
+                  autoComplete="current-password"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword((current) => !current)}
+                  className="absolute right-3 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center text-[#5a4632]/60 hover:text-[#5a4632] disabled:opacity-50"
+                  disabled={isDeleting}
+                  aria-label={showCurrentPassword ? "현재 비밀번호 숨기기" : "현재 비밀번호 보기"}
+                  title={showCurrentPassword ? "현재 비밀번호 숨기기" : "현재 비밀번호 보기"}
+                >
+                  {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </label>
+          )}
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
           <button
             type="submit"
             className="inline-flex items-center gap-2 rounded-md bg-[#b36a5e] px-4 py-2 text-sm text-white hover:bg-[#9f5c53] disabled:opacity-50"
-            disabled={isDeleting}
+            disabled={isPending || !canSubmit}
           >
             탈퇴하기
           </button>

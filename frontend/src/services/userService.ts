@@ -30,6 +30,10 @@ type UserWithdrawalRequest = {
   currentPassword: string;
 };
 
+type SocialUserWithdrawalRequest = {
+  verificationCode: string;
+};
+
 export async function fetchUserProfile() {
   const response = await authFetch(toApiUrl("/api/users/me"));
 
@@ -47,6 +51,32 @@ export async function deleteUserAccount(value: UserWithdrawalRequest) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(value),
+  });
+
+  if (!response.ok) {
+    throw await readApiError(response, "회원탈퇴에 실패했습니다.");
+  }
+}
+
+export async function sendSocialWithdrawalCode() {
+  const response = await authFetch(toApiUrl("/api/users/me/social-withdraw/email/send"), {
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw await readApiError(response, "회원탈퇴 인증번호 전송에 실패했습니다.");
+  }
+}
+
+export async function deleteSocialUserAccount(value: SocialUserWithdrawalRequest) {
+  const response = await authFetch(toApiUrl("/api/users/me/social-withdraw"), {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      code: value.verificationCode,
+    }),
   });
 
   if (!response.ok) {

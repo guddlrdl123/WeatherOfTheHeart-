@@ -23,8 +23,10 @@ import { useRoomObjectCatalog } from "../../hooks/useRoomObjectCatalog";
 import { useResponsiveStageWidth } from "../../hooks/useResponsiveStageWidth";
 import { fetchUserCreatedPlazas, fetchUserPlazaEntries } from "../../services/plazaService";
 import {
+  deleteSocialUserAccount,
   deleteUserAccount,
   fetchUserProfile,
+  sendSocialWithdrawalCode,
   sendUserEmailChangeCode,
   updateUserEmail,
   updateUserProfile,
@@ -88,6 +90,7 @@ function MyPage() {
   const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isSendingWithdrawalCode, setIsSendingWithdrawalCode] = useState(false);
   const [isActivityLoading, setIsActivityLoading] = useState(true);
   const [profileNotice, setProfileNotice] = useState<ProfileNotice | null>(null);
   const [createdPlazas, setCreatedPlazas] = useState<Plaza[]>([]);
@@ -251,7 +254,7 @@ function MyPage() {
   }
 
   function handleCloseWithdrawal() {
-    if (isDeletingAccount) {
+    if (isDeletingAccount || isSendingWithdrawalCode) {
       return;
     }
 
@@ -386,7 +389,50 @@ function MyPage() {
     }
   }
 
+  async function handleSendWithdrawalCode() {
+    if (!isSocialLoginUser) {
+      showProfileNotice("소셜 로그인 계정만 이메일 인증으로 탈퇴할 수 있습니다.", "error");
+      return false;
+    }
+
+    try {
+      setIsSendingWithdrawalCode(true);
+      closeProfileNotice();
+
+      await sendSocialWithdrawalCode();
+      showProfileNotice("계정 이메일로 회원탈퇴 인증번호가 발송되었습니다.");
+      return true;
+    } catch (caughtError) {
+      showProfileNotice(caughtError instanceof Error ? caughtError.message : "회원탈퇴 인증번호 전송에 실패했습니다.", "error");
+      return false;
+    } finally {
+      setIsSendingWithdrawalCode(false);
+    }
+  }
+
   async function handleConfirmWithdrawal(value: AccountWithdrawalValue) {
+    if (isSocialLoginUser) {
+      if (!/^\d{6}$/.test(value.verificationCode)) {
+        showProfileNotice("이메일 인증번호 6자리를 입력해주세요.", "error");
+        return;
+      }
+
+      try {
+        setIsDeletingAccount(true);
+        closeProfileNotice();
+
+        await deleteSocialUserAccount({ verificationCode: value.verificationCode });
+        clearAuthenticated();
+        navigate("/", { replace: true });
+      } catch (caughtError) {
+        showProfileNotice(caughtError instanceof Error ? caughtError.message : "회원탈퇴에 실패했습니다.", "error");
+      } finally {
+        setIsDeletingAccount(false);
+      }
+
+      return;
+    }
+
     if (!value.currentPassword) {
       showProfileNotice("현재 비밀번호를 입력해주세요.", "error");
       return;
@@ -522,8 +568,12 @@ function MyPage() {
 
       {isWithdrawalOpen && (
         <AccountWithdrawalModal
+          email={email}
           isDeleting={isDeletingAccount}
+          isSendingCode={isSendingWithdrawalCode}
+          isSocialLoginUser={isSocialLoginUser}
           onClose={handleCloseWithdrawal}
+          onSendCode={handleSendWithdrawalCode}
           onConfirm={(value) => void handleConfirmWithdrawal(value)}
         />
       )}
