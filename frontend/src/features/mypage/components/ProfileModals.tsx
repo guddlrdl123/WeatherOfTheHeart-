@@ -155,16 +155,18 @@ export function ProfileEditModal({
               <div className="min-w-0 flex items-center gap-3">
                 <Mail size={16} className="shrink-0 text-[#9b6b54]" />
                 <div className="min-w-0">
-                  <p className="text-[11px] text-[#5a4632]/42">이메일</p>
-                  <p className="truncate text-sm">{email || "이메일 정보 없음"}</p>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <p className="text-[11px] text-[#5a4632]/42">이메일</p>
+                    {socialAuthProviderLabel ? (
+                      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#9b6b54]/20 bg-white/35 px-2 py-0.5 text-[11px] leading-4 text-[#5a4632]/62">
+                        {socialAuthProviderIcon ? <img src={socialAuthProviderIcon} alt="" className="h-3.5 w-3.5 shrink-0 rounded-full" /> : null}
+                        {socialAuthProviderLabel}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="min-w-0 truncate text-sm">{email || "이메일 정보 없음"}</p>
                 </div>
               </div>
-              {socialAuthProviderLabel ? (
-                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#9b6b54]/20 bg-white/35 px-2 py-0.5 text-[11px] leading-4 text-[#5a4632]/62">
-                  {socialAuthProviderIcon ? <img src={socialAuthProviderIcon} alt="" className="h-3.5 w-3.5 shrink-0 rounded-full" /> : null}
-                  {socialAuthProviderLabel}
-                </span>
-              ) : null}
               <button
                 type="button"
                 className="shrink-0 rounded-md border border-[#9b6b54]/30 px-2 py-1 text-xs hover:bg-[#9b6b54]/10 disabled:opacity-50"
