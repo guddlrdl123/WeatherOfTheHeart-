@@ -46,6 +46,8 @@ type HoverTooltip = {
 type Props = {
   weatherKey: WeatherKey;
   placedObjects?: PlacedRoomObject[];
+  objectScale?: number;
+  isInteractive?: boolean;
   activeObjectId?: string;
   bouncingObjectId?: string;
   onObjectSelect?: (objectId: string | null) => void;
@@ -129,6 +131,8 @@ function shouldPlaceControlsBelow(
 export default function Room({
   weatherKey,
   placedObjects = [],
+  objectScale = 1,
+  isInteractive = true,
   activeObjectId,
   bouncingObjectId,
   onObjectSelect,
@@ -152,7 +156,7 @@ export default function Room({
   const [hoverTooltip, setHoverTooltip] = useState<HoverTooltip | null>(null);
   const [controlPlacementByObjectId, setControlPlacementByObjectId] = useState<Record<string, HoverTooltip["placement"]>>({});
   const weatherTone = WEATHER_BY_KEY[weatherKey];
-  const objectInteractionDisabled = Boolean(placementDraft);
+  const objectInteractionDisabled = !isInteractive || Boolean(placementDraft);
 
   function clearHoverTooltip() {
     if (hoverTooltipTimerRef.current !== null) {
@@ -362,7 +366,7 @@ export default function Room({
       {/* 위치가 확정되어 저장된 오브젝트들 */}
       {placedObjects.map((placedObject) => {
         const object = ROOM_OBJECT_BY_KEY[placedObject.objectKey];
-        const objectWidth = getObjectWidthPercent(object.roomWidth);
+        const objectWidth = getObjectWidthPercent(object.roomWidth * objectScale);
         const label = placedObject.title?.trim() || "어느 날의 이야기";
         const active = placedObject.id === activeObjectId;
         const bouncing = placedObject.id === bouncingObjectId;
@@ -456,7 +460,7 @@ export default function Room({
               src={object.image}
               alt=""
               draggable={false}
-              className={`cursor-pointer ${bouncing ? "mw-room-object-bounce" : ""}`}
+              className={`${isInteractive ? "cursor-pointer" : "cursor-default"} ${bouncing ? "mw-room-object-bounce" : ""}`}
               style={{
                 width: "100%",
                 maxWidth: "none",

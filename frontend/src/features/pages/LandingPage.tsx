@@ -1,9 +1,16 @@
 import { ArrowRight } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useRoomObjectCatalog } from "../../hooks/useRoomObjectCatalog";
 import Room from "../room/Room";
+import { LANDING_DEMO_ROOM, LANDING_DEMO_WEATHER_KEYS } from "./landingDemoRoom";
 
 export function LandingPage() {
     const navigate = useNavigate();
+    useRoomObjectCatalog();
+    const [demoWeather] = useState(
+        () => LANDING_DEMO_WEATHER_KEYS[Math.floor(Math.random() * LANDING_DEMO_WEATHER_KEYS.length)],
+    );
 
     function moveToAuth(path: "/login" | "/signup") {
         navigate(path, { state: { fromLanding: true } });
@@ -46,8 +53,16 @@ export function LandingPage() {
                 </section>
 
                 <div className="w-[620px] shrink-0">
-                    <div className="h-[520px] overflow-hidden rounded-xl border border-[#5a4632]/20 bg-[#faf8f2]">
-                        <Room weatherKey="sunny" />
+                    <div
+                        className="pointer-events-none h-[520px] overflow-hidden rounded-xl border border-[#5a4632]/20 bg-[#faf8f2]"
+                        aria-label="비 오는 날의 예시 방"
+                    >
+                        <Room
+                            weatherKey={demoWeather}
+                            placedObjects={LANDING_DEMO_ROOM.placedObjects}
+                            objectScale={1.49}
+                            isInteractive={false}
+                        />
                     </div>
                 </div>
             </main>
