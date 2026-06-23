@@ -115,7 +115,7 @@ export function MyPageActivitySection({
                 return (
                   <article
                     key={plaza.id}
-                    className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-lg border border-transparent bg-white/20 p-4 transition hover:border-[#5a4632]/12 hover:bg-white/35"
+                    className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-lg border border-transparent bg-white/20 p-4 transition hover:border-[#5a4632]/12 hover:bg-white/50"
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-3">
@@ -183,7 +183,7 @@ export function MyPageActivitySection({
                     onClick={() => onSelectRecord(record.id)}
                     className={`grid grid-cols-[44px_1fr] gap-3 rounded-lg border p-3 text-left transition ${active
                       ? "border-[#9b6b54]/45 bg-[#9b6b54]/10"
-                      : "border-transparent bg-white/20 hover:border-[#5a4632]/12 hover:bg-white/35"
+                      : "border-transparent bg-white/20 hover:border-[#5a4632]/12 hover:bg-white/50"
                       }`}
                   >
                     <span className="grid h-10 w-11 place-items-center rounded-lg border border-[#5a4632]/10 bg-white/35 text-[#5a4632]/45">
