@@ -52,7 +52,7 @@ function downloadBlob(blob: Blob, fileName: string) {
 const CAPTURE_PIXEL_RATIO = 2;
 const LOGO_WIDTH_RATIO = 0.22;
 const LOGO_MARGIN = 16;
-const LOGO_OPACITY = 0.85;
+const LOGO_OPACITY = 0.5;
 
 let logoImagePromise: Promise<HTMLImageElement> | null = null;
 
