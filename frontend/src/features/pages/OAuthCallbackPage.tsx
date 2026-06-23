@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { socialLogin, type SocialProvider } from "../../services/authService";
-import { getOAuthRedirectUri, getOAuthStateKey } from "../../components/auth/SocialAuthButtons";
+import { getOAuthRedirectUri, getOAuthStateKey } from "../../utils/oauth";
 import {
   setAuthenticated,
   setCurrentUserId,

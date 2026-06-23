@@ -1,4 +1,5 @@
 import { getSocialAuthorizeUrl, type SocialProvider } from "../../services/authService";
+import { getOAuthRedirectUri, getOAuthStateKey } from "../../utils/oauth";
 import { useState } from "react";
 import googleIcon from "../../assets/google.png";
 import naverIcon from "../../assets/naver4.png";
@@ -8,8 +9,6 @@ type SocialAuthButtonsProps = {
   disabled?: boolean;
   onError?: (message: string) => void;
 };
-
-const OAUTH_STATE_KEY_PREFIX = "mw-oauth-state";
 
 const PROVIDERS: Array<{
   provider: SocialProvider;
@@ -51,14 +50,6 @@ const PROVIDERS: Array<{
       icon: naverIcon,
     },
   ];
-
-export function getOAuthStateKey(provider: SocialProvider) {
-  return `${OAUTH_STATE_KEY_PREFIX}:${provider}`;
-}
-
-export function getOAuthRedirectUri(provider: SocialProvider) {
-  return `${window.location.origin}/oauth/callback/${provider}`;
-}
 
 function createState() {
   const bytes = new Uint8Array(16);
@@ -103,10 +94,12 @@ export function SocialAuthButtons({ disabled, onError }: SocialAuthButtonsProps)
     // </div>
 
     <div className="flex justify-center gap-4">
-      {PROVIDERS.map(({ provider, className, icon }) => (
+      {PROVIDERS.map(({ provider, label, className, icon }) => (
         <button
           key={provider}
           type="button"
+          aria-label={`${label}로 계속하기`}
+          title={`${label}로 계속하기`}
           disabled={disabled || Boolean(pendingProvider)}
           onClick={() => void handleSocialLogin(provider)}
           className={`flex flex-col items-center justify-center gap-1 rounded-full border p-2 text-xs font-medium transition disabled:opacity-50 ${className}`}

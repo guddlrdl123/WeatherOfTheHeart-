@@ -82,7 +82,17 @@ git clone <repository-url>
 cd lastdance
 ```
 
-### 2. 백엔드 실행
+### 2. MySQL 실행
+
+루트 `.env`의 `DB_PASSWORD`를 사용해 MySQL 컨테이너와 `woth` 데이터베이스를 생성합니다.
+
+```bash
+docker compose up -d mysql
+```
+
+데이터는 `woth_mysql_data` Docker 볼륨에 유지됩니다. 컨테이너 상태는 `docker compose ps`로 확인할 수 있습니다.
+
+### 3. 백엔드 실행
 
 백엔드는 기본적으로 `5000` 포트에서 실행됩니다.
 
@@ -98,7 +108,7 @@ cd backend
 .\gradlew.bat bootRun
 ```
 
-### 3. 프론트엔드 실행
+### 4. 프론트엔드 실행
 
 ```bash
 cd frontend
@@ -110,7 +120,7 @@ Vite 개발 서버가 실행되면 브라우저에서 안내되는 로컬 주소
 
 ## 환경 변수
 
-백엔드는 루트 또는 `backend` 폴더의 `.env` 파일을 읽을 수 있습니다.
+백엔드와 프론트엔드는 루트 `.env` 파일을 함께 읽습니다. `VITE_` 접두사가 붙은 값만 프론트엔드 번들에 노출됩니다.
 
 ```env
 SERVER_PORT=5000
@@ -138,11 +148,6 @@ KAKAO_CLIENT_SECRET=your_kakao_client_secret
 NAVER_CLIENT_ID=your_naver_client_id
 NAVER_CLIENT_SECRET=your_naver_client_secret
 OAUTH_ALLOWED_REDIRECT_URIS=http://localhost:5173/oauth/callback/google,http://localhost:5173/oauth/callback/kakao,http://localhost:5173/oauth/callback/naver,http://localhost:5174/oauth/callback/google,http://localhost:5174/oauth/callback/kakao,http://localhost:5174/oauth/callback/naver
-```
-
-프론트엔드는 `frontend/.env`에 API 주소를 설정할 수 있습니다.
-
-```env
 VITE_API_BASE_URL=http://localhost:5000
 VITE_S3_ASSET_BASE_URL=https://your_bucket_name.s3.ap-northeast-2.amazonaws.com
 ```
