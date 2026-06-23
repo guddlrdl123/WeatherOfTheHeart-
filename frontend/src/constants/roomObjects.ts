@@ -154,6 +154,7 @@ const WIDTH_BY_KEY: Record<RoomObjectKey, number> = {
     "market-sign": 120,
     "no-littering-sign": 140,
     "notice-board": 130,
+    "snake-plant-floor-pot": 90,
     "keep-off-grass-sign": 140,
     "small-trash-can": 50,
     "small-well": 180,
