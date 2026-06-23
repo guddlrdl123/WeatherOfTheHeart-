@@ -13,6 +13,8 @@ CREATE TABLE users (
                        deleted_at DATETIME NULL,
                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                       CONSTRAINT uk_users_email_auth_provider UNIQUE (email, auth_provider),
+                       CONSTRAINT uk_users_auth_provider_id UNIQUE (auth_provider, auth_provider_id),
                        INDEX idx_users_email_auth_provider (email, auth_provider),
                        INDEX idx_users_auth_provider_id (auth_provider, auth_provider_id)
 );

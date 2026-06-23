@@ -35,12 +35,12 @@ export function OAuthCallbackPage() {
       const savedState = sessionStorage.getItem(getOAuthStateKey(socialProvider));
 
       if (providerError) {
-        setError("소셜 로그인이 취소되었거나 실패했습니다.");
+        setError("소셜 인증이 취소되었거나 실패했습니다.");
         return;
       }
 
       if (!code || !state || !savedState || state !== savedState) {
-        setError("소셜 로그인 요청을 확인할 수 없습니다. 다시 시도해주세요.");
+        setError("소셜 인증 요청을 확인할 수 없습니다. 다시 시도해주세요.");
         return;
       }
 
@@ -66,7 +66,7 @@ export function OAuthCallbackPage() {
         sessionStorage.removeItem(getOAuthStateKey(socialProvider));
         navigate("/room", { replace: true });
       } catch (caughtError) {
-        setError(caughtError instanceof Error ? caughtError.message : "소셜 로그인에 실패했습니다.");
+        setError(caughtError instanceof Error ? caughtError.message : "소셜 인증에 실패했습니다.");
       }
     }
 
@@ -81,7 +81,7 @@ export function OAuthCallbackPage() {
     <div className="mw-app min-h-[100dvh]">
       <main className="flex min-h-[100dvh] items-center justify-center px-5">
         <div className="mw-surface w-full max-w-[420px] rounded-xl p-8 text-center">
-          <p className="mb-3 text-[0.68rem] tracking-[0.2em] text-[#e0d2ba]">SOCIAL LOGIN</p>
+          <p className="mb-3 text-[0.68rem] tracking-[0.2em] text-[#e0d2ba]">SOCIAL AUTH</p>
           {error ? (
             <>
               <p className="text-sm text-[#e6a1a1]">{error}</p>
@@ -90,7 +90,7 @@ export function OAuthCallbackPage() {
               </Link>
             </>
           ) : (
-            <p className="text-sm text-white/54">로그인 정보를 확인하고 있습니다.</p>
+            <p className="text-sm text-white/54">소셜 계정을 확인하고 있습니다.</p>
           )}
         </div>
       </main>

@@ -1,6 +1,7 @@
 package com.woth.backend.global.exception;
 
 import com.woth.backend.global.dto.ApiResponse;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -30,6 +31,17 @@ public class GlobalExceptionHandler {
     })
     public ResponseEntity<ApiResponse<Object>> handleBadRequestException(Exception e) {
         // 방어 코드: /api/users/me처럼 숫자가 아닌 userId가 들어오면 500 대신 400을 반환합니다.
+        ApiResponse<Object> response = ApiResponse.builder()
+                .status("ERROR")
+                .message(ErrorCode.INVALID_INPUT.getMessage() + " [Code: " + ErrorCode.INVALID_INPUT.getCode() + "]")
+                .data(null)
+                .build();
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
+        e.printStackTrace();
         ApiResponse<Object> response = ApiResponse.builder()
                 .status("ERROR")
                 .message(ErrorCode.INVALID_INPUT.getMessage() + " [Code: " + ErrorCode.INVALID_INPUT.getCode() + "]")

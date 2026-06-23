@@ -9,7 +9,17 @@ import java.time.LocalDateTime;
  * 익명 사용자 및 회원 정보를 저장하고 관리하는 도메인 클래스
  */
 @Entity
-@Table(name = "users")
+@Table(
+        name = "users",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_users_email_auth_provider", columnNames = {"email", "auth_provider"}),
+                @UniqueConstraint(name = "uk_users_auth_provider_id", columnNames = {"auth_provider", "auth_provider_id"})
+        },
+        indexes = {
+                @Index(name = "idx_users_email_auth_provider", columnList = "email, auth_provider"),
+                @Index(name = "idx_users_auth_provider_id", columnList = "auth_provider, auth_provider_id")
+        }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // 무분별한 객체 생성 방지
 @AllArgsConstructor(access = AccessLevel.PRIVATE)  // 빌더 패턴 사용을 위한 전체 생성자
