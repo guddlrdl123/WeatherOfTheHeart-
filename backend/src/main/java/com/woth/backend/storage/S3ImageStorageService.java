@@ -63,7 +63,7 @@ public class S3ImageStorageService {
             return parseDataUrl(imageDataOrUrl);
         }
 
-        String key = resolveKeyFromPublicUrl(imageDataOrUrl);
+        String key = resolveKeyFromImageReference(imageDataOrUrl);
         GetObjectRequest request = GetObjectRequest.builder()
                 .bucket(bucketName)
                 .key(key)
@@ -95,21 +95,31 @@ public class S3ImageStorageService {
         }
     }
 
-    private String resolveKeyFromPublicUrl(String imageUrl) {
+    private String resolveKeyFromImageReference(String imageUrl) {
         String normalizedBaseUrl = publicBaseUrl.replaceAll("/+$", "");
         String normalizedImageUrl = imageUrl.trim();
+        String encodedKey;
 
-        if (!normalizedImageUrl.startsWith(normalizedBaseUrl + "/")) {
+        if (normalizedImageUrl.startsWith(normalizedBaseUrl + "/")) {
+            encodedKey = normalizedImageUrl.substring(normalizedBaseUrl.length() + 1);
+        } else if (normalizedImageUrl.startsWith("http://") || normalizedImageUrl.startsWith("https://")) {
             throw new CustomException(ErrorCode.INVALID_INPUT);
+        } else {
+            encodedKey = normalizedImageUrl.replaceFirst("^/+", "");
         }
 
-        String encodedKey = normalizedImageUrl.substring(normalizedBaseUrl.length() + 1);
         int queryIndex = encodedKey.indexOf("?");
         if (queryIndex >= 0) {
             encodedKey = encodedKey.substring(0, queryIndex);
         }
 
-        return URLDecoder.decode(encodedKey, StandardCharsets.UTF_8);
+        String key = URLDecoder.decode(encodedKey, StandardCharsets.UTF_8);
+
+        if (key.isBlank() || key.startsWith("/") || key.contains("../")) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        return key;
     }
 
     private String normalizeDirectory(String directory) {

@@ -110,7 +110,8 @@ export function RoomShareButton({
 
       setImageBlob(blob);
       setPreviewUrl(URL.createObjectURL(blob));
-    } catch {
+    } catch (error) {
+      console.error("Room capture failed", error);
       window.alert("방 사진을 만들지 못했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
       setIsCapturing(false);

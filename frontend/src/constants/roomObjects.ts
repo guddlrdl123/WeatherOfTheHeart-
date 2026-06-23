@@ -534,7 +534,7 @@ function isAbsoluteImageUrl(imageUrl: string) {
 function canResolveCatalogImage(catalog: ObjectCatalogResponse) {
     const imageUrl = getCatalogImageUrl(catalog);
 
-    return Boolean(imageUrl) && (isAbsoluteImageUrl(imageUrl) || Boolean(S3_ASSET_BASE_URL));
+    return Boolean(imageUrl);
 }
 
 function resolveCatalogImage(catalog: ObjectCatalogResponse, mode: ObjectCatalogMode, localObject?: RoomObjectOption) {
@@ -542,6 +542,12 @@ function resolveCatalogImage(catalog: ObjectCatalogResponse, mode: ObjectCatalog
 
     if (!imageUrl) {
         return mode === "api" ? MISSING_ROOM_OBJECT_IMAGE : localObject?.image ?? MISSING_ROOM_OBJECT_IMAGE;
+    }
+
+    // 배포 환경에서는 S3 직접 URL 대신 API 프록시를 사용합니다. S3 CORS 설정과 무관하게
+    // 방 캡처 라이브러리가 오브젝트 이미지를 안전하게 data URL로 변환할 수 있습니다.
+    if (mode === "api" || mode === "merge") {
+        return toApiUrl(`/api/objects/${encodeURIComponent(catalog.objectKey)}/image`);
     }
 
     if (isAbsoluteImageUrl(imageUrl)) {
@@ -552,7 +558,7 @@ function resolveCatalogImage(catalog: ObjectCatalogResponse, mode: ObjectCatalog
         return `${S3_ASSET_BASE_URL.replace(/\/+$/, "")}/${imageUrl.replace(/^\/+/, "")}`;
     }
 
-    return mode === "api" ? MISSING_ROOM_OBJECT_IMAGE : localObject?.image ?? MISSING_ROOM_OBJECT_IMAGE;
+    return localObject?.image ?? MISSING_ROOM_OBJECT_IMAGE;
 }
 
 function toCatalogRoomObjectOption(catalog: ObjectCatalogResponse, mode: ObjectCatalogMode): RoomObjectOption {

@@ -3,6 +3,7 @@ package com.woth.backend.object;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 /*
  * ObjectCatalog 엔티티에 대한 JPA 리포지토리
  * objectKey 기반 조회와 활성화된 오브젝트 목록 조회 기능
@@ -10,4 +11,6 @@ import java.util.List;
 public interface ObjectCatalogRepository extends JpaRepository<ObjectCatalog, Long> {
 
     List<ObjectCatalog> findByIsActiveTrueOrderByIdAsc();
+
+    Optional<ObjectCatalog> findByObjectKeyAndIsActiveTrue(String objectKey);
 }
