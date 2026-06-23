@@ -40,6 +40,7 @@ const ROOM_LAYOUT_WIDTH = 1460;
 const ROOM_LAYOUT_HEIGHT = 630;
 const ROOM_NOTICE_DURATION_MS = 3500;
 const DUPLICATE_MEMORY_DATE_NOTICE = "해당 날짜에는 이미 기록이 있어요. 다른 날짜를 선택해주세요.";
+const PLACEMENT_IN_PROGRESS_NOTICE = "오브젝트 배치를 완료해주세요.";
 
 const getMonthKey = (dateString: string) => {
     return dateString.slice(0, 7);
@@ -300,9 +301,13 @@ function RoomPage() {
     };
 
     const handleOpenWriteModal = () => {
+        if (pendingPlacement || editingPlacement || isPlacementSaving) {
+            showRoomNotice(PLACEMENT_IN_PROGRESS_NOTICE);
+            return;
+        }
+
         closeRoomNotice();
         setActiveObjectId(null);
-        setEditingPlacement(null);
         setIsWriteOpen(true);
     };
 
@@ -578,119 +583,119 @@ function RoomPage() {
                         }}
                     >
 
-                    {/* LEFT CARD */}
-                    <div className="w-[320px] shrink-0 flex flex-col gap-4">
+                        {/* LEFT CARD */}
+                        <div className="w-[320px] shrink-0 flex flex-col gap-4">
 
-                        <div className="h-[360px] bg-[#faf8f2] rounded-2xl border border-[#5a4632]/20 overflow-hidden">
-                            <RoomCalendarSidebar
-                                selectedDate={selectedDate}
-                                onSelectDate={handleSelectDate}
-                                memories={memories}
-                            />
-                        </div>
-
-                        <div className="h-[254px] bg-[#faf8f2] rounded-2xl border border-[#5a4632]/20 overflow-hidden">
-                            {isMemoryLoading ? (
-                                <section className="flex h-full flex-col rounded-xl p-5 select-none">
-                                    <h2 className="text-lg font-normal text-[#5a4632]">
-                                        기록을 불러오는 중입니다.
-                                    </h2>
-                                    <p className="mt-3 text-sm leading-7 text-[#5a4632]/60">
-                                        기존 기록을 확인한 뒤 작성할 수 있어요.
-                                    </p>
-                                </section>
-                            ) : memoryLoadError ? (
-                                <section className="flex h-full flex-col rounded-xl p-5 select-none">
-                                    <h2 className="text-lg font-normal text-[#5a4632]">
-                                        기록을 불러오지 못했습니다.
-                                    </h2>
-                                    <p className="mt-3 text-sm leading-7 text-[#c86f67]">
-                                        {memoryLoadError}
-                                    </p>
-                                </section>
-                            ) : (
-                                <RoomMemoryPanel
+                            <div className="h-[360px] bg-[#faf8f2] rounded-2xl border border-[#5a4632]/20 overflow-hidden">
+                                <RoomCalendarSidebar
                                     selectedDate={selectedDate}
-                                    selectedMemory={selectedMemory}
-                                    onWrite={handleOpenWriteModal}
-                                    onPreview={() => {
-                                        if (selectedMemory) {
-                                            setPreviewMemory(selectedMemory);
-                                        }
-                                    }}
-                                // weatherText="맑음"
+                                    onSelectDate={handleSelectDate}
+                                    memories={memories}
                                 />
-                            )}
-                        </div>
-                    </div>
-
-                    {/* ROOM CARD */}
-                    <div className="relative w-[1120px] h-[630px] shrink-0 bg-[#faf8f2] rounded-2xl border border-[#5a4632]/20 overflow-hidden">
-                        <div className="pointer-events-none absolute left-3 top-3 z-40 rounded-md border border-[#5a4632]/15 bg-[#fffbf6]/80 px-2 py-1 text-xs text-[#5a4632]/70 shadow-sm backdrop-blur-sm">
-                            <span className="font-medium text-[#5a4632]">{roomMonthLabel}의 방</span>
-                            <span className="ml-2 text-[#5a4632]/55">{placedRoomObjects.length}개</span>
-                        </div>
-                        <Room
-                            weatherKey={roomWeather}
-                            placedObjects={placedRoomObjects}
-                            activeObjectId={activeObjectId ?? undefined}
-                            bouncingObjectId={bouncingObjectId ?? undefined}
-                            onObjectSelect={setActiveObjectId}
-                            onObjectPreview={(objectId) => {
-                                const memory = memories.find((item) => item.id === objectId);
-                                if (memory) {
-                                    setActiveObjectId(null);
-                                    setPreviewMemory(memory);
-                                }
-                            }}
-                            onObjectEdit={(objectId) => {
-                                handleStartObjectPlacementEdit(objectId);
-                            }}
-                            placementDraft={
-                                pendingPlacement
-                                    ? {
-                                        objectKey: pendingPlacement.value.objectKey,
-                                        position: pendingPlacement.position,
-                                        layer: pendingPlacement.layer,
-                                    }
-                                    : editingPlacement
-                                        ? {
-                                            objectKey: editingPlacement.objectKey,
-                                            position: editingPlacement.position,
-                                            layer: editingPlacement.layer,
-                                        }
-                                        : null
-                            }
-                            onPlacementCancel={handleCancelPlacement}
-                            onPlacementChange={handlePlacementChange}
-                            onPlacementConfirm={handleConfirmPlacement}
-                            onPlacementReset={editingPlacement ? handleResetPlacement : undefined}
-                            onPlacementLayerDown={handlePlacementLayerDown}
-                            onPlacementLayerUp={handlePlacementLayerUp}
-                            isPlacementSaving={isPlacementSaving}
-                            placementSavingMessage={
-                                editingPlacement
-                                    ? "오브젝트 위치를 저장하고 있어요. 잠시만 기다려주세요."
-                                    : "이야기를 확인하고 마음의 날씨를 분석하고 있어요. 잠시만 기다려주세요."
-                            }
-                        />
-                        {isRoomLoading && (
-                            <div
-                                className="absolute inset-0 z-[80] flex items-center justify-center bg-[#faf8f2]/82 backdrop-blur-[1px]"
-                                aria-live="polite"
-                            >
-                                <div className="flex w-[280px] flex-col items-center gap-4 text-[#5a4632]/60">
-                                    <div className="relative h-24 w-44">
-                                        <span className="absolute bottom-0 left-1/2 h-20 w-20 -translate-x-1/2 rounded-[999px_999px_42%_42%] bg-[#5a4632]/10 shadow-[0_14px_24px_rgba(90,70,50,0.08)] animate-pulse" />
-                                        <span className="absolute bottom-2 left-8 h-12 w-12 rounded-[999px_999px_42%_42%] bg-[#9b6b54]/10 shadow-[0_10px_18px_rgba(90,70,50,0.07)] animate-pulse [animation-delay:160ms]" />
-                                        <span className="absolute bottom-3 right-7 h-14 w-14 rounded-[999px_999px_42%_42%] bg-white/55 shadow-[0_10px_18px_rgba(90,70,50,0.07)] animate-pulse [animation-delay:320ms]" />
-                                    </div>
-                                    <p className="text-sm">방을 불러오는 중입니다.</p>
-                                </div>
                             </div>
-                        )}
-                        {/* <div className="pointer-events-none absolute inset-0 z-50 rounded-2xl ring-1 ring-inset ring-[#fffbf6]/40" /> */}
-                    </div>
+
+                            <div className="h-[254px] bg-[#faf8f2] rounded-2xl border border-[#5a4632]/20 overflow-hidden">
+                                {isMemoryLoading ? (
+                                    <section className="flex h-full flex-col rounded-xl p-5 select-none">
+                                        <h2 className="text-lg font-normal text-[#5a4632]">
+                                            기록을 불러오는 중입니다.
+                                        </h2>
+                                        <p className="mt-3 text-sm leading-7 text-[#5a4632]/60">
+                                            기존 기록을 확인한 뒤 작성할 수 있어요.
+                                        </p>
+                                    </section>
+                                ) : memoryLoadError ? (
+                                    <section className="flex h-full flex-col rounded-xl p-5 select-none">
+                                        <h2 className="text-lg font-normal text-[#5a4632]">
+                                            기록을 불러오지 못했습니다.
+                                        </h2>
+                                        <p className="mt-3 text-sm leading-7 text-[#c86f67]">
+                                            {memoryLoadError}
+                                        </p>
+                                    </section>
+                                ) : (
+                                    <RoomMemoryPanel
+                                        selectedDate={selectedDate}
+                                        selectedMemory={selectedMemory}
+                                        onWrite={handleOpenWriteModal}
+                                        onPreview={() => {
+                                            if (selectedMemory) {
+                                                setPreviewMemory(selectedMemory);
+                                            }
+                                        }}
+                                    // weatherText="맑음"
+                                    />
+                                )}
+                            </div>
+                        </div>
+
+                        {/* ROOM CARD */}
+                        <div className="relative w-[1120px] h-[630px] shrink-0 bg-[#faf8f2] rounded-2xl border border-[#5a4632]/20 overflow-hidden">
+                            <div className="pointer-events-none absolute left-3 top-3 z-40 rounded-md border border-[#5a4632]/15 bg-[#fffbf6]/80 px-2 py-1 text-xs text-[#5a4632]/70 shadow-sm backdrop-blur-sm">
+                                <span className="font-medium text-[#5a4632]">{roomMonthLabel}의 방</span>
+                                <span className="ml-2 text-[#5a4632]/55">{placedRoomObjects.length}개</span>
+                            </div>
+                            <Room
+                                weatherKey={roomWeather}
+                                placedObjects={placedRoomObjects}
+                                activeObjectId={activeObjectId ?? undefined}
+                                bouncingObjectId={bouncingObjectId ?? undefined}
+                                onObjectSelect={setActiveObjectId}
+                                onObjectPreview={(objectId) => {
+                                    const memory = memories.find((item) => item.id === objectId);
+                                    if (memory) {
+                                        setActiveObjectId(null);
+                                        setPreviewMemory(memory);
+                                    }
+                                }}
+                                onObjectEdit={(objectId) => {
+                                    handleStartObjectPlacementEdit(objectId);
+                                }}
+                                placementDraft={
+                                    pendingPlacement
+                                        ? {
+                                            objectKey: pendingPlacement.value.objectKey,
+                                            position: pendingPlacement.position,
+                                            layer: pendingPlacement.layer,
+                                        }
+                                        : editingPlacement
+                                            ? {
+                                                objectKey: editingPlacement.objectKey,
+                                                position: editingPlacement.position,
+                                                layer: editingPlacement.layer,
+                                            }
+                                            : null
+                                }
+                                onPlacementCancel={handleCancelPlacement}
+                                onPlacementChange={handlePlacementChange}
+                                onPlacementConfirm={handleConfirmPlacement}
+                                onPlacementReset={editingPlacement ? handleResetPlacement : undefined}
+                                onPlacementLayerDown={handlePlacementLayerDown}
+                                onPlacementLayerUp={handlePlacementLayerUp}
+                                isPlacementSaving={isPlacementSaving}
+                                placementSavingMessage={
+                                    editingPlacement
+                                        ? "오브젝트 위치를 저장하고 있어요. 잠시만 기다려주세요."
+                                        : "이야기를 확인하고 마음의 날씨를 분석하고 있어요. 잠시만 기다려주세요."
+                                }
+                            />
+                            {isRoomLoading && (
+                                <div
+                                    className="absolute inset-0 z-[80] flex items-center justify-center bg-[#faf8f2]/82 backdrop-blur-[1px]"
+                                    aria-live="polite"
+                                >
+                                    <div className="flex w-[280px] flex-col items-center gap-4 text-[#5a4632]/60">
+                                        <div className="relative h-24 w-44">
+                                            <span className="absolute bottom-0 left-1/2 h-20 w-20 -translate-x-1/2 rounded-[999px_999px_42%_42%] bg-[#5a4632]/10 shadow-[0_14px_24px_rgba(90,70,50,0.08)] animate-pulse" />
+                                            <span className="absolute bottom-2 left-8 h-12 w-12 rounded-[999px_999px_42%_42%] bg-[#9b6b54]/10 shadow-[0_10px_18px_rgba(90,70,50,0.07)] animate-pulse [animation-delay:160ms]" />
+                                            <span className="absolute bottom-3 right-7 h-14 w-14 rounded-[999px_999px_42%_42%] bg-white/55 shadow-[0_10px_18px_rgba(90,70,50,0.07)] animate-pulse [animation-delay:320ms]" />
+                                        </div>
+                                        <p className="text-sm">방을 불러오는 중입니다.</p>
+                                    </div>
+                                </div>
+                            )}
+                            {/* <div className="pointer-events-none absolute inset-0 z-50 rounded-2xl ring-1 ring-inset ring-[#fffbf6]/40" /> */}
+                        </div>
 
                     </div>
                 </div>
