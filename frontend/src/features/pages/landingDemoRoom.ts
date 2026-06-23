@@ -21,7 +21,7 @@ export const LANDING_DEMO_ROOM: {
     { id: "demo-planter", objectKey: "wall-wooden-ivy-planter", position: { x: 65, y: 38 }, layer: 0 },
     { id: "demo-folded-blanket", objectKey: "folded-blanket", position: { x: 15, y: 73 }, layer: 1 },
     { id: "demo-pot", objectKey: "snake-plant-floor-pot", position: { x: 90, y: 78 }, layer: 0 },
-    { id: "demo-umbrella", objectKey: "umbrella", position: { x: 35, y: 83 }, layer: 0 },
+    { id: "demo-box3", objectKey: "box3", position: { x: 35, y: 83 }, layer: 0 },
   ],
 };
 
