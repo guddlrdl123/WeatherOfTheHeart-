@@ -2,7 +2,7 @@ import { Camera, Download, Loader2, Share2, X } from "lucide-react";
 import { useEffect, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock";
-import logoUrl from "../../assets/image-logo.png";
+import logoUrl from "../../assets/image-logo2.png";
 
 type RoomShareButtonProps = {
   targetRef: RefObject<HTMLDivElement | null>;
@@ -50,7 +50,7 @@ function downloadBlob(blob: Blob, fileName: string) {
 }
 
 const CAPTURE_PIXEL_RATIO = 2;
-const LOGO_WIDTH_RATIO = 0.11;
+const LOGO_WIDTH_RATIO = 0.22;
 const LOGO_MARGIN = 16;
 const LOGO_OPACITY = 0.85;
 
