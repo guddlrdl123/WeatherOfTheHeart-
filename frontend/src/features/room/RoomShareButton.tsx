@@ -2,6 +2,7 @@ import { Camera, Download, Loader2, Share2, X } from "lucide-react";
 import { useEffect, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock";
+import logoUrl from "../../assets/image-logo.png";
 
 type RoomShareButtonProps = {
   targetRef: RefObject<HTMLDivElement | null>;
@@ -46,6 +47,81 @@ function downloadBlob(blob: Blob, fileName: string) {
   link.click();
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+}
+
+const CAPTURE_PIXEL_RATIO = 2;
+const LOGO_WIDTH_RATIO = 0.13;
+const LOGO_MARGIN = 16;
+const LOGO_OPACITY = 0.85;
+
+let logoImagePromise: Promise<HTMLImageElement> | null = null;
+
+function loadLogoImage() {
+  if (!logoImagePromise) {
+    logoImagePromise = new Promise((resolve, reject) => {
+      const image = new Image();
+
+      image.addEventListener("load", () => resolve(image), { once: true });
+      image.addEventListener("error", reject, { once: true });
+      image.src = logoUrl;
+    });
+  }
+
+  return logoImagePromise;
+}
+
+function loadImageFromBlob(blob: Blob) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(blob);
+    const image = new Image();
+
+    image.addEventListener("load", () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    }, { once: true });
+    image.addEventListener("error", (event) => {
+      URL.revokeObjectURL(objectUrl);
+      reject(event);
+    }, { once: true });
+    image.src = objectUrl;
+  });
+}
+
+async function withLogoWatermark(blob: Blob) {
+  try {
+    const [roomImage, logoImage] = await Promise.all([
+      loadImageFromBlob(blob),
+      loadLogoImage(),
+    ]);
+    const canvas = document.createElement("canvas");
+
+    canvas.width = roomImage.naturalWidth;
+    canvas.height = roomImage.naturalHeight;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return blob;
+    }
+
+    context.drawImage(roomImage, 0, 0);
+
+    const logoWidth = canvas.width * LOGO_WIDTH_RATIO;
+    const logoHeight = logoWidth * (logoImage.naturalHeight / logoImage.naturalWidth);
+    const margin = LOGO_MARGIN * CAPTURE_PIXEL_RATIO;
+    const x = canvas.width - logoWidth - margin;
+    const y = canvas.height - logoHeight - margin;
+
+    context.globalAlpha = LOGO_OPACITY;
+    context.drawImage(logoImage, x, y, logoWidth, logoHeight);
+    context.globalAlpha = 1;
+
+    return await new Promise<Blob>((resolve) => {
+      canvas.toBlob((result) => resolve(result ?? blob), "image/png");
+    });
+  } catch (error) {
+    console.error("Logo watermark failed", error);
+    return blob;
+  }
 }
 
 export function RoomShareButton({
@@ -97,7 +173,7 @@ export function RoomShareButton({
       const blob = await toBlob(target, {
         backgroundColor: "#faf8f2",
         cacheBust: true,
-        pixelRatio: 2,
+        pixelRatio: CAPTURE_PIXEL_RATIO,
         filter: (node) => (
           !(node instanceof HTMLElement)
           || node.dataset.roomCaptureExclude !== "true"
@@ -108,8 +184,10 @@ export function RoomShareButton({
         throw new Error("empty room image");
       }
 
-      setImageBlob(blob);
-      setPreviewUrl(URL.createObjectURL(blob));
+      const finalBlob = await withLogoWatermark(blob);
+
+      setImageBlob(finalBlob);
+      setPreviewUrl(URL.createObjectURL(finalBlob));
     } catch (error) {
       console.error("Room capture failed", error);
       window.alert("방 사진을 만들지 못했습니다. 잠시 후 다시 시도해 주세요.");
