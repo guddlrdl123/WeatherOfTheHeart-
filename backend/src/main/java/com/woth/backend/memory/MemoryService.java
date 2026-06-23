@@ -30,13 +30,13 @@ public class MemoryService {
             UserRepository userRepository,
             PrivateRoomRepository privateRoomRepository,
             PrivateMemoryRepository privateMemoryRepository,
-            AiService aiService
-    ) {
+            AiService aiService) {
         this.userRepository = userRepository;
         this.privateRoomRepository = privateRoomRepository;
         this.privateMemoryRepository = privateMemoryRepository;
         this.aiService = aiService;
     }
+
     // 개인 메모 조회, 생성, 위치 업데이트 기능을 제공하는 서비스 메서드들
     @Transactional(readOnly = true)
     public List<PrivateMemory> listMemories(Long userId) {
@@ -65,8 +65,7 @@ public class MemoryService {
                                 .year(year)
                                 .month(month)
                                 .title("나만의 방")
-                                .build()
-                ));
+                                .build()));
 
         PrivateMemory memory = PrivateMemory.builder()
                 .privateRoom(privateRoom)
@@ -100,8 +99,7 @@ public class MemoryService {
                 request.positionY(),
                 request.flipX(),
                 request.tiltDeg(),
-                request.layer()
-        );
+                request.layer());
 
         normalizeRoomMemoryLayers(memory.getPrivateRoom().getId());
 
@@ -121,8 +119,7 @@ public class MemoryService {
         memory.updateContent(
                 normalizeTitle(request.title()),
                 request.content(),
-                request.moodKey()
-        );
+                request.moodKey());
 
         return memory;
     }
@@ -138,7 +135,7 @@ public class MemoryService {
     private String normalizeTitle(String title) {
         // 프론트에서 제목을 비워도 DB의 NOT NULL 제약을 만족하도록 기본 제목을 사용
         if (title == null || title.isBlank()) {
-            return "제목 없는 기억";
+            return "어느 날의 이야기";
         }
 
         return title;
@@ -171,8 +168,7 @@ public class MemoryService {
                         memory.getPositionY(),
                         memory.getFlipX(),
                         memory.getTiltDeg(),
-                        layer
-                );
+                        layer);
             }
         }
     }
@@ -191,15 +187,13 @@ public class MemoryService {
             String slotKey,
             Integer positionX,
             Integer positionY,
-            Integer layer
-    ) {
+            Integer layer) {
     }
 
     public record UpdateMemoryRequest(
             String title,
             String content,
-            String moodKey
-    ) {
+            String moodKey) {
     }
 
     public record UpdateMemoryPositionRequest(
@@ -207,7 +201,6 @@ public class MemoryService {
             Integer positionY,
             Boolean flipX,
             Integer tiltDeg,
-            Integer layer
-    ) {
+            Integer layer) {
     }
 }
