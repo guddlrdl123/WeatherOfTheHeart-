@@ -636,7 +636,10 @@ function RoomPage() {
                             ref={roomCaptureRef}
                             className="relative w-[1120px] h-[630px] shrink-0 bg-[#faf8f2] rounded-2xl border border-[#5a4632]/20 overflow-hidden"
                         >
-                            <div className="pointer-events-none absolute left-3 top-3 z-40 rounded-md border border-[#5a4632]/15 bg-[#fffbf6]/80 px-2 py-1 text-xs text-[#5a4632]/70 shadow-sm backdrop-blur-sm">
+                            <div
+                                data-room-capture-exclude="true"
+                                className="pointer-events-none absolute left-3 top-3 z-40 rounded-md border border-[#5a4632]/15 bg-[#fffbf6]/80 px-2 py-1 text-xs text-[#5a4632]/70 shadow-sm backdrop-blur-sm"
+                            >
                                 <span className="font-medium text-[#5a4632]">{roomMonthLabel}의 방</span>
                                 <span className="ml-2 text-[#5a4632]/55">{placedRoomObjects.length}개</span>
                             </div>
