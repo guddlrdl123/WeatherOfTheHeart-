@@ -159,7 +159,7 @@ export function MyPageActivitySection({
             <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full border border-[#5a4632]/15 bg-white/35 text-[#5a4632]/65">
               <MessageSquareText size={20} />
             </div>
-            <h3 className="text-lg font-normal text-[#5a4632]">아직 보관된 광장 글이 없어요.</h3>
+            <h3 className="text-lg font-normal text-[#5a4632]">아직 보관된 발자취가 없어요.</h3>
             <p className="mt-2 text-sm text-[#5a4632]/55">광장에서 발자취를 남기면 마이페이지에 남습니다.</p>
           </div>
         </section>
@@ -220,13 +220,13 @@ export function MyPageActivitySection({
                 <div className="mb-6 flex items-start justify-between gap-5 border-b border-[#5a4632]/15 pb-6">
                   <div className="min-w-0">
                     <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-[#5a4632]/48">
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-[#5a4632]/12 bg-white/30 px-2.5 py-1">
-                        {getPlazaStatusLabel(selectedRecord.plaza)}
-                      </span>
-                      <div className="flex items-center gap-1 px-3 py-1 text-xs text-[#5a4632]/58">
+                      <div className="flex items-center gap-1 text-xs text-[#5a4632]/58">
                         <CalendarDays size={14} />
                         {formatCreatedAt(selectedRecord.entry.createdAt)}
                       </div>
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-[#5a4632]/12 bg-white/30 px-2.5 py-1">
+                        {getPlazaStatusLabel(selectedRecord.plaza)}
+                      </span>
                     </div>
                     <h3 className="truncate text-2xl font-normal text-[#5a4632]">
                       {selectedRecord.plaza.topic}
@@ -258,7 +258,7 @@ export function MyPageActivitySection({
                     </p>
                   </section>
 
-                  <aside className="rounded-lg border border-[#5a4632]/12 bg-white/25 p-5">
+                  <aside className="self-start rounded-lg border border-[#5a4632]/12 bg-white/25 p-5">
                     <p className="mb-4 text-xs text-[#5a4632]/45">내 오브젝트</p>
                     <div className="grid place-items-center rounded-lg border border-[#5a4632]/10 bg-white/30 px-4 py-7 text-[#5a4632]/45">
                       {selectedObject ? (
@@ -268,7 +268,6 @@ export function MyPageActivitySection({
                       )}
                     </div>
                     <p className="mt-4 truncate text-sm text-[#5a4632]">{selectedObject?.label ?? "알 수 없는 오브젝트"}</p>
-                    <p className="mt-1 text-xs text-[#5a4632]/45">이 글과 함께 광장에 놓인 오브젝트</p>
                   </aside>
                 </div>
               </div>
