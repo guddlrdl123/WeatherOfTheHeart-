@@ -4,6 +4,7 @@ import type { WeatherKey } from "../../types/weather";
 import type { MoodKey } from "../../types/mood";
 import type { RoomObjectKey } from "../../types/roomObject";
 import { MOOD_BY_KEY, MOOD_OPTIONS } from "../../constants/mood";
+import { getTodayString } from "../../utils/date";
 import { MemoryObjectSelectModal } from "./MemoryObjectSelectModal";
 
 export type WriteModalValue = {
@@ -37,9 +38,7 @@ export function MemoryWriteModal({
     onSave,
     onUnavailableDateSelect,
 }: MemoryWriteModalProps) {
-    const today = useMemo(() => {
-        return new Date().toISOString().split("T")[0];
-    }, []);
+    const today = getTodayString();
     const unavailableDateSet = useMemo(() => new Set(unavailableDates), [unavailableDates]);
 
     const [memoryDate, setMemoryDate] = useState(initialDate);

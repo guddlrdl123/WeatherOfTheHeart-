@@ -1,4 +1,4 @@
-import { readApiData, readJsonResponse, toApiUrl } from "./apiClient";
+import { apiFetch, readApiData, readJsonResponse, toApiUrl } from "./apiClient";
 
 export type AuthResponse = {
   id?: number | string;
@@ -94,7 +94,7 @@ function getAuthErrorMessage(body: ApiErrorResponse | null, fallbackMessage: str
 }
 
 async function postAuth<TResponse>(path: string, body: object, errorMessage: string) {
-  const response = await fetch(toApiUrl(path), {
+  const response = await apiFetch(toApiUrl(path), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -111,7 +111,7 @@ async function postAuth<TResponse>(path: string, body: object, errorMessage: str
 }
 
 async function getAuth<TResponse>(path: string, errorMessage: string) {
-  const response = await fetch(toApiUrl(path));
+  const response = await apiFetch(toApiUrl(path));
 
   if (!response.ok) {
     const body = await readJsonResponse<ApiErrorResponse>(response).catch(() => null);

@@ -2,7 +2,7 @@ import type { Memory } from "../types/memory";
 import type { MoodKey } from "../types/mood";
 import type { RoomObjectKey, RoomObjectPosition } from "../types/roomObject";
 import type { WeatherKey } from "../types/weather";
-import { authFetch, readJsonResponse, toApiUrl } from "./apiClient";
+import { authFetch, readApiError, readJsonResponse, toApiUrl } from "./apiClient";
 
 type ApiResponse<T> = {
   status: string;
@@ -69,9 +69,9 @@ function toMemory(response: MemoryResponse): Memory {
 }
 
 async function readErrorMessage(response: Response, fallbackMessage: string) {
-  const body = await readJsonResponse<ApiResponse<null>>(response).catch(() => null);
+  const error = await readApiError(response, fallbackMessage);
 
-  return body?.message || fallbackMessage;
+  return error.message;
 }
 
 export async function createMemory(value: CreateMemoryRequest) {

@@ -1,13 +1,7 @@
 import type { Plaza, PlazaBackground, PlazaEntry, PlazaWeatherKey } from "../types/plaza";
 import type { RoomObjectPosition } from "../types/roomObject";
 import type { RoomObjectKey } from "../types/roomObject";
-import { authFetch, readApiData, readJsonResponse, toApiUrl } from "./apiClient";
-
-type ApiResponse<T> = {
-  status: string;
-  message: string;
-  data: T;
-};
+import { authFetch, readApiData, readApiError, toApiUrl } from "./apiClient";
 
 type PlazaResponse = {
   id: number | string;
@@ -65,23 +59,12 @@ const PLAZA_ERROR_MESSAGE_BY_CODE: Record<string, string> = {
   PLAZA_007: "광장 이미지 생성 중입니다. 우편함 도착 후 다시 삭제해주세요.",
 };
 
-function getApiErrorCode(message?: string | null) {
-  return message?.match(/\[Code:\s*([^\]]+)\]/)?.[1];
-}
-
-function removeApiErrorCode(message: string) {
-  return message.replace(/\s*\[Code:\s*[^\]]+\]\s*$/, "").trim();
-}
-
 async function readErrorMessage(response: Response, fallbackMessage: string) {
-  const body = await readJsonResponse<ApiResponse<null>>(response).catch(() => null);
-  const code = getApiErrorCode(body?.message);
+  const error = await readApiError(response, fallbackMessage, {
+    messageByCode: PLAZA_ERROR_MESSAGE_BY_CODE,
+  });
 
-  if (code && PLAZA_ERROR_MESSAGE_BY_CODE[code]) {
-    return PLAZA_ERROR_MESSAGE_BY_CODE[code];
-  }
-
-  return body?.message ? removeApiErrorCode(body.message) || fallbackMessage : fallbackMessage;
+  return error.message;
 }
 
 function normalizePlazaWeatherKey(value?: string | null): PlazaWeatherKey {
