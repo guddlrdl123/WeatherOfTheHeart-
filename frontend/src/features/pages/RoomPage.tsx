@@ -133,6 +133,7 @@ function RoomPage() {
     const roomNoticeTimerRef = useRef<number | null>(null);
     const [roomNotice, setRoomNotice] = useState<RoomNotice | null>(null);
     const roomCaptureRef = useRef<HTMLDivElement>(null);
+    const isObjectPlacementInProgress = Boolean(pendingPlacement || editingPlacement || isPlacementSaving);
 
     useEffect(() => {
         let isMounted = true;
@@ -643,16 +644,18 @@ function RoomPage() {
                                 <span className="font-medium text-[#5a4632]">{roomMonthLabel}의 방</span>
                                 <span className="ml-2 text-[#5a4632]/55">{placedRoomObjects.length}개</span>
                             </div>
-                            <RoomShareButton
-                                targetRef={roomCaptureRef}
-                                monthLabel={roomMonthLabel}
-                                fileName={`maeum-weather-${roomMonthKey}.png`}
-                                disabled={isRoomLoading || Boolean(pendingPlacement || editingPlacement) || isPlacementSaving}
-                                onPrepareCapture={() => {
-                                    setActiveObjectId(null);
-                                    setBouncingObjectId(null);
-                                }}
-                            />
+                            {!isObjectPlacementInProgress && (
+                                <RoomShareButton
+                                    targetRef={roomCaptureRef}
+                                    monthLabel={roomMonthLabel}
+                                    fileName={`maeum-weather-${roomMonthKey}.png`}
+                                    disabled={isRoomLoading}
+                                    onPrepareCapture={() => {
+                                        setActiveObjectId(null);
+                                        setBouncingObjectId(null);
+                                    }}
+                                />
+                            )}
                             <Room
                                 weatherKey={roomWeather}
                                 placedObjects={placedRoomObjects}
