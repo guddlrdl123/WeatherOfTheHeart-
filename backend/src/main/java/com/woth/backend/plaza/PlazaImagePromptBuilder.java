@@ -88,8 +88,9 @@ public class PlazaImagePromptBuilder {
        However, you may naturally add basic background elements that complete the scene, such as the floor, walls, sky, lighting, shadows, and atmosphere, while keeping the placed objects clear and readable.
 
        Do not include user names, human faces, logos, UI, captions, or watermarks.
-       Do not include any readable text in the image, including Korean, English, numbers, or symbols.
-       Do not put readable text or text-like patterns on signs, paper, book covers, wall decorations, or object surfaces.
+       Do not include any readable text in the image (Korean, English, numbers, or symbols),
+       with ONE exception: if a placed object is itself an English alphabet letter, you may draw that letter as a letter-shaped decorative object.
+       Other than such placed alphabet-letter objects, do not put any readable text or text-like patterns on signs, paper, book covers, wall decorations, or object surfaces.
 
        If the background type is weather, clearly reflect the weather of the background weather key in the background, lighting, sky, and atmosphere of the scene.
        If the background type is color, naturally reflect the background color in the main color tone and lighting mood of the scene.
