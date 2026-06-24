@@ -1,5 +1,6 @@
 package com.woth.backend.memory;
 
+import com.woth.backend.global.crypto.EncryptedStringConverter;
 import com.woth.backend.room.PrivateRoom;
 import jakarta.persistence.*;
 import lombok.*;
@@ -28,11 +29,15 @@ public class PrivateMemory {
     @JoinColumn(name = "private_room_id", nullable = false)
     private PrivateRoom privateRoom;
 
-    @Column(nullable = false, length = 100)
-    private String title; // 일기 제목
-
+    // DB 저장 시 AES-256-GCM 으로 암호화. 암호문은 평문보다 길어 TEXT 사용(VARCHAR(100) 불가).
+    @Convert(converter = EncryptedStringConverter.class)
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String content; // 일기 본문 내용
+    private String title; // 일기 제목 (암호화 저장)
+
+    // DB 저장 시 AES-256-GCM 으로 암호화.
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String content; // 일기 본문 내용 (암호화 저장)
 
     @Column(name = "mood_key", nullable = false, length = 50)
     private String moodKey; // 마음 상태 / 감정 태그
