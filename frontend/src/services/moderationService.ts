@@ -3,6 +3,7 @@ import { authFetch, readApiData, readApiError, toApiUrl } from "./apiClient";
 export type ReportDetail = {
   reportId: number;
   reporterNickname: string;
+  reporterEmail: string;
   reason: string;
   detail: string | null;
   createdAt: string;

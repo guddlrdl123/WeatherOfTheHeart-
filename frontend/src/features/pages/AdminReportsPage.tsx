@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Ban, CheckCircle2, EyeOff, RefreshCw, ShieldCheck, Siren, Trash2, UserRound, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import { AppHeader } from "../../components/layout/AppHeader";
 import {
   moderateReportedEntry,
@@ -184,7 +185,13 @@ function AdminReportsPage() {
                       <h2 className="mt-3 text-base font-semibold text-[#5a4632]">{item.entryTitle || "제목 없는 글"}</h2>
                       <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-[#5a4632]/68">{item.entryContent}</p>
                     </div>
-                    <div className="flex shrink-0 gap-2">
+                    <div className="flex shrink-0 flex-wrap gap-2 md:justify-end">
+                      <Link
+                        to={`/plaza/${item.plazaId}`}
+                        className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#5a4632]/20 px-3 text-xs text-[#5a4632]/72 hover:bg-[#5a4632]/8"
+                      >
+                        광장 보기
+                      </Link>
                       <button
                         type="button"
                         onClick={() => openAction("delete", item)}
@@ -215,6 +222,14 @@ function AdminReportsPage() {
                           <div key={report.reportId} className="py-3 first:pt-0 last:pb-0">
                             <div className="flex flex-wrap items-center justify-between gap-2">
                               <span className="text-sm text-[#5a4632]">{REPORT_REASON_LABELS[report.reason] ?? report.reason}</span>
+                              <span className="text-[11px] text-[#5a4632]/42">{formatDateTime(report.createdAt)}</span>
+                            </div>
+                            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5 text-[11px] text-[#5a4632]/45">
+                              <span className="shrink-0">{report.reporterNickname}</span>
+                              <span className="shrink-0">·</span>
+                              <span className="max-w-[220px] truncate" title={report.reporterEmail}>
+                                {report.reporterEmail}
+                              </span>
                             </div>
                             {report.detail && <p className="mt-1.5 whitespace-pre-wrap text-xs leading-6 text-[#5a4632]/58">{report.detail}</p>}
                           </div>
@@ -249,7 +264,16 @@ function AdminReportsPage() {
                       : "해제 후 사용자가 다시 로그인할 수 있습니다."}
                 </p>
               </div>
-              <button type="button" onClick={() => setActionTarget(null)} disabled={isActing} className="grid h-8 w-8 shrink-0 place-items-center rounded-md hover:bg-[#5a4632]/8" aria-label="닫기"><X size={16} /></button>
+              <button
+                type="button"
+                onClick={() => setActionTarget(null)}
+                disabled={isActing}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#5a4632]/10 text-[#5a4632] hover:bg-black/5 disabled:opacity-50"
+                aria-label="닫기"
+                title="닫기"
+              >
+                <X size={17} />
+              </button>
             </div>
 
             {actionTarget.kind !== "release" && (

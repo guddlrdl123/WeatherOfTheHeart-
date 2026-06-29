@@ -70,6 +70,7 @@ public class ModerationService {
             accumulator.reports().add(new ReportDetailView(
                     report.getId(),
                     report.getReporter().getNickname(),
+                    report.getReporter().getEmail(),
                     report.getReason(),
                     report.getDetail(),
                     report.getCreatedAt()
@@ -209,6 +210,7 @@ public class ModerationService {
     public record ReportDetailView(
             Long reportId,
             String reporterNickname,
+            String reporterEmail,
             String reason,
             String detail,
             LocalDateTime createdAt
