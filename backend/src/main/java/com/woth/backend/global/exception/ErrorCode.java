@@ -33,6 +33,7 @@ public enum ErrorCode {
     PLAZA_DELETE_FORBIDDEN("PLAZA_007", "AI 이미지 생성 중인 광장은 삭제할 수 없습니다."),
     PLAZA_REPORT_DUPLICATE("PLAZA_008", "이미 신고한 광장 글입니다."),
     PLAZA_REPORT_SELF_FORBIDDEN("PLAZA_009", "자신의 광장 글은 신고할 수 없습니다."),
+    PLAZA_ENTRY_BLINDED("PLAZA_010", "관리자에 의해 블라인드 처리된 광장 글입니다."),
     MAILBOX_NOT_FOUND("MAILBOX_001", "존재하지 않는 우편입니다."),
     ROOM_NOT_FOUND("ROOM_001", "존재하지 않는 방입니다."),
     AI_API_KEY_MISSING("AI_001", "OpenAI API 키가 설정되지 않았습니다."),

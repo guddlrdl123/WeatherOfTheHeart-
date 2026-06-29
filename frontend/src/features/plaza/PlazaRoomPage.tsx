@@ -191,7 +191,7 @@ export function PlazaRoomPage({
   const canUpdateEntry = (entry: PlazaEntry) => !plazaEnded && entry.ownerId === currentGuestId && entry.ownerId === plaza.ownerId;
   const canMoveEntry = (entry: PlazaEntry) => !plazaEnded && entry.ownerId === currentGuestId;
   const canDeleteEntry = (entry: PlazaEntry) => !plazaEnded && entry.ownerId === currentGuestId && entry.ownerId !== plaza.ownerId;
-  const canReportEntry = (entry: PlazaEntry) => !isDraftPlaza && entry.ownerId !== currentGuestId && Boolean(onReportEntry);
+  const canReportEntry = (entry: PlazaEntry) => !isDraftPlaza && !entry.blinded && entry.ownerId !== currentGuestId && Boolean(onReportEntry);
   const enterable = canEnterPlaza(plaza);
   const canBypassEntryLimits = currentGuestIsAdmin;
   const unavailableObjectKeys = canBypassEntryLimits ? [] : plaza.entries.map((entry) => entry.objectKey);
@@ -387,6 +387,10 @@ export function PlazaRoomPage({
   }
 
   async function handleLike(entryId: string) {
+    if (plaza.entries.some((entry) => entry.id === entryId && entry.blinded)) {
+      return;
+    }
+
     if (likingEntryIds.has(entryId)) {
       return;
     }

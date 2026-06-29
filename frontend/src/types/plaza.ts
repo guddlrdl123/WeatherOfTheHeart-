@@ -29,6 +29,7 @@ export type PlazaEntry = {
   layer?: number;
   likes: number;
   likedGuestIds?: string[];
+  blinded?: boolean;
   createdAt: string;
 };
 

@@ -59,6 +59,16 @@ public class PlazaEntry {
     @Column(name = "layer_index")
     private Integer layerIndex;
 
+    @Column(name = "is_blinded", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
+    @Builder.Default
+    private Boolean isBlinded = false;
+
+    @Column(name = "blinded_at")
+    private LocalDateTime blindedAt;
+
+    @Column(name = "blind_reason", length = 255)
+    private String blindReason;
+
     @Column(name = "create_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -67,6 +77,9 @@ public class PlazaEntry {
 
     @PrePersist
     protected void onCreate() {
+        if (this.isBlinded == null) {
+            this.isBlinded = false;
+        }
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     } // INSERT 쿼리가 나가기 직전 실행 (생성일, 수정일을 현재 시간으로 초기화)
@@ -84,5 +97,11 @@ public class PlazaEntry {
         this.positionX = positionX;
         this.positionY = positionY;
         this.layerIndex = layerIndex;
+    }
+
+    public void blind(String reason) {
+        this.isBlinded = true;
+        this.blindedAt = LocalDateTime.now();
+        this.blindReason = reason;
     }
 }

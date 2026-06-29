@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Flag, Heart, Loader2, Pencil, Trash2, X } from "lucide-react";
+import { Flag, Heart, Loader2, Pencil, ShieldAlert, Trash2, X } from "lucide-react";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
 import type { PlazaEntry } from "../../types/plaza";
 import { getPlazaEntryLikeCount, hasLikedPlazaEntry } from "./plazaHelpers";
@@ -277,16 +277,23 @@ export function PlazaPreviewModal({ entry, currentGuestId, onClose, onUpdate, on
           </div>
         </div>
 
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#5a4632]/15 bg-white/45 px-3 py-1.5 text-xs text-[#5a4632]/70">
-          <img src={object.image} alt="" className="h-6 w-6 object-contain" />
-          <span>{object.label}</span>
-          <Heart
-            size={13}
-            fill={likedByCurrentGuest ? "currentColor" : "none"}
-            className={likedByCurrentGuest ? "text-[#b65f55]" : ""}
-          />
-          <span>{likeCount}</span>
-        </div>
+        {entry.blinded ? (
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#b36a5e]/20 bg-[#b36a5e]/[0.07] px-3 py-1.5 text-xs text-[#b36a5e]">
+            <ShieldAlert size={14} />
+            운영 정책에 따라 블라인드됨
+          </div>
+        ) : (
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#5a4632]/15 bg-white/45 px-3 py-1.5 text-xs text-[#5a4632]/70">
+            <img src={object.image} alt="" className="h-6 w-6 object-contain" />
+            <span>{object.label}</span>
+            <Heart
+              size={13}
+              fill={likedByCurrentGuest ? "currentColor" : "none"}
+              className={likedByCurrentGuest ? "text-[#b65f55]" : ""}
+            />
+            <span>{likeCount}</span>
+          </div>
+        )}
 
         {isEditing ? (
           <>

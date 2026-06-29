@@ -503,19 +503,21 @@ export function PlazaSpace({
                 >
                   글 확인하기
                 </button>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onEntryLike(entry.id);
-                  }}
-                  className={`inline-flex items-center gap-1 rounded px-2.5 py-1.5 transition hover:bg-[#5a4632]/10 ${likedByCurrentGuest ? "text-[#b65f55]" : ""}`}
-                  aria-label={likedByCurrentGuest ? "좋아요 취소" : "좋아요"}
-                  title={likedByCurrentGuest ? "좋아요 취소" : "좋아요"}
-                >
-                  <Heart size={13} fill={likedByCurrentGuest ? "currentColor" : "none"} />
-                  <span>{likeCount}</span>
-                </button>
+                {!entry.blinded && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onEntryLike(entry.id);
+                    }}
+                    className={`inline-flex items-center gap-1 rounded px-2.5 py-1.5 transition hover:bg-[#5a4632]/10 ${likedByCurrentGuest ? "text-[#b65f55]" : ""}`}
+                    aria-label={likedByCurrentGuest ? "좋아요 취소" : "좋아요"}
+                    title={likedByCurrentGuest ? "좋아요 취소" : "좋아요"}
+                  >
+                    <Heart size={13} fill={likedByCurrentGuest ? "currentColor" : "none"} />
+                    <span>{likeCount}</span>
+                  </button>
+                )}
                 {movableEntry && (
                   <button
                     type="button"

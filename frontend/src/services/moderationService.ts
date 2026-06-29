@@ -20,6 +20,7 @@ export type ReportedEntry = {
   reportedUserEmail: string;
   warningCount: number;
   suspended: boolean;
+  completedPlaza: boolean;
   reportCount: number;
   latestReportedAt: string;
   reports: ReportDetail[];
@@ -30,6 +31,7 @@ export type ModerationActionResult = {
   warningId: number | null;
   warningCount: number;
   suspended: boolean;
+  entryAction: "DELETED" | "BLINDED" | null;
 };
 
 export async function fetchReportedEntries() {
@@ -42,7 +44,7 @@ export async function fetchReportedEntries() {
   return readApiData<ReportedEntry[]>(response);
 }
 
-export async function deleteReportedEntry(entryId: number, reason: string) {
+export async function moderateReportedEntry(entryId: number, reason: string) {
   const response = await authFetch(toApiUrl(`/api/admin/reports/entries/${encodeURIComponent(entryId)}`), {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },

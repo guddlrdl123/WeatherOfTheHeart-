@@ -147,7 +147,7 @@ public class MailboxService {
     }
 
     @Transactional
-    public void sendWarningLetter(User receiver, String reason, long warningCount) {
+    public void sendWarningLetter(User receiver, String reason, long warningCount, boolean blinded) {
         LocalDateTime now = LocalDateTime.now();
         String titleSuffix = "로 인한 경고 " + warningCount + "회";
         int reasonTitleLength = Math.max(1, 100 - titleSuffix.length());
@@ -157,7 +157,9 @@ public class MailboxService {
         Letter letter = Letter.builder()
                 .receiver(receiver)
                 .title(titleReason + titleSuffix)
-                .message("처분 사유: " + reason + "\n\n신고된 광장 글을 관리자가 확인하여 삭제했습니다. 같은 사유가 반복되면 계정 이용이 정지될 수 있습니다.")
+                .message("처분 사유: " + reason + "\n\n신고된 광장 글을 관리자가 확인하여 "
+                        + (blinded ? "블라인드 처리했습니다." : "삭제했습니다.")
+                        + " 같은 사유가 반복되면 계정 이용이 정지될 수 있습니다.")
                 .category(Letter.CATEGORY_WARNING)
                 .warningCount(warningCount)
                 .plazaTitle("운영팀 안내")

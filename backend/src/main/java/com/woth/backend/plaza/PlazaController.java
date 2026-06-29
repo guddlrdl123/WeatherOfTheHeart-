@@ -20,6 +20,9 @@ import java.util.stream.Collectors;
 @RequestMapping(path = "/api/plazas", produces = MediaType.APPLICATION_JSON_VALUE)
 public class PlazaController {
 
+    private static final String BLINDED_TITLE = "블라인드 처리된 글";
+    private static final String BLINDED_CONTENT = "관리자에 의해 블라인드 처리된 글입니다.";
+
     private final PlazaService plazaService;
 
     public PlazaController(PlazaService plazaService) {
@@ -239,12 +242,13 @@ public class PlazaController {
     }
 
     private PlazaEntryResponse toEntryResponse(PlazaEntry entry) {
+        boolean blinded = Boolean.TRUE.equals(entry.getIsBlinded());
         return new PlazaEntryResponse(
                 entry.getId(),
                 entry.getPlaza().getId(),
                 entry.getOwner().getId(),
-                entry.getTitle(),
-                entry.getContent(),
+                blinded ? BLINDED_TITLE : entry.getTitle(),
+                blinded ? BLINDED_CONTENT : entry.getContent(),
                 entry.getMoodKey(),
                 entry.getWeatherKey(),
                 entry.getObjectKey(),
@@ -254,6 +258,7 @@ public class PlazaController {
                 entry.getLayerIndex(),
                 plazaService.countEntryLikes(entry.getId()),
                 plazaService.listEntryLikedUserIds(entry.getId()),
+                blinded,
                 entry.getCreatedAt().toString(),
                 entry.getUpdatedAt().toString()
         );
@@ -387,6 +392,7 @@ public class PlazaController {
             Integer layer,
             Long likeCount,
             List<Long> likedUserIds,
+            boolean blinded,
             String createdAt,
             String updatedAt
     ) {

@@ -152,6 +152,10 @@ public class PlazaService {
         User reporter = userRepository.findById(request.reporterId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
+        if (Boolean.TRUE.equals(entry.getIsBlinded())) {
+            throw new CustomException(ErrorCode.PLAZA_ENTRY_BLINDED);
+        }
+
         if (entry.getOwner().getId().equals(reporter.getId())) {
             throw new CustomException(ErrorCode.PLAZA_REPORT_SELF_FORBIDDEN);
         }
@@ -298,6 +302,10 @@ public class PlazaService {
                 .orElseThrow(() -> new CustomException(ErrorCode.PLAZA_ENTRY_NOT_FOUND));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if (Boolean.TRUE.equals(entry.getIsBlinded())) {
+            throw new CustomException(ErrorCode.PLAZA_ENTRY_BLINDED);
+        }
 
         objectLikeRepository.findByUserIdAndPlazaEntryId(user.getId(), entry.getId())
                 .ifPresentOrElse(

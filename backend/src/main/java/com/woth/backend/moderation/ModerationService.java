@@ -85,8 +85,12 @@ public class ModerationService {
     public ModerationActionResult deleteEntryAndWarn(Long entryId, String reason, String adminNickname) {
         PlazaEntry entry = entryRepository.findById(entryId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PLAZA_ENTRY_NOT_FOUND));
+        if (Boolean.TRUE.equals(entry.getIsBlinded())) {
+            throw new CustomException(ErrorCode.PLAZA_ENTRY_BLINDED);
+        }
         String normalizedReason = normalizeReason(reason);
         User reportedUser = entry.getOwner();
+        boolean shouldBlind = entry.getPlaza().isCompleted();
 
         UserWarning warning = warningRepository.save(UserWarning.builder()
                 .user(reportedUser)
@@ -97,16 +101,21 @@ public class ModerationService {
                 .build());
         long warningCount = warningRepository.countByUserId(reportedUser.getId());
 
-        mailboxService.sendWarningLetter(reportedUser, normalizedReason, warningCount);
+        mailboxService.sendWarningLetter(reportedUser, normalizedReason, warningCount, shouldBlind);
         reportRepository.deleteByPlazaEntryId(entryId);
-        objectLikeRepository.deleteByPlazaEntryId(entryId);
-        entryRepository.delete(entry);
+        if (shouldBlind) {
+            entry.blind(normalizedReason);
+        } else {
+            objectLikeRepository.deleteByPlazaEntryId(entryId);
+            entryRepository.delete(entry);
+        }
 
         return new ModerationActionResult(
                 reportedUser.getId(),
                 warning.getId(),
                 warningCount,
-                Boolean.TRUE.equals(reportedUser.getIsSuspended())
+                Boolean.TRUE.equals(reportedUser.getIsSuspended()),
+                shouldBlind ? "BLINDED" : "DELETED"
         );
     }
 
@@ -130,7 +139,8 @@ public class ModerationService {
                 userId,
                 null,
                 warningRepository.countByUserId(userId),
-                Boolean.TRUE.equals(user.getIsSuspended())
+                Boolean.TRUE.equals(user.getIsSuspended()),
+                null
         );
     }
 
@@ -169,6 +179,7 @@ public class ModerationService {
                     owner.getEmail(),
                     warningCount,
                     Boolean.TRUE.equals(owner.getIsSuspended()),
+                    entry.getPlaza().isCompleted(),
                     reports.size(),
                     reports.getFirst().createdAt(),
                     List.copyOf(reports)
@@ -188,6 +199,7 @@ public class ModerationService {
             String reportedUserEmail,
             long warningCount,
             boolean suspended,
+            boolean completedPlaza,
             int reportCount,
             LocalDateTime latestReportedAt,
             List<ReportDetailView> reports
@@ -207,7 +219,8 @@ public class ModerationService {
             Long userId,
             Long warningId,
             long warningCount,
-            boolean suspended
+            boolean suspended,
+            String entryAction
     ) {
     }
 }
