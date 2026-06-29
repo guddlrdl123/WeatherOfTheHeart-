@@ -145,6 +145,22 @@ public class PlazaController {
         return ApiResponse.success(toEntryResponse(plazaService.toggleEntryLike(entryId, currentUser.id())));
     }
 
+    @PostMapping("/entries/{entryId}/reports")
+    public ApiResponse<PlazaEntryReportResponse> reportEntry(
+            @CurrentUser AuthenticatedUser currentUser,
+            @PathVariable Long entryId,
+            @RequestBody ReportPlazaEntryRequest request
+    ) {
+        return ApiResponse.success(toReportResponse(plazaService.reportEntry(
+                entryId,
+                new PlazaService.ReportPlazaEntryRequest(
+                        currentUser.id(),
+                        request.reason(),
+                        request.detail()
+                )
+        )));
+    }
+
     @PatchMapping("/entries/{entryId}")
     public ApiResponse<PlazaEntryResponse> updateEntry(
             @CurrentUser AuthenticatedUser currentUser,
@@ -243,6 +259,19 @@ public class PlazaController {
         );
     }
 
+    private PlazaEntryReportResponse toReportResponse(PlazaEntryReport report) {
+        return new PlazaEntryReportResponse(
+                report.getId(),
+                report.getPlaza().getId(),
+                report.getPlazaEntry().getId(),
+                report.getReporter().getId(),
+                report.getReportedUser().getId(),
+                report.getReason(),
+                report.getDetail(),
+                report.getCreatedAt().toString()
+        );
+    }
+
     public record CreatePlazaRequest(
             Long ownerId,
             String title,
@@ -314,6 +343,12 @@ public class PlazaController {
     ) {
     }
 
+    public record ReportPlazaEntryRequest(
+            String reason,
+            String detail
+    ) {
+    }
+
     public record CompletePlazaRequest(Long ownerId) {
     }
 
@@ -360,6 +395,18 @@ public class PlazaController {
     public record PlazaWithFirstEntryResponse(
             PlazaResponse plaza,
             PlazaEntryResponse entry
+    ) {
+    }
+
+    public record PlazaEntryReportResponse(
+            Long id,
+            Long plazaId,
+            Long entryId,
+            Long reporterId,
+            Long reportedUserId,
+            String reason,
+            String detail,
+            String createdAt
     ) {
     }
 }

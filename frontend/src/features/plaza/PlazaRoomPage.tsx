@@ -9,7 +9,7 @@ import type { RoomObjectPosition } from "../../types/roomObject";
 import { createPlazaEntry } from "../../utils/plazaStorage";
 import { PlazaSpace } from "./PlazaSpace";
 import { PlazaWriteModal, type PlazaWriteValue } from "./PlazaWriteModal";
-import { PlazaPreviewModal, type PlazaPreviewUpdate } from "./PlazaPreviewModal";
+import { PlazaPreviewModal, type PlazaPreviewUpdate, type PlazaReportValue } from "./PlazaPreviewModal";
 import {
   DEFAULT_PLAZA_OBJECT_POSITION,
   OBJECT_LAYER_MIN,
@@ -57,6 +57,7 @@ type Props = {
   onUpdateEntry?: (entryId: string, value: PlazaPreviewUpdate) => Promise<PlazaEntry>;
   onUpdateEntryPosition?: (entryId: string, position: RoomObjectPosition, layer: number) => Promise<PlazaEntry>;
   onDeleteEntry?: (entryId: string) => Promise<void>;
+  onReportEntry?: (entryId: string, value: PlazaReportValue) => Promise<void>;
 };
 
 type PlazaConfirmAction = "close" | "delete";
@@ -158,6 +159,7 @@ export function PlazaRoomPage({
   onUpdateEntry,
   onUpdateEntryPosition,
   onDeleteEntry,
+  onReportEntry,
 }: Props) {
   useRoomObjectCatalog();
 
@@ -189,6 +191,7 @@ export function PlazaRoomPage({
   const canUpdateEntry = (entry: PlazaEntry) => !plazaEnded && entry.ownerId === currentGuestId && entry.ownerId === plaza.ownerId;
   const canMoveEntry = (entry: PlazaEntry) => !plazaEnded && entry.ownerId === currentGuestId;
   const canDeleteEntry = (entry: PlazaEntry) => !plazaEnded && entry.ownerId === currentGuestId && entry.ownerId !== plaza.ownerId;
+  const canReportEntry = (entry: PlazaEntry) => !isDraftPlaza && entry.ownerId !== currentGuestId && Boolean(onReportEntry);
   const enterable = canEnterPlaza(plaza);
   const canBypassEntryLimits = currentGuestIsAdmin;
   const unavailableObjectKeys = canBypassEntryLimits ? [] : plaza.entries.map((entry) => entry.objectKey);
@@ -516,6 +519,15 @@ export function PlazaRoomPage({
     setActiveEntryId(null);
     setHighlightedEntryId(null);
     setPendingPlacement((current) => current?.kind === "move" && current.entryId === entryId ? null : current);
+  }
+
+  async function handleReportEntry(entryId: string, value: PlazaReportValue) {
+    if (!onReportEntry) {
+      return;
+    }
+
+    await onReportEntry(entryId, value);
+    showPlazaNotice("신고가 접수되었습니다. 확인해 주셔서 감사합니다.");
   }
 
   function openPlazaConfirm(action: PlazaConfirmAction) {
@@ -894,6 +906,7 @@ export function PlazaRoomPage({
           onClose={() => setPreviewEntry(null)}
           onUpdate={canUpdateEntry(previewEntry) ? handleUpdateEntry : undefined}
           onDelete={canDeleteEntry(previewEntry) ? handleDeleteEntry : undefined}
+          onReport={canReportEntry(previewEntry) ? handleReportEntry : undefined}
         />
       )}
 

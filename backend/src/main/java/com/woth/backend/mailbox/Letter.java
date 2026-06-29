@@ -20,6 +20,9 @@ import java.time.LocalDateTime;
 @Builder
 public class Letter {
 
+    public static final String CATEGORY_PLAZA = "PLAZA";
+    public static final String CATEGORY_WARNING = "WARNING";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; //AUTO_INCREMENT 설정 적용 (편지 고유 식별자)
@@ -37,6 +40,13 @@ public class Letter {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message; // 편지 본문 내용
+
+    @Column(nullable = false, length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'PLAZA'")
+    @Builder.Default
+    private String category = CATEGORY_PLAZA;
+
+    @Column(name = "warning_count")
+    private Long warningCount;
 
     @Column(name = "plaza_title", nullable = false, length = 100)
     private String plazaTitle; // 완료된 광장의 제목

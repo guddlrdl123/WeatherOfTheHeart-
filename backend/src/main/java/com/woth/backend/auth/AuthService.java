@@ -42,6 +42,7 @@ public class AuthService {
             return userRepository.findByEmailAndAuthProviderIgnoreCaseAndIsDeletedFalse(email, LOCAL_AUTH_PROVIDER)
                     .map(user -> {
                         user.promoteToAdmin(passwordEncoder.encode(password));
+                        ensureUserCanLogin(user);
                         return user;
                     })
                     .orElseGet(() -> createAdminUser(email, password));
@@ -59,6 +60,7 @@ public class AuthService {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);
         }
 
+        ensureUserCanLogin(user);
         migratePlainTextPasswordIfNeeded(user, password);
         return user;
     }
@@ -98,11 +100,13 @@ public class AuthService {
 
         return userRepository.findByAuthProviderIgnoreCaseAndAuthProviderIdAndIsDeletedFalse(authProvider, profile.providerId())
                 .map(user -> {
+                    ensureUserCanLogin(user);
                     user.linkOAuth(authProvider, profile.providerId());
                     return user;
                 })
                 .or(() -> userRepository.findByEmailAndAuthProviderIgnoreCaseAndIsDeletedFalse(email, authProvider)
                         .map(user -> {
+                            ensureUserCanLogin(user);
                             user.linkOAuth(authProvider, profile.providerId());
                             return user;
                         }))
@@ -134,6 +138,12 @@ public class AuthService {
                 .build();
 
         return userRepository.save(admin);
+    }
+
+    private void ensureUserCanLogin(User user) {
+        if (Boolean.TRUE.equals(user.getIsSuspended())) {
+            throw new CustomException(ErrorCode.USER_SUSPENDED);
+        }
     }
 
     private boolean matchesPassword(String rawPassword, String storedPassword) {

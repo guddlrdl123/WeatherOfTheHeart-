@@ -1,8 +1,9 @@
-import { House, Home, Inbox, LogOut, UserRound, CastleIcon, MessageCircleQuestion, Megaphone } from "lucide-react";
+import { House, Home, Inbox, LogOut, UserRound, CastleIcon, MessageCircleQuestion, Megaphone, ShieldAlert } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { fetchMailboxUnreadCount, MAILBOX_CHANGED_EVENT } from "../../services/mailboxService";
 import { clearAuthenticated } from "../../utils/authSession";
+import { fetchUserProfile } from "../../services/userService";
 
 export function AppHeader() {
     const navigate = useNavigate();
@@ -13,6 +14,7 @@ export function AppHeader() {
     const plazaNavLabel = isPlazaPage ? "내 방 돌아가기" : "광장 들어가기";
     const PlazaNavIcon = isPlazaPage ? House : CastleIcon;
     const [unreadMailboxCount, setUnreadMailboxCount] = useState(0);
+    const [isAdmin, setIsAdmin] = useState(false);
 
     const loadUnreadMailboxCount = useCallback(async () => {
         try {
@@ -46,6 +48,16 @@ export function AppHeader() {
             window.removeEventListener(MAILBOX_CHANGED_EVENT, handleRefresh);
         };
     }, [loadUnreadMailboxCount, location.pathname]);
+
+    useEffect(() => {
+        const timerId = window.setTimeout(() => {
+            void fetchUserProfile()
+                .then((profile) => setIsAdmin(Boolean(profile.isAdmin)))
+                .catch(() => setIsAdmin(false));
+        }, 0);
+
+        return () => window.clearTimeout(timerId);
+    }, []);
 
     function handleLogout() {
         clearAuthenticated();
@@ -138,6 +150,15 @@ export function AppHeader() {
                                         <Megaphone size={14} className="shrink-0 text-[#9b6b54]" />
                                         공지사항
                                     </Link>
+                                    {isAdmin && (
+                                        <Link
+                                            to="/admin/reports"
+                                            className="flex items-center gap-2 px-3 py-2 text-xs text-[#5a4632]/85 hover:bg-[#5a4632]/10"
+                                        >
+                                            <ShieldAlert size={14} className="shrink-0 text-[#a75e55]" />
+                                            신고내역
+                                        </Link>
+                                    )}
                                 </div>
                             </div>
                         </div>

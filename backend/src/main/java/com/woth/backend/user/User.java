@@ -59,6 +59,16 @@ public class User {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(name = "is_suspended", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
+    @Builder.Default
+    private Boolean isSuspended = false;
+
+    @Column(name = "suspended_at")
+    private LocalDateTime suspendedAt;
+
+    @Column(name = "suspension_reason", length = 255)
+    private String suspensionReason;
+
     @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP") // DB default도 함께 둬 SQL 직접 INSERT 시에도 생성 시간이 채워짐
     private LocalDateTime createdAt;
 
@@ -110,5 +120,17 @@ public class User {
     public void withdraw() {
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
+    }
+
+    public void suspend(String reason) {
+        this.isSuspended = true;
+        this.suspendedAt = LocalDateTime.now();
+        this.suspensionReason = reason;
+    }
+
+    public void releaseSuspension() {
+        this.isSuspended = false;
+        this.suspendedAt = null;
+        this.suspensionReason = null;
     }
 }

@@ -13,6 +13,7 @@ import PlazaPage from "../features/pages/PlazaPage";
 import MailboxPage from "../features/pages/MailboxPage";
 import QnaPage from "../features/pages/QnaPage";
 import NoticePage from "../features/pages/NoticePage";
+import AdminReportsPage from "../features/pages/AdminReportsPage";
 
 type RouteGuardProps = {
   children: ReactNode;
@@ -164,6 +165,14 @@ function App() {
         element={
           <ProtectedRoute authenticated={authenticated}>
             <NoticePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/reports"
+        element={
+          <ProtectedRoute authenticated={authenticated}>
+            <AdminReportsPage />
           </ProtectedRoute>
         }
       />

@@ -5,8 +5,10 @@ export type MailboxItemResponse = {
   id: number | string;
   title: string;
   message: string;
+  category?: "PLAZA" | "WARNING" | null;
+  warningCount?: number | null;
   plazaTitle: string;
-  plazaId: number | string;
+  plazaId?: number | string | null;
   generatedImageData?: string | null;
   completedAt: string;
   plazaCreatedAt?: string | null;
@@ -36,8 +38,10 @@ function toMailboxItem(response: MailboxItemResponse): MailboxItem {
     id: String(response.id),
     title: response.title,
     message: response.message,
+    category: response.category ?? "PLAZA",
+    warningCount: response.warningCount ?? null,
     plazaTitle: response.plazaTitle,
-    plazaId: String(response.plazaId),
+    plazaId: response.plazaId == null ? "" : String(response.plazaId),
     generatedImageData: response.generatedImageData ?? "",
     completedAt: response.completedAt,
     plazaCreatedAt: response.plazaCreatedAt ?? response.completedAt,

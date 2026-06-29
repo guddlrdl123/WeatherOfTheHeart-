@@ -3,6 +3,8 @@ export type MailboxItem = {
   id: string;
   title: string;
   message: string;
+  category: "PLAZA" | "WARNING";
+  warningCount: number | null;
   plazaTitle: string;
   plazaId: string;
   generatedImageData: string;

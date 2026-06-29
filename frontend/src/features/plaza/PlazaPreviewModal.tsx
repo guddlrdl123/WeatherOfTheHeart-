@@ -1,14 +1,28 @@
 import { useState } from "react";
-import { Heart, Pencil, Trash2, X } from "lucide-react";
+import { Flag, Heart, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
 import type { PlazaEntry } from "../../types/plaza";
 import { getPlazaEntryLikeCount, hasLikedPlazaEntry } from "./plazaHelpers";
 
 const PLAZA_CONTENT_MAX_LENGTH = 200;
+const PLAZA_REPORT_DETAIL_MAX_LENGTH = 500;
+const PLAZA_REPORT_REASONS = [
+  { value: "ABUSIVE_CONTENT", label: "욕설/비방" },
+  { value: "HARASSMENT", label: "괴롭힘" },
+  { value: "HATE_OR_DISCRIMINATION", label: "혐오/차별" },
+  { value: "SPAM", label: "스팸/홍보" },
+  { value: "OTHER", label: "기타" },
+] as const;
+type PlazaReportReason = typeof PLAZA_REPORT_REASONS[number]["value"];
 
 export type PlazaPreviewUpdate = {
   title: string;
   content: string;
+};
+
+export type PlazaReportValue = {
+  reason: string;
+  detail: string;
 };
 
 type Props = {
@@ -17,11 +31,17 @@ type Props = {
   onClose: () => void;
   onUpdate?: (entryId: string, value: PlazaPreviewUpdate) => void;
   onDelete?: (entryId: string) => void;
+  onReport?: (entryId: string, value: PlazaReportValue) => void | Promise<void>;
 };
 
 type DeleteConfirmModalProps = {
   onCancel: () => void;
   onConfirm: () => void;
+};
+
+type ReportConfirmModalProps = {
+  onCancel: () => void;
+  onConfirm: (value: PlazaReportValue) => void | Promise<void>;
 };
 
 function DeleteConfirmModal({ onCancel, onConfirm }: DeleteConfirmModalProps) {
@@ -61,10 +81,105 @@ function DeleteConfirmModal({ onCancel, onConfirm }: DeleteConfirmModalProps) {
   );
 }
 
-export function PlazaPreviewModal({ entry, currentGuestId, onClose, onUpdate, onDelete }: Props) {
+function ReportConfirmModal({ onCancel, onConfirm }: ReportConfirmModalProps) {
+  const [reason, setReason] = useState<PlazaReportReason>(PLAZA_REPORT_REASONS[0].value);
+  const [detail, setDetail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleConfirm() {
+    if (isSubmitting) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await onConfirm({
+        reason,
+        detail: detail.trim(),
+      });
+    } catch (caughtError) {
+      window.alert(caughtError instanceof Error ? caughtError.message : "신고를 접수하지 못했습니다.");
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/25 px-4 py-8 backdrop-blur-[2px]">
+      <div className="w-full max-w-[420px] max-h-[calc(100vh-64px)] overflow-y-auto rounded-xl border border-[#b36a5e]/25 bg-[#fffbf6f2] p-5 text-[#5a4632] shadow-xl">
+        <div className="mb-4 flex items-start gap-3">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9] text-[#b36a5e]">
+            <Flag size={17} />
+          </div>
+          <div>
+            <h4 className="text-base font-semibold text-[#5a4632]">이 글을 신고할까요?</h4>
+            <p className="mt-1 text-xs leading-6 text-[#5a4632]/65">
+              운영자가 확인할 수 있도록 신고 사유를 남겨주세요.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-4">
+          <label className="flex flex-col gap-2 text-sm text-[#5a4632]">
+            신고 사유
+            <select
+              className="mw-input h-10 px-3 text-sm"
+              value={reason}
+              disabled={isSubmitting}
+              onChange={(event) => setReason(event.target.value as PlazaReportReason)}
+            >
+              {PLAZA_REPORT_REASONS.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-2 text-sm text-[#5a4632]">
+            상세 내용
+            <textarea
+              className="mw-input min-h-[110px] resize-none p-3 text-sm leading-6"
+              value={detail}
+              maxLength={PLAZA_REPORT_DETAIL_MAX_LENGTH}
+              disabled={isSubmitting}
+              placeholder="어떤 점이 문제였는지 적어주세요."
+              onChange={(event) => setDetail(event.target.value)}
+            />
+            <span className="text-right text-[0.68rem] text-[#5a4632]">
+              {detail.length}/{PLAZA_REPORT_DETAIL_MAX_LENGTH}
+            </span>
+          </label>
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={onCancel}
+            className="rounded-md border border-[#9b6b54]/40 bg-white/30 px-4 py-2 text-sm text-[#9b6b54]/80 hover:bg-white/60 disabled:opacity-50"
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={handleConfirm}
+            className="inline-flex items-center gap-2 rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9] px-4 py-2 text-sm text-[#b36a5e] hover:bg-[#faebe7] disabled:opacity-50"
+          >
+            {isSubmitting ? <Loader2 size={15} className="animate-spin" /> : <Flag size={15} />}
+            신고
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function PlazaPreviewModal({ entry, currentGuestId, onClose, onUpdate, onDelete, onReport }: Props) {
   const object = ROOM_OBJECT_BY_KEY[entry.objectKey];
   const [isEditing, setIsEditing] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isConfirmingReport, setIsConfirmingReport] = useState(false);
   const [title, setTitle] = useState(entry.title);
   const [content, setContent] = useState(entry.content);
   const likedByCurrentGuest = currentGuestId ? hasLikedPlazaEntry(entry, currentGuestId) : false;
@@ -74,6 +189,7 @@ export function PlazaPreviewModal({ entry, currentGuestId, onClose, onUpdate, on
   function handleCancelEdit() {
     setIsEditing(false);
     setIsConfirmingDelete(false);
+    setIsConfirmingReport(false);
     setTitle(entry.title);
     setContent(entry.content);
   }
@@ -92,10 +208,16 @@ export function PlazaPreviewModal({ entry, currentGuestId, onClose, onUpdate, on
     });
     setIsEditing(false);
     setIsConfirmingDelete(false);
+    setIsConfirmingReport(false);
   }
 
   function handleDelete() {
     onDelete?.(entry.id);
+  }
+
+  async function handleReport(value: PlazaReportValue) {
+    await onReport?.(entry.id, value);
+    setIsConfirmingReport(false);
   }
 
   return (
@@ -130,6 +252,17 @@ export function PlazaPreviewModal({ entry, currentGuestId, onClose, onUpdate, on
                 title="삭제하기"
               >
                 <Trash2 size={17} />
+              </button>
+            )}
+            {!isEditing && onReport && (
+              <button
+                type="button"
+                onClick={() => setIsConfirmingReport(true)}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9]/70 text-[#b36a5e] hover:bg-[#faebe7]"
+                aria-label="신고하기"
+                title="신고하기"
+              >
+                <Flag size={17} />
               </button>
             )}
             <button
@@ -225,6 +358,13 @@ export function PlazaPreviewModal({ entry, currentGuestId, onClose, onUpdate, on
         <DeleteConfirmModal
           onCancel={() => setIsConfirmingDelete(false)}
           onConfirm={handleDelete}
+        />
+      )}
+
+      {isConfirmingReport && (
+        <ReportConfirmModal
+          onCancel={() => setIsConfirmingReport(false)}
+          onConfirm={handleReport}
         />
       )}
     </div>

@@ -57,6 +57,8 @@ export type UserPlazaEntry = {
 const PLAZA_WEATHER_KEYS = ["sunny", "rain", "cloud", "snow", "sunset", "night", "dawn", "cherry", "ocean"] as const satisfies readonly PlazaWeatherKey[];
 const PLAZA_ERROR_MESSAGE_BY_CODE: Record<string, string> = {
   PLAZA_007: "광장 이미지 생성 중입니다. 우편함 도착 후 다시 삭제해주세요.",
+  PLAZA_008: "이미 신고한 광장 글입니다.",
+  PLAZA_009: "자신의 광장 글은 신고할 수 없습니다.",
 };
 
 async function readErrorMessage(response: Response, fallbackMessage: string) {
@@ -289,6 +291,29 @@ export async function toggleBackendPlazaEntryLike(entryId: string) {
   }
 
   return toEntry(await readApiData<PlazaEntryResponse>(response));
+}
+
+export async function reportBackendPlazaEntry(
+  entryId: string,
+  value: {
+    reason: string;
+    detail?: string;
+  },
+) {
+  const response = await authFetch(toApiUrl(`/api/plazas/entries/${encodeURIComponent(entryId)}/reports`), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      reason: value.reason,
+      detail: value.detail?.trim() || null,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, "신고를 접수하지 못했습니다."));
+  }
 }
 
 export async function updateBackendPlazaEntry(

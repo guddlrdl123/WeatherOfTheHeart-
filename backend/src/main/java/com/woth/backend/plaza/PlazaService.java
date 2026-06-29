@@ -27,6 +27,7 @@ public class PlazaService {
 
     private final PlazaRepository plazaRepository;
     private final PlazaEntryRepository plazaEntryRepository;
+    private final PlazaEntryReportRepository plazaEntryReportRepository;
     private final ObjectLikeRepository objectLikeRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
@@ -35,12 +36,14 @@ public class PlazaService {
     public PlazaService(
             PlazaRepository plazaRepository,
             PlazaEntryRepository plazaEntryRepository,
+            PlazaEntryReportRepository plazaEntryReportRepository,
             ObjectLikeRepository objectLikeRepository,
             UserRepository userRepository,
             ApplicationEventPublisher eventPublisher
     ) {
         this.plazaRepository = plazaRepository;
         this.plazaEntryRepository = plazaEntryRepository;
+        this.plazaEntryReportRepository = plazaEntryReportRepository;
         this.objectLikeRepository = objectLikeRepository;
         this.userRepository = userRepository;
         this.eventPublisher = eventPublisher;
@@ -139,6 +142,44 @@ public class PlazaService {
     }
 
     @Transactional
+    public PlazaEntryReport reportEntry(Long entryId, ReportPlazaEntryRequest request) {
+        if (request.reporterId() == null || request.reason() == null || request.reason().isBlank()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        PlazaEntry entry = plazaEntryRepository.findById(entryId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PLAZA_ENTRY_NOT_FOUND));
+        User reporter = userRepository.findById(request.reporterId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if (entry.getOwner().getId().equals(reporter.getId())) {
+            throw new CustomException(ErrorCode.PLAZA_REPORT_SELF_FORBIDDEN);
+        }
+
+        if (plazaEntryReportRepository.existsByReporterIdAndPlazaEntryId(reporter.getId(), entry.getId())) {
+            throw new CustomException(ErrorCode.PLAZA_REPORT_DUPLICATE);
+        }
+
+        String reason = request.reason().trim();
+        String detail = normalizeReportDetail(request.detail());
+
+        if (reason.length() > 50 || (detail != null && detail.length() > 1000)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        PlazaEntryReport report = PlazaEntryReport.builder()
+                .reporter(reporter)
+                .reportedUser(entry.getOwner())
+                .plaza(entry.getPlaza())
+                .plazaEntry(entry)
+                .reason(reason)
+                .detail(detail)
+                .build();
+
+        return plazaEntryReportRepository.save(report);
+    }
+
+    @Transactional
     public PlazaEntry createEntry(Long plazaId, CreatePlazaEntryRequest request) {
         Plaza plaza = plazaRepository.findById(plazaId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PLAZA_NOT_FOUND));
@@ -220,6 +261,7 @@ public class PlazaService {
             throw new CustomException(ErrorCode.PLAZA_DELETE_FORBIDDEN);
         }
 
+        plazaEntryReportRepository.deleteByPlazaId(plazaId);
         objectLikeRepository.deleteByPlazaId(plazaId);
         plazaEntryRepository.deleteByPlazaId(plazaId);
         plazaRepository.delete(plaza);
@@ -332,8 +374,17 @@ public class PlazaService {
             throw new CustomException(ErrorCode.PLAZA_COMPLETE);
         }
 
+        plazaEntryReportRepository.deleteByPlazaEntryId(entryId);
         objectLikeRepository.deleteByPlazaEntryId(entryId);
         plazaEntryRepository.delete(entry);
+    }
+
+    private String normalizeReportDetail(String detail) {
+        if (detail == null || detail.isBlank()) {
+            return null;
+        }
+
+        return detail.trim();
     }
 
     private boolean isEntryChangeLocked(Plaza plaza) {
@@ -388,6 +439,13 @@ public class PlazaService {
             Integer positionX,
             Integer positionY,
             Integer layer
+    ) {
+    }
+
+    public record ReportPlazaEntryRequest(
+            Long reporterId,
+            String reason,
+            String detail
     ) {
     }
 }

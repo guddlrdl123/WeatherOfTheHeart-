@@ -1,4 +1,4 @@
-import { CalendarDays, ImageIcon, Mail, MailOpen } from "lucide-react";
+import { CalendarDays, ImageIcon, Mail, MailOpen, ShieldAlert } from "lucide-react";
 import type { MailboxItem } from "../../types/mailbox";
 import { trimTrailingDatePeriod } from "../../utils/date";
 
@@ -25,6 +25,7 @@ function formatCompletedAt(value: string) {
 export function MailboxCard({ item, onOpen }: Props) {
   // 읽음 여부에 따라 봉투 아이콘과 카드 톤을 다르게 보여줍니다.
   const MailIcon = item.read ? MailOpen : Mail;
+  const isWarning = item.category === "WARNING";
 
   return (
     <button
@@ -33,9 +34,16 @@ export function MailboxCard({ item, onOpen }: Props) {
       className={`mw-surface flex h-[300px] flex-col overflow-hidden rounded-xl text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(90,70,50,0.1)] ${item.read ? "opacity-[0.82]" : "border-[#9b6b54]/42 bg-[#fffbf6]"
         }`}
     >
-      <div className="relative h-40 border-b border-[#5a4632]/10 bg-white/25">
+      <div className={`relative h-40 border-b border-[#5a4632]/10 ${isWarning ? "bg-[#a75e55]/[0.07]" : "bg-white/25"}`}>
         {/* generatedImageData는 백엔드가 만든 완성 광장 이미지를 그대로 img src에 연결합니다. */}
-        {item.generatedImageData ? (
+        {isWarning ? (
+          <div className="grid h-full place-items-center text-[#a75e55]/70">
+            <div className="text-center">
+              <ShieldAlert size={34} className="mx-auto" />
+              <p className="mt-3 text-xs">운영팀 경고 안내</p>
+            </div>
+          </div>
+        ) : item.generatedImageData ? (
           <img
             src={item.generatedImageData}
             alt={`${item.plazaTitle} 완성 이미지`}

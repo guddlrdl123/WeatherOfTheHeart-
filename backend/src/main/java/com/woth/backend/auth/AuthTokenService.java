@@ -96,6 +96,10 @@ public class AuthTokenService {
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_WITHDRAWN));
 
+        if (Boolean.TRUE.equals(user.getIsSuspended())) {
+            throw new CustomException(ErrorCode.USER_SUSPENDED);
+        }
+
         return new AuthenticatedUser(
                 user.getId(),
                 user.getEmail(),

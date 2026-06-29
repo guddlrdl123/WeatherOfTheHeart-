@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowRight, CalendarDays, Download, ImageIcon, Inbox, MailCheck, MapPinned, RefreshCw, Trash2, Users, X } from "lucide-react";
+import { ArrowRight, CalendarDays, Download, ImageIcon, Inbox, MailCheck, MapPinned, RefreshCw, ShieldAlert, Trash2, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { MailboxCard } from "../../components/mailbox/MailboxCard";
 import { AppHeader } from "../../components/layout/AppHeader";
@@ -79,6 +79,7 @@ function MailboxDetailModal({
   useBodyScrollLock();
 
   const [isDownloadingImage, setIsDownloadingImage] = useState(false);
+  const isWarning = item.category === "WARNING";
   const myObject = item.myObjectKey ? ROOM_OBJECT_BY_KEY[item.myObjectKey] : null;
   const myObjectContent = item.myObjectContent.trim();
 
@@ -103,6 +104,37 @@ function MailboxDetailModal({
     } finally {
       setIsDownloadingImage(false);
     }
+  }
+
+  if (isWarning) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center overscroll-contain bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
+        <section className="mw-surface w-full max-w-[520px] overflow-hidden rounded-lg bg-[#fffbf6] shadow-xl">
+          <div className="border-b border-[#5a4632]/10 bg-[#a75e55]/[0.07] px-6 py-8 text-center">
+            <ShieldAlert size={32} className="mx-auto text-[#a75e55]" />
+            <p className="mt-3 text-xs text-[#a75e55]/75">운영팀 경고 안내</p>
+            <h2 className="mt-2 text-lg font-semibold leading-8 text-[#5a4632]">{item.title}</h2>
+          </div>
+          <div className="p-6">
+            <p className="whitespace-pre-wrap text-sm leading-7 text-[#5a4632]/68">{item.message}</p>
+            <div className="mt-5 flex items-center justify-between rounded-md border border-[#a75e55]/18 bg-[#a75e55]/[0.05] px-4 py-3 text-xs text-[#5a4632]/58">
+              <span>누적 경고 {item.warningCount ?? 0}회</span>
+              <span>{formatDate(item.completedAt)}</span>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => onRequestDelete(item.id)}
+                className="grid h-9 w-9 place-items-center rounded-md border border-[#5a4632]/12 text-[#5a4632]/70 hover:bg-[#5a4632]/8"
+                aria-label="우편 삭제"
+                title="우편 삭제"
+              ><Trash2 size={16} /></button>
+              <button type="button" onClick={onClose} className="mw-button rounded-md px-4 py-2 text-sm">확인</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
   }
 
   return (
@@ -410,7 +442,7 @@ function MailboxPage() {
               <div>
                 <h1 className="text-2xl font-normal text-[#5a4632]">도착한 우편</h1>
                 <p className="mt-2 text-sm text-[#5a4632]/58">
-                  완성된 광장 사진 {items.length}개, 읽지 않은 우편 {unreadCount}개
+                  도착한 우편 {items.length}개, 읽지 않은 우편 {unreadCount}개
                 </p>
               </div>
 
@@ -454,7 +486,7 @@ function MailboxPage() {
                     <Inbox size={20} />
                   </div>
                   <h2 className="text-lg font-normal text-[#5a4632]">아직 도착한 우편이 없어요.</h2>
-                  <p className="mt-2 text-sm text-[#5a4632]/55">광장이 완성되면 생성된 이미지가 이곳으로 도착합니다.</p>
+                  <p className="mt-2 text-sm text-[#5a4632]/55">광장 완성 소식과 운영 안내가 이곳으로 도착합니다.</p>
                 </div>
               </section>
             ) : (

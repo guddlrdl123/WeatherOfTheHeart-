@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppHeader } from "../../components/layout/AppHeader";
-import { completeBackendPlaza, createBackendPlazaEntry, createBackendPlazaWithFirstEntry, deleteBackendPlaza, deleteBackendPlazaEntry, fetchPlazas, toggleBackendPlazaEntryLike, updateBackendPlazaEntry, updateBackendPlazaEntryPosition } from "../../services/plazaService";
+import { completeBackendPlaza, createBackendPlazaEntry, createBackendPlazaWithFirstEntry, deleteBackendPlaza, deleteBackendPlazaEntry, fetchPlazas, reportBackendPlazaEntry, toggleBackendPlazaEntryLike, updateBackendPlazaEntry, updateBackendPlazaEntryPosition } from "../../services/plazaService";
 import type { Plaza } from "../../types/plaza";
 import type { RoomObjectPosition } from "../../types/roomObject";
 import { getCurrentUserId, getCurrentUserIsAdmin } from "../../utils/authSession";
@@ -251,6 +251,11 @@ function PlazaPage() {
             isDraftPlaza
               ? undefined
               : (entryId) => deleteBackendPlazaEntry(entryId)
+          }
+          onReportEntry={
+            isDraftPlaza
+              ? undefined
+              : (entryId, value) => reportBackendPlazaEntry(entryId, value)
           }
         />
       ) : plazaId ? (

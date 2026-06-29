@@ -94,7 +94,8 @@ public class InquiryController {
                     false,
                     inquiry.getCreatedAt().toString(),
                     true,
-                    false);
+                    false,
+                    null);
         }
 
         return new InquiryResponse(
@@ -109,7 +110,8 @@ public class InquiryController {
                 inquiry.isAnswered(),
                 inquiry.getCreatedAt().toString(),
                 false,
-                mine);
+                mine,
+                isAdmin(currentUser) ? inquiryService.countWarnings(authorId) : null);
     }
 
     public record CreateInquiryRequest(
@@ -135,7 +137,8 @@ public class InquiryController {
             boolean answered,
             String createdAt,
             boolean masked,
-            boolean mine
+            boolean mine,
+            Long warningCount
     ) {
     }
 

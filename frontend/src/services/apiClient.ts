@@ -44,7 +44,7 @@ function getApiErrorMessage(body: ApiErrorBody | null, fallbackMessage: string) 
 }
 
 function handleApiErrorCode(code?: string) {
-  if (code === "USER_001" || code === "AUTH_001" || code === "AUTH_002" || code === "AUTH_003") {
+  if (code === "USER_001" || code === "USER_006" || code === "AUTH_001" || code === "AUTH_002" || code === "AUTH_003") {
     clearAuthenticated();
   }
 }

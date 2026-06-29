@@ -146,6 +146,28 @@ public class MailboxService {
         }
     }
 
+    @Transactional
+    public void sendWarningLetter(User receiver, String reason, long warningCount) {
+        LocalDateTime now = LocalDateTime.now();
+        String titleSuffix = "로 인한 경고 " + warningCount + "회";
+        int reasonTitleLength = Math.max(1, 100 - titleSuffix.length());
+        String titleReason = reason.length() > reasonTitleLength
+                ? reason.substring(0, reasonTitleLength)
+                : reason;
+        Letter letter = Letter.builder()
+                .receiver(receiver)
+                .title(titleReason + titleSuffix)
+                .message("처분 사유: " + reason + "\n\n신고된 광장 글을 관리자가 확인하여 삭제했습니다. 같은 사유가 반복되면 계정 이용이 정지될 수 있습니다.")
+                .category(Letter.CATEGORY_WARNING)
+                .warningCount(warningCount)
+                .plazaTitle("운영팀 안내")
+                .completedAt(now)
+                .plazaCreatedAt(now)
+                .participantCount(0L)
+                .build();
+        letterRepository.save(letter);
+    }
+
     private MailboxItemView toMailboxItemView(Long receiverId, Letter letter) {
         Long plazaId = letter.getPlazaId();
         LocalDateTime plazaCreatedAt = letter.getPlazaCreatedAt();

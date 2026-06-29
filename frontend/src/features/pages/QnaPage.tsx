@@ -151,6 +151,7 @@ function InquiryRow({
       <p className="mt-1 text-xs text-[#5a4632]/50">
         {item.authorNickname || "알 수 없음"}
         {item.authorEmail ? ` · ${item.authorEmail}` : ""}
+        {viewerIsAdmin && item.warningCount !== null ? ` · 경고 ${item.warningCount}회` : ""}
       </p>
       <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[#5a4632]/72">{item.content}</p>
 

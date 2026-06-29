@@ -2,6 +2,7 @@ package com.woth.backend.inquiry;
 
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
+import com.woth.backend.moderation.UserWarningRepository;
 import com.woth.backend.user.User;
 import com.woth.backend.user.UserRepository;
 import org.springframework.data.domain.Page;
@@ -25,10 +26,16 @@ public class InquiryService {
 
     private final InquiryRepository inquiryRepository;
     private final UserRepository userRepository;
+    private final UserWarningRepository warningRepository;
 
-    public InquiryService(InquiryRepository inquiryRepository, UserRepository userRepository) {
+    public InquiryService(
+            InquiryRepository inquiryRepository,
+            UserRepository userRepository,
+            UserWarningRepository warningRepository
+    ) {
         this.inquiryRepository = inquiryRepository;
         this.userRepository = userRepository;
+        this.warningRepository = warningRepository;
     }
 
     @Transactional
@@ -78,5 +85,10 @@ public class InquiryService {
         Pageable pageable = PageRequest.of(safePage, PAGE_SIZE);
 
         return inquiryRepository.findAllByOrderByCreatedAtDesc(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public long countWarnings(Long userId) {
+        return userId == null ? 0L : warningRepository.countByUserId(userId);
     }
 }

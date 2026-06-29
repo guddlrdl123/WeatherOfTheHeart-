@@ -11,6 +11,9 @@ CREATE TABLE users (
                        is_deleted TINYINT(1) NOT NULL DEFAULT 0,
     -- [수정] 회원 탈퇴 시각 저장
                        deleted_at DATETIME NULL,
+                       is_suspended TINYINT(1) NOT NULL DEFAULT 0,
+                       suspended_at DATETIME NULL,
+                       suspension_reason VARCHAR(255) NULL,
                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                        CONSTRAINT uk_users_email_auth_provider UNIQUE (email, auth_provider),
@@ -166,7 +169,29 @@ CREATE TABLE object_likes (
                               CONSTRAINT uk_user_plaza_entry UNIQUE (user_id, plaza_entry_id)
 );
 
---11. 우편함(편지) 테이블
+--11. 광장 글 신고 테이블
+-- 광장에 놓인 사용자 글/오브젝트를 신고한 기록을 저장합니다.
+CREATE TABLE plaza_entry_reports (
+                                     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                     reporter_id BIGINT NOT NULL,
+                                     reported_user_id BIGINT NOT NULL,
+                                     plaza_id BIGINT NOT NULL,
+                                     plaza_entry_id BIGINT NOT NULL,
+                                     reason VARCHAR(50) NOT NULL,
+                                     detail TEXT NULL,
+                                     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                     CONSTRAINT fk_plaza_entry_reports_reporter FOREIGN KEY (reporter_id) REFERENCES users(id),
+                                     CONSTRAINT fk_plaza_entry_reports_reported_user FOREIGN KEY (reported_user_id) REFERENCES users(id),
+                                     CONSTRAINT fk_plaza_entry_reports_plaza FOREIGN KEY (plaza_id) REFERENCES plazas(id),
+                                     CONSTRAINT fk_plaza_entry_reports_entry FOREIGN KEY (plaza_entry_id) REFERENCES plaza_entries(id),
+                                     CONSTRAINT uk_reporter_plaza_entry UNIQUE (reporter_id, plaza_entry_id),
+                                     INDEX idx_plaza_entry_reports_plaza_id (plaza_id),
+                                     INDEX idx_plaza_entry_reports_reported_user_id (reported_user_id),
+                                     INDEX idx_plaza_entry_reports_created_at (created_at)
+);
+
+--12. 우편함(편지) 테이블
 -- [수정] 현재 Letter 엔티티 기준 컬럼 전체 반영
 CREATE TABLE letters (
                          id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -174,6 +199,8 @@ CREATE TABLE letters (
                          receiver_id BIGINT NOT NULL,
                          title VARCHAR(100) NOT NULL,
                          message TEXT NOT NULL,
+                         category VARCHAR(20) NOT NULL DEFAULT 'PLAZA',
+                         warning_count BIGINT NULL,
                          plaza_title VARCHAR(100) NOT NULL,
                          plaza_id BIGINT NULL,
                          generated_image_data LONGTEXT NULL,
@@ -191,7 +218,21 @@ CREATE TABLE letters (
                          INDEX idx_letters_receiver_created_at (receiver_id, created_at)
 );
 
---12. 비밀번호 재설정 토큰 테이블
+-- 관리자 제재로 누적된 사용자 경고 이력
+CREATE TABLE user_warnings (
+                               id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                               user_id BIGINT NOT NULL,
+                               source_entry_id BIGINT NULL,
+                               source_entry_title VARCHAR(100) NULL,
+                               reason VARCHAR(255) NOT NULL,
+                               issued_by_nickname VARCHAR(20) NOT NULL,
+                               created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                               CONSTRAINT fk_user_warnings_user FOREIGN KEY (user_id) REFERENCES users(id),
+                               INDEX idx_user_warnings_user_id (user_id),
+                               INDEX idx_user_warnings_created_at (created_at)
+);
+
+--13. 비밀번호 재설정 토큰 테이블
 -- [수정] 비밀번호 찾기 시 발급되는 재설정 토큰 및 만료 시간, 사용 여부를 관리
 CREATE TABLE password_reset_tokens (
                                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -203,7 +244,7 @@ CREATE TABLE password_reset_tokens (
                                        INDEX idx_password_reset_tokens_email_created_at (email, created_at)
 );
 
---13. 1:1 문의 테이블
+--14. 1:1 문의 테이블
 -- 사용자가 남긴 1:1 문의를 저장합니다. 목록은 모두에게 보이되 내용은 관리자만 조회합니다.
 CREATE TABLE inquiries (
                            id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -221,7 +262,7 @@ CREATE TABLE inquiries (
                            INDEX idx_inquiries_created_at (created_at)
 );
 
---14. 공지사항 테이블
+--15. 공지사항 테이블
 -- 관리자가 작성하는 공지사항. 모든 사용자가 열람하고, 작성/수정/삭제는 관리자만 가능합니다.
 CREATE TABLE notices (
                          id BIGINT AUTO_INCREMENT PRIMARY KEY,

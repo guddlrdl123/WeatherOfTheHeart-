@@ -11,6 +11,7 @@ public enum ErrorCode {
     USER_PASSWORD_MISMATCH("USER_003", "현재 비밀번호가 일치하지 않습니다."),
     USER_WITHDRAWN("USER_004", "탈퇴한 회원입니다."),
     SOCIAL_EMAIL_CHANGE_FORBIDDEN("USER_005", "소셜로그인 이용자는 이메일 수정이 불가능합니다."),
+    USER_SUSPENDED("USER_006", "관리자에 의해 이용이 정지된 계정입니다."),
     AUTH_REQUIRED("AUTH_001", "로그인이 필요합니다."),
     AUTH_INVALID("AUTH_002", "인증 정보가 올바르지 않습니다."),
     AUTH_EXPIRED("AUTH_003", "인증 시간이 만료되었습니다."),
@@ -30,6 +31,8 @@ public enum ErrorCode {
     PLAZA_ENTRY_NOT_FOUND("PLAZA_005", "존재하지 않는 광장 글입니다."),
     PLAZA_ENTRY_FORBIDDEN("PLAZA_006", "광장 글/오브젝트를 수정하거나 삭제할 권한이 없습니다."),
     PLAZA_DELETE_FORBIDDEN("PLAZA_007", "AI 이미지 생성 중인 광장은 삭제할 수 없습니다."),
+    PLAZA_REPORT_DUPLICATE("PLAZA_008", "이미 신고한 광장 글입니다."),
+    PLAZA_REPORT_SELF_FORBIDDEN("PLAZA_009", "자신의 광장 글은 신고할 수 없습니다."),
     MAILBOX_NOT_FOUND("MAILBOX_001", "존재하지 않는 우편입니다."),
     ROOM_NOT_FOUND("ROOM_001", "존재하지 않는 방입니다."),
     AI_API_KEY_MISSING("AI_001", "OpenAI API 키가 설정되지 않았습니다."),
@@ -40,7 +43,8 @@ public enum ErrorCode {
     INVALID_INPUT("GLOBAL_001", "입력값이 올바르지 않습니다."),
     FORBIDDEN("GLOBAL_002", "접근 권한이 없습니다."),
     INQUIRY_NOT_FOUND("INQUIRY_001", "존재하지 않는 문의입니다."),
-    NOTICE_NOT_FOUND("NOTICE_001", "존재하지 않는 공지입니다.");
+    NOTICE_NOT_FOUND("NOTICE_001", "존재하지 않는 공지입니다."),
+    MODERATION_ADMIN_SUSPEND_FORBIDDEN("MODERATION_001", "관리자 계정은 정지할 수 없습니다.");
 
     private final String code;
     private final String message;

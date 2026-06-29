@@ -16,6 +16,7 @@ export type InquiryItem = {
   createdAt: string;
   masked: boolean;
   mine: boolean;
+  warningCount: number | null;
 };
 
 export type InquiryPage = {

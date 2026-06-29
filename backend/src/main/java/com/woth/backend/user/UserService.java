@@ -9,6 +9,7 @@ import com.woth.backend.like.ObjectLikeRepository;
 import com.woth.backend.mailbox.LetterRepository;
 import com.woth.backend.memory.PrivateMemoryRepository;
 import com.woth.backend.plaza.PlazaEntryRepository;
+import com.woth.backend.plaza.PlazaEntryReportRepository;
 import com.woth.backend.plaza.PlazaRepository;
 import com.woth.backend.room.PrivateRoomRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,6 +35,7 @@ public class UserService {
     private final PrivateMemoryRepository privateMemoryRepository;
     private final PrivateRoomRepository privateRoomRepository;
     private final PlazaEntryRepository plazaEntryRepository;
+    private final PlazaEntryReportRepository plazaEntryReportRepository;
     private final PlazaRepository plazaRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
@@ -47,6 +49,7 @@ public class UserService {
             PrivateMemoryRepository privateMemoryRepository,
             PrivateRoomRepository privateRoomRepository,
             PlazaEntryRepository plazaEntryRepository,
+            PlazaEntryReportRepository plazaEntryReportRepository,
             PlazaRepository plazaRepository,
             RefreshTokenRepository refreshTokenRepository,
             PasswordResetTokenRepository passwordResetTokenRepository
@@ -59,6 +62,7 @@ public class UserService {
         this.privateMemoryRepository = privateMemoryRepository;
         this.privateRoomRepository = privateRoomRepository;
         this.plazaEntryRepository = plazaEntryRepository;
+        this.plazaEntryReportRepository = plazaEntryReportRepository;
         this.plazaRepository = plazaRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
@@ -214,6 +218,8 @@ public class UserService {
         objectLikeRepository.deleteByPlazaOwnerId(userId);
         objectLikeRepository.deleteByPlazaEntryOwnerId(userId);
 
+        plazaEntryReportRepository.deleteByPlazaOwnerId(userId);
+        plazaEntryReportRepository.deleteOpenByPlazaEntryOwnerId(userId);
         plazaEntryRepository.deleteByPlazaOwnerId(userId);
         plazaEntryRepository.deleteOpenByOwnerId(userId);
         plazaEntryRepository.anonymizeCompletedOwnerByOwnerId(userId, withdrawnOwner);
