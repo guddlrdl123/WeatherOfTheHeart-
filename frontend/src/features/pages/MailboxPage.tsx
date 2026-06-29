@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowRight, CalendarDays, Download, ImageIcon, Inbox, MailCheck, MapPinned, RefreshCw, ShieldAlert, Trash2, Users, X } from "lucide-react";
+import { ArrowRight, CalendarDays, Download, ImageIcon, Inbox, MailCheck, MapPinned, RefreshCw, Trash2, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { MailboxCard } from "../../components/mailbox/MailboxCard";
 import { AppHeader } from "../../components/layout/AppHeader";
@@ -109,27 +109,38 @@ function MailboxDetailModal({
   if (isWarning) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center overscroll-contain bg-black/35 px-4 py-8 backdrop-blur-sm select-none">
-        <section className="mw-surface w-full max-w-[520px] overflow-hidden rounded-lg bg-[#fffbf6] shadow-xl">
-          <div className="border-b border-[#5a4632]/10 bg-[#a75e55]/[0.07] px-6 py-8 text-center">
-            <ShieldAlert size={32} className="mx-auto text-[#a75e55]" />
-            <p className="mt-3 text-xs text-[#a75e55]/75">운영팀 경고 안내</p>
-            <h2 className="mt-2 text-lg font-semibold leading-8 text-[#5a4632]">{item.title}</h2>
+        <section className="mw-surface max-h-[calc(100vh-64px)] w-full max-w-[560px] overflow-y-auto overscroll-contain rounded-xl bg-[#fffbf6f2] shadow-xl">
+          <div className="flex items-start justify-between gap-4 border-b border-[#5a4632]/10 bg-[#a75e55]/[0.07] px-6 py-5">
+            <div className="min-w-0">
+              <p className="text-xs tracking-[0.18em] text-[#a75e55]/75">WARNING</p>
+              <h2 className="mt-2 text-lg font-semibold leading-8 text-[#5a4632]">{item.title}</h2>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => onRequestDelete(item.id)}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#5a4632]/10 text-[#5a4632] hover:bg-black/5"
+                aria-label="우편 삭제"
+                title="우편 삭제"
+              >
+                <Trash2 size={17} />
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#5a4632]/10 text-[#5a4632] hover:bg-black/5"
+                aria-label="닫기"
+                title="닫기"
+              >
+                <X size={17} />
+              </button>
+            </div>
           </div>
           <div className="p-6">
             <p className="whitespace-pre-wrap text-sm leading-7 text-[#5a4632]/68">{item.message}</p>
             <div className="mt-5 flex items-center justify-between rounded-md border border-[#a75e55]/18 bg-[#a75e55]/[0.05] px-4 py-3 text-xs text-[#5a4632]/58">
               <span>누적 경고 {item.warningCount ?? 0}회</span>
               <span>{formatDate(item.completedAt)}</span>
-            </div>
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => onRequestDelete(item.id)}
-                className="grid h-9 w-9 place-items-center rounded-md border border-[#5a4632]/12 text-[#5a4632]/70 hover:bg-[#5a4632]/8"
-                aria-label="우편 삭제"
-                title="우편 삭제"
-              ><Trash2 size={16} /></button>
-              <button type="button" onClick={onClose} className="mw-button rounded-md px-4 py-2 text-sm">확인</button>
             </div>
           </div>
         </section>

@@ -147,27 +147,51 @@ public class MailboxService {
     }
 
     @Transactional
-    public void sendWarningLetter(User receiver, String reason, long warningCount, boolean blinded) {
+    public void sendWarningLetter(User receiver, String reason, long warningCount, boolean blinded, PlazaEntry entry) {
         LocalDateTime now = LocalDateTime.now();
         String titleSuffix = "로 인한 경고 " + warningCount + "회";
         int reasonTitleLength = Math.max(1, 100 - titleSuffix.length());
         String titleReason = reason.length() > reasonTitleLength
                 ? reason.substring(0, reasonTitleLength)
                 : reason;
+        String plazaTitle = getWarningPlazaTitle(entry);
         Letter letter = Letter.builder()
                 .receiver(receiver)
                 .title(titleReason + titleSuffix)
-                .message("처분 사유: " + reason + "\n\n신고된 광장 글을 관리자가 확인하여 "
-                        + (blinded ? "블라인드 처리했습니다." : "삭제했습니다.")
-                        + " 같은 사유가 반복되면 계정 이용이 정지될 수 있습니다.")
+                .message(buildWarningMessage(reason, blinded, entry, plazaTitle))
                 .category(Letter.CATEGORY_WARNING)
                 .warningCount(warningCount)
-                .plazaTitle("운영팀 안내")
+                .plazaTitle(plazaTitle)
                 .completedAt(now)
                 .plazaCreatedAt(now)
                 .participantCount(0L)
                 .build();
         letterRepository.save(letter);
+    }
+
+    private String buildWarningMessage(String reason, boolean blinded, PlazaEntry entry, String plazaTitle) {
+        String entryTitle = getWarningEntryTitle(entry);
+        String entryContent = entry.getContent() == null || entry.getContent().isBlank()
+                ? "내용 없음"
+                : entry.getContent().trim();
+
+        return "대상 광장: " + plazaTitle
+                + "\n대상 글: " + entryTitle
+                + "\n\n작성한 내용:\n" + entryContent
+                + "\n\n처분 사유: " + reason
+                + "\n\n신고된 광장 글을 관리자가 확인하여 "
+                + (blinded ? "블라인드 처리했습니다." : "삭제했습니다.")
+                + "\n같은 사유가 반복되면 계정 이용이 정지될 수 있습니다.";
+    }
+
+    private String getWarningEntryTitle(PlazaEntry entry) {
+        String title = entry.getTitle();
+        return title == null || title.isBlank() ? "제목 없는 글" : title.trim();
+    }
+
+    private String getWarningPlazaTitle(PlazaEntry entry) {
+        String plazaTitle = entry.getPlaza().getTitle();
+        return plazaTitle == null || plazaTitle.isBlank() ? "광장" : plazaTitle.trim();
     }
 
     private MailboxItemView toMailboxItemView(Long receiverId, Letter letter) {

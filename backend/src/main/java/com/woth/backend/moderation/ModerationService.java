@@ -102,7 +102,7 @@ public class ModerationService {
                 .build());
         long warningCount = warningRepository.countByUserId(reportedUser.getId());
 
-        mailboxService.sendWarningLetter(reportedUser, normalizedReason, warningCount, shouldBlind);
+        mailboxService.sendWarningLetter(reportedUser, normalizedReason, warningCount, shouldBlind, entry);
         reportRepository.deleteByPlazaEntryId(entryId);
         if (shouldBlind) {
             entry.blind(normalizedReason);
