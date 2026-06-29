@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Flag, Heart, Loader2, Pencil, ShieldAlert, Trash2, X } from "lucide-react";
+import { Siren, Heart, Pencil, ShieldAlert, Trash2, X } from "lucide-react";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
 import type { PlazaEntry } from "../../types/plaza";
 import { getPlazaEntryLikeCount, hasLikedPlazaEntry } from "./plazaHelpers";
@@ -97,8 +97,7 @@ function ReportConfirmModal({ onCancel, onConfirm }: ReportConfirmModalProps) {
         reason,
         detail: detail.trim(),
       });
-    } catch (caughtError) {
-      window.alert(caughtError instanceof Error ? caughtError.message : "신고를 접수하지 못했습니다.");
+    } catch {
       setIsSubmitting(false);
     }
   }
@@ -108,7 +107,7 @@ function ReportConfirmModal({ onCancel, onConfirm }: ReportConfirmModalProps) {
       <div className="w-full max-w-[420px] max-h-[calc(100vh-64px)] overflow-y-auto rounded-xl border border-[#b36a5e]/25 bg-[#fffbf6f2] p-5 text-[#5a4632] shadow-xl">
         <div className="mb-4 flex items-start gap-3">
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9] text-[#b36a5e]">
-            <Flag size={17} />
+            <Siren size={17} />
           </div>
           <div>
             <h4 className="text-base font-semibold text-[#5a4632]">이 글을 신고할까요?</h4>
@@ -164,9 +163,8 @@ function ReportConfirmModal({ onCancel, onConfirm }: ReportConfirmModalProps) {
             type="button"
             disabled={isSubmitting}
             onClick={handleConfirm}
-            className="inline-flex items-center gap-2 rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9] px-4 py-2 text-sm text-[#b36a5e] hover:bg-[#faebe7] disabled:opacity-50"
+            className="rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9] px-4 py-2 text-sm text-[#b36a5e] hover:bg-[#faebe7] disabled:opacity-50"
           >
-            {isSubmitting ? <Loader2 size={15} className="animate-spin" /> : <Flag size={15} />}
             신고
           </button>
         </div>
@@ -262,7 +260,7 @@ export function PlazaPreviewModal({ entry, currentGuestId, onClose, onUpdate, on
                 aria-label="신고하기"
                 title="신고하기"
               >
-                <Flag size={17} />
+                <Siren size={17} />
               </button>
             )}
             <button

@@ -530,8 +530,16 @@ export function PlazaRoomPage({
       return;
     }
 
-    await onReportEntry(entryId, value);
-    showPlazaNotice("신고가 접수되었습니다. 확인해 주셔서 감사합니다.");
+    try {
+      await onReportEntry(entryId, value);
+      showPlazaNotice("신고가 접수되었습니다. 확인해 주셔서 감사합니다.");
+    } catch (caughtError) {
+      showPlazaNotice(
+        caughtError instanceof Error ? caughtError.message : "신고를 접수하지 못했습니다.",
+        "error",
+      );
+      throw caughtError;
+    }
   }
 
   function openPlazaConfirm(action: PlazaConfirmAction) {
@@ -650,7 +658,7 @@ export function PlazaRoomPage({
   return (
     <main className="min-h-0 flex-1 overflow-auto px-6 py-6">
       {plazaNotice && (
-        <div className="fixed left-1/2 top-6 z-[120] w-[min(420px,calc(100vw-32px))] -translate-x-1/2">
+        <div className="fixed left-1/2 top-6 z-[160] w-[min(420px,calc(100vw-32px))] -translate-x-1/2">
           <div className="mw-surface flex items-start gap-3 rounded-xl bg-[#fffbf6f2] px-4 py-3 text-[#5a4632] shadow-xl backdrop-blur-sm">
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-md border ${plazaNotice.tone === "error"

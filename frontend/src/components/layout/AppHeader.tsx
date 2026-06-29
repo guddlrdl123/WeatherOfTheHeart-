@@ -1,4 +1,4 @@
-import { House, Home, Inbox, LogOut, UserRound, CastleIcon, MessageCircleQuestion, Megaphone, ShieldAlert } from "lucide-react";
+import { House, Home, Inbox, LogOut, UserRound, CastleIcon, MessageCircleQuestion, Megaphone, Siren } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { fetchMailboxUnreadCount, MAILBOX_CHANGED_EVENT } from "../../services/mailboxService";
@@ -155,7 +155,7 @@ export function AppHeader() {
                                             to="/admin/reports"
                                             className="flex items-center gap-2 px-3 py-2 text-xs text-[#5a4632]/85 hover:bg-[#5a4632]/10"
                                         >
-                                            <ShieldAlert size={14} className="shrink-0 text-[#a75e55]" />
+                                            <Siren size={14} className="shrink-0 text-[#a75e55]" />
                                             신고내역
                                         </Link>
                                     )}

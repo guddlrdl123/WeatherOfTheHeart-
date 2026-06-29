@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Ban, CheckCircle2, EyeOff, Flag, RefreshCw, ShieldCheck, Trash2, UserRound, X } from "lucide-react";
+import { AlertTriangle, Ban, CheckCircle2, EyeOff, RefreshCw, ShieldCheck, Siren, Trash2, UserRound, X } from "lucide-react";
 import { AppHeader } from "../../components/layout/AppHeader";
 import {
   moderateReportedEntry,
@@ -130,7 +130,7 @@ function AdminReportsPage() {
           <section className="flex flex-col justify-between gap-5 border-b border-[#5a4632]/12 pb-6 sm:flex-row sm:items-end">
             <div>
               <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#a75e55]/20 bg-[#a75e55]/10 text-[#a75e55]">
-                <Flag size={19} />
+                <Siren size={19} />
               </div>
               <h1 className="text-2xl font-normal text-[#5a4632]">신고 내역</h1>
               <p className="mt-2 text-sm text-[#5a4632]/58">진행 중인 글은 삭제하고, 종료된 광장의 글은 블라인드 처리합니다.</p>
@@ -215,7 +215,6 @@ function AdminReportsPage() {
                           <div key={report.reportId} className="py-3 first:pt-0 last:pb-0">
                             <div className="flex flex-wrap items-center justify-between gap-2">
                               <span className="text-sm text-[#5a4632]">{REPORT_REASON_LABELS[report.reason] ?? report.reason}</span>
-                              <span className="text-[11px] text-[#5a4632]/42">{report.reporterNickname} · {formatDateTime(report.createdAt)}</span>
                             </div>
                             {report.detail && <p className="mt-1.5 whitespace-pre-wrap text-xs leading-6 text-[#5a4632]/58">{report.detail}</p>}
                           </div>
