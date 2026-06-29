@@ -215,6 +215,7 @@ function PlazaPage() {
           currentGuestId={currentUserId}
           currentGuestIsAdmin={currentUserIsAdmin}
           isDraftPlaza={isDraftPlaza}
+          isRefreshing={isLoading}
           onUpdatePlaza={(updater) => {
             if (isDraftPlaza) {
               handleUpdateDraftPlaza(updater);
@@ -223,6 +224,11 @@ function PlazaPage() {
 
             persistPlazas((current) => current.map((plaza) => plaza.id === selectedPlaza.id ? updater(plaza) : plaza));
           }}
+          onRefresh={
+            isDraftPlaza
+              ? undefined
+              : () => loadPlazaList()
+          }
           onFinalizeDraftPlaza={handleFinalizeDraftPlaza}
           onCancelDraftPlaza={handleCancelDraftPlaza}
           onDeletePlaza={() => handleDeletePlaza(selectedPlaza.id)}

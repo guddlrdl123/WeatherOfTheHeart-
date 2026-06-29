@@ -58,8 +58,8 @@ export type UserPlazaEntry = {
 const PLAZA_WEATHER_KEYS = ["sunny", "rain", "cloud", "snow", "sunset", "night", "dawn", "cherry", "ocean"] as const satisfies readonly PlazaWeatherKey[];
 const PLAZA_ERROR_MESSAGE_BY_CODE: Record<string, string> = {
   PLAZA_007: "광장 이미지 생성 중입니다. 우편함 도착 후 다시 삭제해주세요.",
-  PLAZA_008: "이미 신고한 광장 글입니다.",
-  PLAZA_009: "자신의 광장 글은 신고할 수 없습니다.",
+  PLAZA_008: "이미 신고한 글입니다.",
+  PLAZA_009: "자신의 글은 신고할 수 없습니다.",
   PLAZA_010: "관리자에 의해 블라인드 처리된 글입니다.",
 };
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, CheckCircle2, CircleAlert, Copy, Footprints, Heart, MapPinned, MoreHorizontal, Power, Trash2, X } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CircleAlert, Copy, Footprints, Heart, MapPinned, MoreHorizontal, Power, RefreshCw, Trash2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROOM_OBJECT_BY_KEY } from "../../constants/roomObjects";
 import { useRoomObjectCatalog } from "../../hooks/useRoomObjectCatalog";
@@ -47,7 +47,9 @@ type Props = {
   currentGuestId: string;
   currentGuestIsAdmin?: boolean;
   isDraftPlaza?: boolean;
+  isRefreshing?: boolean;
   onUpdatePlaza: (updater: (plaza: Plaza) => Plaza) => void;
+  onRefresh?: () => Promise<void> | void;
   onFinalizeDraftPlaza?: (value: PlazaWriteValue, position: RoomObjectPosition, layer: number) => Promise<void>;
   onCancelDraftPlaza?: () => void;
   onDeletePlaza: () => Promise<void>;
@@ -149,7 +151,9 @@ export function PlazaRoomPage({
   currentGuestId,
   currentGuestIsAdmin = false,
   isDraftPlaza = false,
+  isRefreshing = false,
   onUpdatePlaza,
+  onRefresh,
   onFinalizeDraftPlaza,
   onCancelDraftPlaza,
   onDeletePlaza,
@@ -532,7 +536,7 @@ export function PlazaRoomPage({
 
     try {
       await onReportEntry(entryId, value);
-      showPlazaNotice("신고가 접수되었습니다. 확인해 주셔서 감사합니다.");
+      showPlazaNotice("신고가 접수되었습니다.");
     } catch (caughtError) {
       showPlazaNotice(
         caughtError instanceof Error ? caughtError.message : "신고를 접수하지 못했습니다.",
@@ -693,37 +697,56 @@ export function PlazaRoomPage({
             <section className="mw-surface relative rounded-xl p-5">
               <div className="flex items-start justify-between gap-3">
                 <h1 className="min-w-0 truncate text-xl font-normal text-[#5a4632]">{plaza.topic}</h1>
-                {owner && !isDraftPlaza && (
-                  <div className="relative shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setIsManagementMenuOpen((value) => !value)}
-                      className="grid h-8 w-8 place-items-center rounded-md border border-[#5a4632]/15 bg-white/35 text-[#5a4632]/70 hover:bg-white/60"
-                      aria-label="광장 관리 메뉴"
-                      title="광장 관리 메뉴"
-                    >
-                      <MoreHorizontal size={17} />
-                    </button>
-                    {isManagementMenuOpen && (
-                      <div className="absolute right-0 top-[calc(100%+6px)] z-40 flex w-[132px] flex-col rounded-md border border-[#5a4632]/15 bg-[#fffbf6f2] p-1 text-xs text-[#5a4632] shadow-lg backdrop-blur-sm">
-                        {!plazaEnded && (
-                          <button
-                            type="button"
-                            onClick={() => openPlazaConfirm("close")}
-                            className="inline-flex items-center gap-2 rounded px-3 py-2 text-left hover:bg-[#5a4632]/10"
-                          >
-                            <Power size={12} />
-                            광장 종료
-                          </button>
-                        )}
+                {!isDraftPlaza && (onRefresh || owner) && (
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {onRefresh && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsManagementMenuOpen(false);
+                          void onRefresh();
+                        }}
+                        disabled={isRefreshing}
+                        className="grid h-8 w-8 place-items-center rounded-md border border-[#5a4632]/15 bg-white/35 text-[#5a4632]/70 hover:bg-white/60 disabled:opacity-50"
+                        aria-label="광장 새로고침"
+                        title="광장 새로고침"
+                      >
+                        <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+                      </button>
+                    )}
+                    {owner && (
+                      <div className="relative shrink-0">
                         <button
                           type="button"
-                          onClick={() => openPlazaConfirm("delete")}
-                          className="inline-flex items-center gap-2 rounded px-3 py-2 text-left text-[#9a4f48] hover:bg-[#5a4632]/10"
+                          onClick={() => setIsManagementMenuOpen((value) => !value)}
+                          className="grid h-8 w-8 place-items-center rounded-md border border-[#5a4632]/15 bg-white/35 text-[#5a4632]/70 hover:bg-white/60"
+                          aria-label="광장 관리 메뉴"
+                          title="광장 관리 메뉴"
                         >
-                          <Trash2 size={12} />
-                          광장 삭제
+                          <MoreHorizontal size={17} />
                         </button>
+                        {isManagementMenuOpen && (
+                          <div className="absolute right-0 top-[calc(100%+6px)] z-40 flex w-[132px] flex-col rounded-md border border-[#5a4632]/15 bg-[#fffbf6f2] p-1 text-xs text-[#5a4632] shadow-lg backdrop-blur-sm">
+                            {!plazaEnded && (
+                              <button
+                                type="button"
+                                onClick={() => openPlazaConfirm("close")}
+                                className="inline-flex items-center gap-2 rounded px-3 py-2 text-left hover:bg-[#5a4632]/10"
+                              >
+                                <Power size={12} />
+                                광장 종료
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => openPlazaConfirm("delete")}
+                              className="inline-flex items-center gap-2 rounded px-3 py-2 text-left text-[#9a4f48] hover:bg-[#5a4632]/10"
+                            >
+                              <Trash2 size={12} />
+                              광장 삭제
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
