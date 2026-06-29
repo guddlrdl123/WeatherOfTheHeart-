@@ -22,6 +22,7 @@ export type ReportedEntry = {
   warningCount: number;
   suspended: boolean;
   completedPlaza: boolean;
+  ownerEntry: boolean;
   reportCount: number;
   latestReportedAt: string;
   reports: ReportDetail[];

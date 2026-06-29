@@ -91,7 +91,7 @@ public class ModerationService {
         }
         String normalizedReason = normalizeReason(reason);
         User reportedUser = entry.getOwner();
-        boolean shouldBlind = entry.getPlaza().isCompleted();
+        boolean shouldBlind = entry.getPlaza().isCompleted() || isPlazaOwnerEntry(entry);
 
         UserWarning warning = warningRepository.save(UserWarning.builder()
                 .user(reportedUser)
@@ -157,6 +157,12 @@ public class ModerationService {
         return normalized;
     }
 
+    private static boolean isPlazaOwnerEntry(PlazaEntry entry) {
+        return entry.getPlaza().getOwner() != null
+                && entry.getOwner() != null
+                && entry.getPlaza().getOwner().getId().equals(entry.getOwner().getId());
+    }
+
     private record ReportedEntryAccumulator(
             PlazaEntry entry,
             User owner,
@@ -181,6 +187,7 @@ public class ModerationService {
                     warningCount,
                     Boolean.TRUE.equals(owner.getIsSuspended()),
                     entry.getPlaza().isCompleted(),
+                    isPlazaOwnerEntry(entry),
                     reports.size(),
                     reports.getFirst().createdAt(),
                     List.copyOf(reports)
@@ -201,6 +208,7 @@ public class ModerationService {
             long warningCount,
             boolean suspended,
             boolean completedPlaza,
+            boolean ownerEntry,
             int reportCount,
             LocalDateTime latestReportedAt,
             List<ReportDetailView> reports

@@ -40,6 +40,10 @@ function getDefaultWarningReason(item: ReportedEntry) {
   return labels.slice(0, 2).join(", ") || "커뮤니티 운영 정책 위반";
 }
 
+function shouldBlindReportedEntry(item: ReportedEntry) {
+  return item.completedPlaza || item.ownerEntry;
+}
+
 function AdminReportsPage() {
   const [items, setItems] = useState<ReportedEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -134,7 +138,7 @@ function AdminReportsPage() {
                 <Siren size={19} />
               </div>
               <h1 className="text-2xl font-normal text-[#5a4632]">신고 내역</h1>
-              <p className="mt-2 text-sm text-[#5a4632]/58">진행 중인 글은 삭제하고, 종료된 광장의 글은 블라인드 처리합니다.</p>
+              <p className="mt-2 text-sm text-[#5a4632]/58">진행 중인 일반 글은 삭제하고, 종료된 광장 또는 방장의 글은 블라인드 처리합니다.</p>
             </div>
             <button
               type="button"
@@ -179,6 +183,7 @@ function AdminReportsPage() {
                       <div className="flex flex-wrap items-center gap-2 text-xs">
                         <span className="rounded-full bg-[#a75e55]/12 px-2 py-1 text-[#a75e55]">신고 {item.reportCount}건</span>
                         <span className="rounded-full bg-[#5a4632]/[0.07] px-2 py-1 text-[#5a4632]/62">{item.completedPlaza ? "종료된 광장" : "진행 중인 광장"}</span>
+                        {item.ownerEntry && <span className="rounded-full bg-[#d39a43]/12 px-2 py-1 text-[#9a6b25]">방장 글</span>}
                         <span className="text-[#5a4632]/45">{formatDateTime(item.latestReportedAt)}</span>
                         <span className="text-[#5a4632]/45">{item.plazaTitle}</span>
                       </div>
@@ -196,7 +201,7 @@ function AdminReportsPage() {
                         type="button"
                         onClick={() => openAction("delete", item)}
                         className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#a75e55]/25 px-3 text-xs text-[#a75e55] hover:bg-[#a75e55]/10"
-                      >{item.completedPlaza ? <EyeOff size={14} /> : <Trash2 size={14} />}{item.completedPlaza ? "블라인드 및 경고" : "삭제 및 경고"}</button>
+                      >{shouldBlindReportedEntry(item) ? <EyeOff size={14} /> : <Trash2 size={14} />}{shouldBlindReportedEntry(item) ? "블라인드 및 경고" : "삭제 및 경고"}</button>
                       <button
                         type="button"
                         onClick={() => openAction(item.suspended ? "release" : "suspend", item)}
@@ -251,13 +256,13 @@ function AdminReportsPage() {
               <div>
                 <h2 className="text-base font-semibold text-[#5a4632]">
                   {actionTarget.kind === "delete"
-                    ? actionTarget.item.completedPlaza ? "글을 블라인드하고 경고할까요?" : "글을 삭제하고 경고할까요?"
+                    ? shouldBlindReportedEntry(actionTarget.item) ? "글을 블라인드하고 경고할까요?" : "글을 삭제하고 경고할까요?"
                     : actionTarget.kind === "suspend" ? "계정 이용을 정지할까요?" : "계정 정지를 해제할까요?"}
                 </h2>
                 <p className="mt-2 text-xs leading-6 text-[#5a4632]/58">
                   {actionTarget.kind === "delete"
-                    ? actionTarget.item.completedPlaza
-                      ? "종료된 광장의 기록은 보존되고, 일반 사용자에게 내용이 보이지 않게 됩니다."
+                    ? shouldBlindReportedEntry(actionTarget.item)
+                      ? "광장 기록은 보존되고, 일반 사용자에게 내용이 보이지 않게 됩니다."
                       : "글은 즉시 삭제되며 작성자의 우편함에 누적 경고 횟수가 발송됩니다."
                     : actionTarget.kind === "suspend"
                       ? "정지 즉시 기존 로그인도 만료되며 다시 로그인할 수 없습니다."
@@ -298,8 +303,8 @@ function AdminReportsPage() {
                 disabled={isActing || (actionTarget.kind !== "release" && !actionReason.trim())}
                 className="inline-flex items-center gap-2 rounded-md bg-[#a75e55] px-4 py-2 text-sm text-white hover:bg-[#96534b] disabled:opacity-50"
               >
-                {actionTarget.kind === "delete" ? actionTarget.item.completedPlaza ? <EyeOff size={14} /> : <Trash2 size={14} /> : actionTarget.kind === "suspend" ? <Ban size={14} /> : <ShieldCheck size={14} />}
-                {isActing ? "처리 중" : actionTarget.kind === "delete" ? actionTarget.item.completedPlaza ? "블라인드 및 경고" : "삭제 및 경고" : actionTarget.kind === "suspend" ? "정지" : "정지 해제"}
+                {actionTarget.kind === "delete" ? shouldBlindReportedEntry(actionTarget.item) ? <EyeOff size={14} /> : <Trash2 size={14} /> : actionTarget.kind === "suspend" ? <Ban size={14} /> : <ShieldCheck size={14} />}
+                {isActing ? "처리 중" : actionTarget.kind === "delete" ? shouldBlindReportedEntry(actionTarget.item) ? "블라인드 및 경고" : "삭제 및 경고" : actionTarget.kind === "suspend" ? "정지" : "정지 해제"}
               </button>
             </div>
           </section>
