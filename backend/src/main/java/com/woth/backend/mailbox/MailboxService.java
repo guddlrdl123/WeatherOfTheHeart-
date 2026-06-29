@@ -162,8 +162,9 @@ public class MailboxService {
                 .category(Letter.CATEGORY_WARNING)
                 .warningCount(warningCount)
                 .plazaTitle(plazaTitle)
+                .plazaId(entry.getPlaza().getId())
                 .completedAt(now)
-                .plazaCreatedAt(now)
+                .plazaCreatedAt(entry.getPlaza().getCreatedAt())
                 .participantCount(0L)
                 .build();
         letterRepository.save(letter);

@@ -142,6 +142,16 @@ function MailboxDetailModal({
               <span>누적 경고 {item.warningCount ?? 0}회</span>
               <span>{formatDate(item.completedAt)}</span>
             </div>
+            {item.plazaId && (
+              <button
+                type="button"
+                onClick={() => onGoToPlaza(item.plazaId)}
+                className="mw-button mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md px-4 py-3 text-sm"
+              >
+                해당 광장 보기
+                <ArrowRight size={15} />
+              </button>
+            )}
           </div>
         </section>
       </div>
