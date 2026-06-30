@@ -72,3 +72,13 @@ export async function answerInquiry(inquiryId: number, answer: string) {
 
   return readApiData<InquiryItem>(response);
 }
+
+export async function deleteInquiry(inquiryId: number) {
+  const response = await authFetch(toApiUrl(`/api/inquiries/${encodeURIComponent(inquiryId)}`), {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw await readApiError(response, "문의 삭제에 실패했습니다.");
+  }
+}

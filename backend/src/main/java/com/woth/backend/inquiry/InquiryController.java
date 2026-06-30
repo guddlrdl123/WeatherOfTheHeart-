@@ -80,6 +80,14 @@ public class InquiryController {
         return ApiResponse.success(toResponse(answered, currentUser));
     }
 
+    @DeleteMapping("/{inquiryId}")
+    public ApiResponse<Void> delete(@CurrentUser AuthenticatedUser currentUser,
+                                    @PathVariable Long inquiryId) {
+        inquiryService.delete(inquiryId, currentUser.id());
+
+        return ApiResponse.success(null);
+    }
+
     private boolean isAdmin(AuthenticatedUser currentUser) {
         return Boolean.TRUE.equals(currentUser.isAdmin());
     }

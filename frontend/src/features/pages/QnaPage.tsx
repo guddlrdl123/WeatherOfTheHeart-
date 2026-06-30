@@ -1,7 +1,7 @@
 import { type FormEvent, useCallback, useEffect, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, CornerDownRight, Lock, MessageCircleQuestion, Send } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, CornerDownRight, Lock, MessageCircleQuestion, Send, Trash2 } from "lucide-react";
 import { AppHeader } from "../../components/layout/AppHeader";
-import { answerInquiry, createInquiry, fetchInquiries, type InquiryItem, type InquiryPage } from "../../services/inquiryService";
+import { answerInquiry, createInquiry, deleteInquiry, fetchInquiries, type InquiryItem, type InquiryPage } from "../../services/inquiryService";
 
 type FaqItem = {
   question: string;
@@ -92,14 +92,70 @@ function FaqAccordionItem({
   );
 }
 
+type InquiryDeleteConfirmModalProps = {
+  isDeleting: boolean;
+  error: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+};
+
+function InquiryDeleteConfirmModal({ isDeleting, error, onCancel, onConfirm }: InquiryDeleteConfirmModalProps) {
+  return (
+    <div
+      className="fixed inset-0 z-[140] flex items-center justify-center bg-black/25 px-4 py-8 backdrop-blur-[2px]"
+      onPointerDown={isDeleting ? undefined : onCancel}
+    >
+      <div
+        className="w-full max-w-[360px] max-h-[calc(100vh-64px)] overflow-y-auto rounded-xl border border-[#b36a5e]/25 bg-[#fffbf6f2] p-5 text-[#5a4632] shadow-xl"
+        onPointerDown={(event) => event.stopPropagation()}
+      >
+        <div className="mb-4 flex items-start gap-3">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9] text-[#b36a5e]">
+            <Trash2 size={17} />
+          </div>
+          <div>
+            <h4 className="text-base font-semibold text-[#5a4632]">문의 내역을 삭제할까요?</h4>
+            <p className="mt-1 text-xs leading-6 text-[#5a4632]/65">
+              삭제 후에는 복구할 수 없습니다.
+            </p>
+          </div>
+        </div>
+
+        {error && <p className="mb-3 text-xs text-[#c86f67]">{error}</p>}
+
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isDeleting}
+            className="rounded-md border border-[#9b6b54]/40 bg-white/30 px-4 py-2 text-sm text-[#9b6b54]/80 hover:bg-white/60 disabled:opacity-50"
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9] px-4 py-2 text-sm text-[#b36a5e] hover:bg-[#faebe7] disabled:opacity-50"
+          >
+            {isDeleting ? "삭제 중" : "삭제"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function InquiryRow({
   item,
   viewerIsAdmin,
   onAnswered,
+  onRequestDelete,
 }: {
   item: InquiryItem;
   viewerIsAdmin: boolean;
   onAnswered: () => void;
+  onRequestDelete: (item: InquiryItem) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [answerDraft, setAnswerDraft] = useState(item.answer ?? "");
@@ -179,6 +235,21 @@ function InquiryRow({
         </div>
       )}
 
+      {item.mine && (
+        <div className="mt-3 flex flex-col items-end gap-2">
+          <button
+            type="button"
+            onClick={() => onRequestDelete(item)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-[#5a4632]/20 px-3 py-1.5 text-xs text-[#5a4632]/60 transition hover:bg-[#5a4632]/10 disabled:opacity-50"
+            aria-label="문의 삭제"
+            title="문의 삭제"
+          >
+            <Trash2 size={13} />
+            삭제
+          </button>
+        </div>
+      )}
+
       {/* 관리자만 답변 작성/수정 */}
       {viewerIsAdmin && (
         <div className="mt-3">
@@ -249,6 +320,9 @@ function QnaPage() {
   const [inquiryPage, setInquiryPage] = useState<InquiryPage | null>(null);
   const [isLoadingList, setIsLoadingList] = useState(true);
   const [listError, setListError] = useState("");
+  const [deleteTargetInquiry, setDeleteTargetInquiry] = useState<InquiryItem | null>(null);
+  const [isDeletingInquiry, setIsDeletingInquiry] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const canSubmit = subject.trim().length > 0 && message.trim().length > 0 && !isSubmitting;
 
@@ -299,6 +373,39 @@ function QnaPage() {
       setFormError(caughtError instanceof Error ? caughtError.message : "문의 등록에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  function closeDeleteModal() {
+    if (isDeletingInquiry) {
+      return;
+    }
+
+    setDeleteTargetInquiry(null);
+    setDeleteError("");
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteTargetInquiry || isDeletingInquiry) {
+      return;
+    }
+
+    try {
+      setIsDeletingInquiry(true);
+      setDeleteError("");
+      await deleteInquiry(deleteTargetInquiry.id);
+      setDeleteTargetInquiry(null);
+
+      if (items.length === 1 && currentPage > 0) {
+        setPage(currentPage - 1);
+        return;
+      }
+
+      void loadInquiries(currentPage);
+    } catch (caughtError) {
+      setDeleteError(caughtError instanceof Error ? caughtError.message : "문의 삭제에 실패했습니다.");
+    } finally {
+      setIsDeletingInquiry(false);
     }
   }
 
@@ -442,6 +549,10 @@ function QnaPage() {
                     item={item}
                     viewerIsAdmin={inquiryPage?.viewerIsAdmin ?? false}
                     onAnswered={() => void loadInquiries(currentPage)}
+                    onRequestDelete={(targetItem) => {
+                      setDeleteError("");
+                      setDeleteTargetInquiry(targetItem);
+                    }}
                   />
                 ))}
               </div>
@@ -489,6 +600,15 @@ function QnaPage() {
           </section>
         </div>
       </main>
+
+      {deleteTargetInquiry && (
+        <InquiryDeleteConfirmModal
+          isDeleting={isDeletingInquiry}
+          error={deleteError}
+          onCancel={closeDeleteModal}
+          onConfirm={() => void handleConfirmDelete()}
+        />
+      )}
     </div>
   );
 }

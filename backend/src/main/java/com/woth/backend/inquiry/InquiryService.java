@@ -80,6 +80,20 @@ public class InquiryService {
         return inquiry;
     }
 
+    @Transactional
+    public void delete(Long inquiryId, Long authorId) {
+        Inquiry inquiry = inquiryRepository.findById(inquiryId)
+                .orElseThrow(() -> new CustomException(ErrorCode.INQUIRY_NOT_FOUND));
+
+        Long inquiryAuthorId = inquiry.getAuthor() == null ? null : inquiry.getAuthor().getId();
+
+        if (!authorId.equals(inquiryAuthorId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+
+        inquiryRepository.delete(inquiry);
+    }
+
     @Transactional(readOnly = true)
     public Page<Inquiry> list(int page) {
         int safePage = Math.max(page, 0);
