@@ -8,6 +8,7 @@ export type AuthResponse = {
   isAdmin?: boolean;
   accessToken?: string;
   accessTokenExpiresAt?: string;
+  isNewUser?: boolean;
 };
 
 export type SocialProvider = "google" | "kakao" | "naver";

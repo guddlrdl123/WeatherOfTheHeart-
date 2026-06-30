@@ -90,7 +90,7 @@ public class AuthService {
     }
 
     @Transactional
-    public User loginWithOAuth(OAuthProfile profile) {
+    public OAuthLoginResult loginWithOAuth(OAuthProfile profile) {
         if (profile.email() == null || profile.email().isBlank()) {
             throw new CustomException(ErrorCode.OAUTH_EMAIL_MISSING);
         }
@@ -102,13 +102,13 @@ public class AuthService {
                 .map(user -> {
                     ensureUserCanLogin(user);
                     user.linkOAuth(authProvider, profile.providerId());
-                    return user;
+                    return new OAuthLoginResult(user, false);
                 })
                 .or(() -> userRepository.findByEmailAndAuthProviderIgnoreCaseAndIsDeletedFalse(email, authProvider)
                         .map(user -> {
                             ensureUserCanLogin(user);
                             user.linkOAuth(authProvider, profile.providerId());
-                            return user;
+                            return new OAuthLoginResult(user, false);
                         }))
                 .orElseGet(() -> {
                     if (releaseWithdrawnOAuthIdentity(authProvider, profile.providerId(), email)) {
@@ -124,8 +124,11 @@ public class AuthService {
                             .authProviderId(profile.providerId())
                             .build();
 
-                    return userRepository.save(user);
+                    return new OAuthLoginResult(userRepository.save(user), true);
                 });
+    }
+
+    public record OAuthLoginResult(User user, boolean newUser) {
     }
 
     private boolean releaseWithdrawnOAuthIdentity(String authProvider, String authProviderId, String email) {

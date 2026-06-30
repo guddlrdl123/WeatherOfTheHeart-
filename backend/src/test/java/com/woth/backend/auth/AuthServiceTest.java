@@ -55,15 +55,17 @@ class AuthServiceTest {
         given(passwordEncoder.encode(anyString())).willReturn("encoded-password");
         given(userRepository.save(any(User.class))).willAnswer(invocation -> invocation.getArgument(0));
 
-        User signedUpUser = authService.loginWithOAuth(new OAuthProfile(
+        AuthService.OAuthLoginResult loginResult = authService.loginWithOAuth(new OAuthProfile(
                 OAuthProvider.GOOGLE,
                 providerId,
                 email,
                 "member"
         ));
+        User signedUpUser = loginResult.user();
 
         assertThat(withdrawnUser.getEmail()).startsWith("withdrawn-42-");
         assertThat(withdrawnUser.getAuthProviderId()).isNull();
+        assertThat(loginResult.newUser()).isTrue();
         assertThat(signedUpUser.getEmail()).isEqualTo(email);
         assertThat(signedUpUser.getAuthProvider()).isEqualTo(provider);
         assertThat(signedUpUser.getAuthProviderId()).isEqualTo(providerId);

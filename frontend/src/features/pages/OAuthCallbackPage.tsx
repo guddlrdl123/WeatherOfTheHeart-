@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-r
 import { socialLogin, type SocialProvider } from "../../services/authService";
 import { getOAuthRedirectUri, getOAuthStateKey } from "../../utils/oauth";
 import {
+  markSignupCompletedNotice,
   setAuthenticated,
   setCurrentUserId,
   setCurrentUserIsAdmin,
@@ -62,9 +63,12 @@ export function OAuthCallbackPage() {
 
         setCurrentUserIsAdmin(auth.isAdmin);
         setProfileEmail(auth.email ?? "");
+        if (auth.isNewUser) {
+          markSignupCompletedNotice();
+        }
         setAuthenticated(auth.accessToken, auth.accessTokenExpiresAt);
         sessionStorage.removeItem(getOAuthStateKey(socialProvider));
-        navigate("/room", { replace: true });
+        navigate("/room", { replace: true, state: auth.isNewUser ? { signupCompleted: true } : null });
       } catch (caughtError) {
         setError(caughtError instanceof Error ? caughtError.message : "소셜 인증에 실패했습니다.");
       }

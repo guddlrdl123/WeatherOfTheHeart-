@@ -50,7 +50,7 @@ public class AuthController {
     @PostMapping("/signup")
     public ApiResponse<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
         var user = authService.signup(request.email(), request.password(), request.nickname());
-        return ApiResponse.success(toResponse(user));
+        return ApiResponse.success(toResponse(user, true));
     }
 
     @GetMapping("/oauth/{provider}/authorize")
@@ -69,8 +69,8 @@ public class AuthController {
             @PathVariable String provider,
             @Valid @RequestBody OAuthLoginRequest request
     ) {
-        var user = socialAuthService.login(provider, request.code(), request.redirectUri(), request.state());
-        return ApiResponse.success(toResponse(user));
+        var loginResult = socialAuthService.login(provider, request.code(), request.redirectUri(), request.state());
+        return ApiResponse.success(toResponse(loginResult.user(), loginResult.newUser()));
     }
 
     @PostMapping("/email/send")
@@ -104,6 +104,10 @@ public class AuthController {
     }
 
     private AuthResponse toResponse(com.woth.backend.user.User user) {
+        return toResponse(user, false);
+    }
+
+    private AuthResponse toResponse(com.woth.backend.user.User user, boolean newUser) {
         AuthTokenService.IssuedToken token = authTokenService.issue(user);
 
         return new AuthResponse(
@@ -113,7 +117,8 @@ public class AuthController {
                 user.getIsAdmin(),
                 user.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                 token.accessToken(),
-                token.expiresAt()
+                token.expiresAt(),
+                newUser
         );
     }
 
@@ -169,7 +174,8 @@ public class AuthController {
             Boolean isAdmin,
             String joinedAt,
             String accessToken,
-            String accessTokenExpiresAt
+            String accessTokenExpiresAt,
+            Boolean isNewUser
     ) {
     }
 }

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
-import com.woth.backend.user.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -82,7 +81,7 @@ public class SocialAuthService {
         };
     }
 
-    public User login(String providerKey, String code, String redirectUri, String state) {
+    public AuthService.OAuthLoginResult login(String providerKey, String code, String redirectUri, String state) {
         OAuthProvider provider = OAuthProvider.from(providerKey);
         validateRedirectUri(provider, redirectUri);
 
