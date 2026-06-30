@@ -237,6 +237,7 @@ public class UserService {
         user.updateNickname(WITHDRAWN_NICKNAME);
         user.updatePassword(passwordEncoder.encode(UUID.randomUUID().toString()));
         user.updateEmail(createWithdrawnEmail(userId));
+        user.clearOAuthProviderId();
         user.withdraw();
     }
 

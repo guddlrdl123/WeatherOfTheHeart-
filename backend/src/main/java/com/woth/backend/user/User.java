@@ -116,6 +116,15 @@ public class User {
         this.authProviderId = authProviderId;
     }
 
+    public void clearOAuthProviderId() {
+        this.authProviderId = null;
+    }
+
+    public void releaseWithdrawnOAuthIdentity(String email) {
+        this.email = email;
+        this.authProviderId = null;
+    }
+
     // [수정] 회원 탈퇴 시 soft delete 처리
     public void withdraw() {
         this.isDeleted = true;

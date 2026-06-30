@@ -111,8 +111,8 @@ public class AuthService {
                             return user;
                         }))
                 .orElseGet(() -> {
-                    if (userRepository.existsByEmailAndAuthProviderIgnoreCase(email, authProvider)) {
-                        throw new CustomException(ErrorCode.USER_WITHDRAWN);
+                    if (releaseWithdrawnOAuthIdentity(authProvider, profile.providerId(), email)) {
+                        userRepository.flush();
                     }
 
                     User user = User.builder()
@@ -126,6 +126,30 @@ public class AuthService {
 
                     return userRepository.save(user);
                 });
+    }
+
+    private boolean releaseWithdrawnOAuthIdentity(String authProvider, String authProviderId, String email) {
+        boolean released = false;
+
+        var withdrawnByProviderId = userRepository.findByAuthProviderIgnoreCaseAndAuthProviderId(authProvider, authProviderId);
+
+        if (withdrawnByProviderId.isPresent() && Boolean.TRUE.equals(withdrawnByProviderId.get().getIsDeleted())) {
+            withdrawnByProviderId.get().releaseWithdrawnOAuthIdentity(createWithdrawnEmail(withdrawnByProviderId.get().getId()));
+            released = true;
+        }
+
+        var withdrawnByEmail = userRepository.findByEmailAndAuthProviderIgnoreCase(email, authProvider);
+
+        if (withdrawnByEmail.isPresent() && Boolean.TRUE.equals(withdrawnByEmail.get().getIsDeleted())) {
+            withdrawnByEmail.get().releaseWithdrawnOAuthIdentity(createWithdrawnEmail(withdrawnByEmail.get().getId()));
+            released = true;
+        }
+
+        return released;
+    }
+
+    private String createWithdrawnEmail(Long userId) {
+        return "withdrawn-" + userId + "-" + UUID.randomUUID() + "@deleted.local";
     }
 
     private User createAdminUser(String email, String password) {
