@@ -141,7 +141,7 @@ export function AppHeader() {
                                         className="flex items-center gap-2 px-3 py-2 text-xs text-[#5a4632]/85 hover:bg-[#5a4632]/10"
                                     >
                                         <MessageCircleQuestion size={14} className="shrink-0 text-[#9b6b54]" />
-                                        상담 및 QnA
+                                        문의하기
                                     </Link>
                                     <Link
                                         to="/notices"

@@ -103,12 +103,13 @@ public class InquiryController {
                     null);
         }
 
-        // 공개 문의를 제3자가 볼 때는 작성자 이메일을 노출하지 않습니다(본인/관리자만 확인).
-        boolean canSeeEmail = admin || mine;
+        // 작성자 식별 정보는 답변/관리 목적이 있는 관리자에게만 노출합니다.
+        boolean canSeeAuthorIdentity = admin;
+        boolean canSeeEmail = admin;
 
         return new InquiryResponse(
                 inquiry.getId(),
-                inquiry.getAuthorNickname(),
+                canSeeAuthorIdentity ? inquiry.getAuthorNickname() : null,
                 canSeeEmail ? inquiry.getAuthorEmail() : null,
                 inquiry.getTitle(),
                 inquiry.getContent(),

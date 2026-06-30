@@ -137,6 +137,13 @@ function InquiryRow({
     }
   }
 
+  const showAuthorIdentity = viewerIsAdmin;
+  const authorLabel = showAuthorIdentity ? item.authorNickname || "알 수 없음" : null;
+  const authorEmail = showAuthorIdentity ? item.authorEmail : null;
+  const warningLabel = viewerIsAdmin && item.warningCount !== null ? `경고 ${item.warningCount}회` : null;
+  const authorMeta = [authorLabel, authorEmail, warningLabel].filter(Boolean).join(" · ");
+  const canSeeVisibilityBadge = viewerIsAdmin || item.mine;
+
   return (
     <div className="mw-surface rounded-xl px-5 py-4">
       <div className="flex items-start justify-between gap-4">
@@ -145,19 +152,15 @@ function InquiryRow({
           {item.mine && (
             <span className="shrink-0 rounded-full bg-[#9b6b54]/12 px-2 py-0.5 text-[10px] text-[#9b6b54]">내 문의</span>
           )}
-          <span
-            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] ${item.isPublic ? "bg-[#5a8f5a]/12 text-[#5a8f5a]" : "bg-[#5a4632]/10 text-[#5a4632]/55"}`}
-          >
-            {item.isPublic ? "공개" : "비공개"}
-          </span>
+          {canSeeVisibilityBadge && (
+            <span className="shrink-0 rounded-full bg-[#5a4632]/10 px-2 py-0.5 text-[10px] text-[#5a4632]/55">
+              {item.isPublic ? "공개" : "비공개"}
+            </span>
+          )}
         </div>
         <span className="shrink-0 text-xs text-[#5a4632]/42">{formatDateTime(item.createdAt)}</span>
       </div>
-      <p className="mt-1 text-xs text-[#5a4632]/50">
-        {item.authorNickname || "알 수 없음"}
-        {item.authorEmail ? ` · ${item.authorEmail}` : ""}
-        {viewerIsAdmin && item.warningCount !== null ? ` · 경고 ${item.warningCount}회` : ""}
-      </p>
+      {authorMeta && <p className="mt-1 text-xs text-[#5a4632]/50">{authorMeta}</p>}
       <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[#5a4632]/72">{item.content}</p>
 
       {/* 관리자가 작성한 답변 표시 */}
@@ -241,7 +244,6 @@ function QnaPage() {
   const [isPublic, setIsPublic] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
-  const [formNotice, setFormNotice] = useState("");
 
   const [page, setPage] = useState(0);
   const [inquiryPage, setInquiryPage] = useState<InquiryPage | null>(null);
@@ -282,12 +284,10 @@ function QnaPage() {
     try {
       setIsSubmitting(true);
       setFormError("");
-      setFormNotice("");
       await createInquiry({ title: subject.trim(), content: message, isPublic });
       setSubject("");
       setMessage("");
       setIsPublic(false);
-      setFormNotice("문의가 등록되었습니다.");
 
       // 새 문의가 맨 위에 보이도록 항상 첫 페이지로 이동/갱신합니다.
       if (page === 0) {
@@ -373,8 +373,8 @@ function QnaPage() {
                   <span className="text-sm text-[#5a4632]/72">공개 설정</span>
                   <span className="text-xs leading-5 text-[#5a4632]/50">
                     {isPublic
-                      ? "다른 사용자도 이 문의의 제목과 내용을 볼 수 있어요."
-                      : "작성자 본인과 관리자만 이 문의의 내용을 볼 수 있어요."}
+                      ? "다른 사용자도 이 문의를 볼 수 있어요."
+                      : "작성자 본인과 관리자만 이 문의를 볼 수 있어요."}
                   </span>
                 </div>
                 <button
@@ -383,7 +383,7 @@ function QnaPage() {
                   aria-checked={isPublic}
                   aria-label={isPublic ? "공개 문의" : "비공개 문의"}
                   onClick={() => setIsPublic((value) => !value)}
-                  className={`flex h-10 shrink-0 items-center justify-between gap-2 rounded-md border px-3 text-left text-sm transition ${isPublic ? "border-[#9b6b54]/45 bg-[#9b6b54]/12 text-[#5a4632]" : "border-[#5a4632]/15 bg-white/30 text-[#5a4632]/55"}`}
+                  className={`flex h-10 min-w-[128px] shrink-0 items-center justify-between gap-2 rounded-md border px-3 text-left text-sm transition ${isPublic ? "border-[#9b6b54]/45 bg-[#9b6b54]/12 text-[#5a4632]" : "border-[#5a4632]/15 bg-white/30 text-[#5a4632]/55"}`}
                 >
                   <span className="whitespace-nowrap">{isPublic ? "공개" : "비공개"}</span>
                   <span
@@ -398,7 +398,6 @@ function QnaPage() {
               </div>
 
               {formError && <p className="text-xs text-[#c86f67]">{formError}</p>}
-              {formNotice && <p className="text-xs text-[#5a8f5a]">{formNotice}</p>}
 
               <div className="flex justify-end">
                 <button
