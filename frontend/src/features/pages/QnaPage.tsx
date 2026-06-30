@@ -383,9 +383,9 @@ function QnaPage() {
                   aria-checked={isPublic}
                   aria-label={isPublic ? "공개 문의" : "비공개 문의"}
                   onClick={() => setIsPublic((value) => !value)}
-                  className={`flex h-10 w-[112px] shrink-0 items-center justify-between gap-2 rounded-md border px-3 text-left text-sm transition ${isPublic ? "border-[#9b6b54]/45 bg-[#9b6b54]/12 text-[#5a4632]" : "border-[#5a4632]/15 bg-white/30 text-[#5a4632]/55"}`}
+                  className={`flex h-10 shrink-0 items-center justify-between gap-2 rounded-md border px-3 text-left text-sm transition ${isPublic ? "border-[#9b6b54]/45 bg-[#9b6b54]/12 text-[#5a4632]" : "border-[#5a4632]/15 bg-white/30 text-[#5a4632]/55"}`}
                 >
-                  <span className="truncate">{isPublic ? "공개" : "비공개"}</span>
+                  <span className="whitespace-nowrap">{isPublic ? "공개" : "비공개"}</span>
                   <span
                     className={`relative h-6 w-11 shrink-0 rounded-full border transition ${isPublic ? "border-[#9b6b54]/40 bg-[#9b6b54]/35" : "border-[#5a4632]/18 bg-[#5a4632]/10"}`}
                     aria-hidden="true"
