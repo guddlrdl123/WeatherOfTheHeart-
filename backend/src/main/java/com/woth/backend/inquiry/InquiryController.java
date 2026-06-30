@@ -5,6 +5,7 @@ import com.woth.backend.auth.CurrentUser;
 import com.woth.backend.global.dto.ApiResponse;
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +18,8 @@ import java.util.List;
  * - 문의 목록: 모든 사용자에게 노출하되 내용 열람 권한은 제한합니다.
  *   · 관리자: 모든 문의 내용/답변 열람 + 답변 작성 가능
  *   · 작성자 본인: 자신이 쓴 문의 내용과 그에 달린 답변 열람 가능
- *   · 그 외 사용자: "비공개된 문의"로 마스킹되어 내용이 보이지 않습니다.
+ *   · 그 외 사용자: 작성자가 '공개'로 등록한 문의만 내용을 볼 수 있고,
+ *     '비공개' 문의는 "비공개된 문의"로 마스킹되어 내용이 보이지 않습니다.
  */
 @RestController
 @RequestMapping(path = "/api/inquiries", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -37,7 +39,8 @@ public class InquiryController {
                 currentUser.nickname(),
                 currentUser.email(),
                 request.title(),
-                request.content());
+                request.content(),
+                Boolean.TRUE.equals(request.isPublic())); // null(미전송)은 비공개로 처리합니다.
 
         return ApiResponse.success(toResponse(created, currentUser));
     }
@@ -81,11 +84,12 @@ public class InquiryController {
         return Boolean.TRUE.equals(currentUser.isAdmin());
     }
 
-    // 열람 권한(관리자 또는 작성자 본인)이 없으면 제목/내용/답변/작성자를 내려보내지 않습니다(서버 차단).
+    // 열람 권한(관리자/작성자 본인/공개 문의)이 없으면 제목/내용/답변/작성자를 내려보내지 않습니다(서버 차단).
     private InquiryResponse toResponse(Inquiry inquiry, AuthenticatedUser currentUser) {
         Long authorId = inquiry.getAuthor() == null ? null : inquiry.getAuthor().getId();
+        boolean admin = isAdmin(currentUser);
         boolean mine = authorId != null && authorId.equals(currentUser.id());
-        boolean canView = isAdmin(currentUser) || mine;
+        boolean canView = admin || mine || inquiry.isPublic();
 
         if (!canView) {
             return new InquiryResponse(
@@ -95,13 +99,17 @@ public class InquiryController {
                     inquiry.getCreatedAt().toString(),
                     true,
                     false,
+                    inquiry.isPublic(),
                     null);
         }
+
+        // 공개 문의를 제3자가 볼 때는 작성자 이메일을 노출하지 않습니다(본인/관리자만 확인).
+        boolean canSeeEmail = admin || mine;
 
         return new InquiryResponse(
                 inquiry.getId(),
                 inquiry.getAuthorNickname(),
-                inquiry.getAuthorEmail(),
+                canSeeEmail ? inquiry.getAuthorEmail() : null,
                 inquiry.getTitle(),
                 inquiry.getContent(),
                 inquiry.getAnswer(),
@@ -111,12 +119,14 @@ public class InquiryController {
                 inquiry.getCreatedAt().toString(),
                 false,
                 mine,
-                isAdmin(currentUser) ? inquiryService.countWarnings(authorId) : null);
+                inquiry.isPublic(),
+                admin ? inquiryService.countWarnings(authorId) : null);
     }
 
     public record CreateInquiryRequest(
             String title,
-            String content
+            String content,
+            @JsonProperty("isPublic") Boolean isPublic
     ) {
     }
 
@@ -138,6 +148,7 @@ public class InquiryController {
             String createdAt,
             boolean masked,
             boolean mine,
+            @JsonProperty("isPublic") boolean isPublic,
             Long warningCount
     ) {
     }

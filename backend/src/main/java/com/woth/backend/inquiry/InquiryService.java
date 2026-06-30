@@ -39,7 +39,7 @@ public class InquiryService {
     }
 
     @Transactional
-    public Inquiry create(Long authorId, String authorNickname, String authorEmail, String title, String content) {
+    public Inquiry create(Long authorId, String authorNickname, String authorEmail, String title, String content, boolean isPublic) {
         String normalizedTitle = title == null ? "" : title.trim();
         String normalizedContent = content == null ? "" : content.trim();
 
@@ -58,6 +58,7 @@ public class InquiryService {
                 .authorEmail(authorEmail)
                 .title(normalizedTitle)
                 .content(normalizedContent)
+                .isPublic(isPublic)
                 .build();
 
         return inquiryRepository.save(inquiry);

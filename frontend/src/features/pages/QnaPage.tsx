@@ -145,6 +145,11 @@ function InquiryRow({
           {item.mine && (
             <span className="shrink-0 rounded-full bg-[#9b6b54]/12 px-2 py-0.5 text-[10px] text-[#9b6b54]">내 문의</span>
           )}
+          <span
+            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] ${item.isPublic ? "bg-[#5a8f5a]/12 text-[#5a8f5a]" : "bg-[#5a4632]/10 text-[#5a4632]/55"}`}
+          >
+            {item.isPublic ? "공개" : "비공개"}
+          </span>
         </div>
         <span className="shrink-0 text-xs text-[#5a4632]/42">{formatDateTime(item.createdAt)}</span>
       </div>
@@ -233,6 +238,7 @@ function QnaPage() {
 
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [formNotice, setFormNotice] = useState("");
@@ -277,9 +283,10 @@ function QnaPage() {
       setIsSubmitting(true);
       setFormError("");
       setFormNotice("");
-      await createInquiry({ title: subject.trim(), content: message });
+      await createInquiry({ title: subject.trim(), content: message, isPublic });
       setSubject("");
       setMessage("");
+      setIsPublic(false);
       setFormNotice("문의가 등록되었습니다.");
 
       // 새 문의가 맨 위에 보이도록 항상 첫 페이지로 이동/갱신합니다.
@@ -332,7 +339,7 @@ function QnaPage() {
           <section className="mt-12">
             <h2 className="mb-1 text-base font-medium text-[#5a4632]">1:1 문의</h2>
             <p className="mb-4 text-sm text-[#5a4632]/58">
-              문의를 남기면 아래 목록에 기록되며, 내용은 관리자만 확인할 수 있어요.
+              문의를 남기면 아래 목록에 기록됩니다. 공개로 설정하면 다른 사용자도 내용을 볼 수 있어요.
             </p>
 
             <form onSubmit={handleSubmit} className="mw-surface flex flex-col gap-4 rounded-xl p-6">
@@ -359,6 +366,36 @@ function QnaPage() {
                   maxLength={2000}
                 />
               </label>
+
+              {/* 작성자가 공개/비공개를 직접 선택합니다. 좌(비공개)·우(공개)로 움직이는 스위치입니다. */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <span className="text-sm text-[#5a4632]/72">공개 설정</span>
+                  <span className="text-xs leading-5 text-[#5a4632]/50">
+                    {isPublic
+                      ? "다른 사용자도 이 문의의 제목과 내용을 볼 수 있어요."
+                      : "작성자 본인과 관리자만 이 문의의 내용을 볼 수 있어요."}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isPublic}
+                  aria-label={isPublic ? "공개 문의" : "비공개 문의"}
+                  onClick={() => setIsPublic((value) => !value)}
+                  className={`flex h-10 w-[112px] shrink-0 items-center justify-between gap-2 rounded-md border px-3 text-left text-sm transition ${isPublic ? "border-[#9b6b54]/45 bg-[#9b6b54]/12 text-[#5a4632]" : "border-[#5a4632]/15 bg-white/30 text-[#5a4632]/55"}`}
+                >
+                  <span className="truncate">{isPublic ? "공개" : "비공개"}</span>
+                  <span
+                    className={`relative h-6 w-11 shrink-0 rounded-full border transition ${isPublic ? "border-[#9b6b54]/40 bg-[#9b6b54]/35" : "border-[#5a4632]/18 bg-[#5a4632]/10"}`}
+                    aria-hidden="true"
+                  >
+                    <span
+                      className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[#fffbf6] shadow-sm transition-transform ${isPublic ? "translate-x-[22px]" : "translate-x-1"}`}
+                    />
+                  </span>
+                </button>
+              </div>
 
               {formError && <p className="text-xs text-[#c86f67]">{formError}</p>}
               {formNotice && <p className="text-xs text-[#5a8f5a]">{formNotice}</p>}

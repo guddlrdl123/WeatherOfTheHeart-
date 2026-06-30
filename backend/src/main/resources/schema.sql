@@ -256,6 +256,7 @@ CREATE TABLE inquiries (
                            author_email VARCHAR(100) NULL,
                            title VARCHAR(100) NOT NULL,
                            content TEXT NOT NULL,
+                           is_public TINYINT(1) NOT NULL DEFAULT 0,
                            answer TEXT NULL,
                            answerer_nickname VARCHAR(20) NULL,
                            answered_at DATETIME NULL,

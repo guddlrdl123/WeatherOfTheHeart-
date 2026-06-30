@@ -40,6 +40,9 @@ public class Inquiry {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content; // 문의 내용
 
+    @Column(name = "is_public", nullable = false)
+    private boolean isPublic; // 공개 여부 (true=모두 열람, false=작성자/관리자만 열람)
+
     @Column(columnDefinition = "TEXT")
     private String answer; // 관리자 답변 (없으면 null)
 

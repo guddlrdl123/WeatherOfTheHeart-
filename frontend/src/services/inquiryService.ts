@@ -16,6 +16,7 @@ export type InquiryItem = {
   createdAt: string;
   masked: boolean;
   mine: boolean;
+  isPublic: boolean;
   warningCount: number | null;
 };
 
@@ -29,7 +30,7 @@ export type InquiryPage = {
   viewerIsAdmin: boolean;
 };
 
-export async function createInquiry(input: { title: string; content: string }) {
+export async function createInquiry(input: { title: string; content: string; isPublic: boolean }) {
   const response = await authFetch(toApiUrl("/api/inquiries"), {
     method: "POST",
     headers: {
