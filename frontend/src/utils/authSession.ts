@@ -6,6 +6,7 @@ const PROFILE_NICKNAME_STORAGE_KEY = "mw-profile-nickname";
 const PROFILE_EMAIL_STORAGE_KEY = "mw-profile-email";
 const USER_ID_STORAGE_KEY = "mw-user-id";
 const USER_IS_ADMIN_STORAGE_KEY = "mw-user-is-admin";
+const SIGNUP_COMPLETED_NOTICE_STORAGE_KEY = "mw-signup-completed-notice";
 export const AUTH_SESSION_CHANGED_EVENT = "mw-auth-session-changed";
 export const DEFAULT_PROFILE_NICKNAME = "나그네";
 export const PROFILE_NICKNAME_MAX_LENGTH = 10;
@@ -67,6 +68,7 @@ export function clearAuthenticated() {
     removeSessionValue(USER_IS_ADMIN_STORAGE_KEY);
     removeSessionValue(ACCESS_TOKEN_STORAGE_KEY);
     removeSessionValue(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
+    removeSessionValue(SIGNUP_COMPLETED_NOTICE_STORAGE_KEY);
     notifyAuthSessionChanged();
 }
 
@@ -138,4 +140,16 @@ export function getCurrentUserIsAdmin() {
 export function setCurrentUserIsAdmin(isAdmin?: boolean | null) {
     setSessionValue(USER_IS_ADMIN_STORAGE_KEY, isAdmin ? "true" : "false");
     notifyAuthSessionChanged();
+}
+
+export function markSignupCompletedNotice() {
+    setSessionValue(SIGNUP_COMPLETED_NOTICE_STORAGE_KEY, "true");
+}
+
+export function hasSignupCompletedNotice() {
+    return getSessionValue(SIGNUP_COMPLETED_NOTICE_STORAGE_KEY) === "true";
+}
+
+export function clearSignupCompletedNotice() {
+    removeSessionValue(SIGNUP_COMPLETED_NOTICE_STORAGE_KEY);
 }

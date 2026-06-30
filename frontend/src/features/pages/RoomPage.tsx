@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { CircleAlert, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CheckCircle2, CircleAlert, X } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Room from "../room/Room"
 import { RoomShareButton } from "../room/RoomShareButton";
 import RoomCalendarSidebar from "../calendar/RoomCalendarSidebar";
@@ -15,6 +16,7 @@ import type { Memory } from "../../types/memory";
 import type { RoomObjectKey, RoomObjectPosition } from "../../types/roomObject";
 import type { WeatherKey } from "../../types/weather";
 import { getTodayString } from "../../utils/date";
+import { clearSignupCompletedNotice, hasSignupCompletedNotice } from "../../utils/authSession";
 
 type PendingPlacement = {
     value: WriteModalValue;
@@ -33,6 +35,11 @@ type EditingPlacement = {
 
 type RoomNotice = {
     message: string;
+    tone: "success" | "error";
+};
+
+type RoomRouteState = {
+    signupCompleted?: boolean;
 };
 
 const DEFAULT_OBJECT_POSITION: RoomObjectPosition = { x: 24, y: 84 };
@@ -40,6 +47,7 @@ const OBJECT_LAYER_MIN = 0;
 const ROOM_LAYOUT_WIDTH = 1460;
 const ROOM_LAYOUT_HEIGHT = 630;
 const ROOM_NOTICE_DURATION_MS = 3500;
+const SIGNUP_COMPLETE_NOTICE = "회원가입이 완료되었습니다. 오늘의 이야기를 남겨보세요.";
 const DUPLICATE_MEMORY_DATE_NOTICE = "해당 날짜에는 이미 기록이 있어요. 다른 날짜를 선택해주세요.";
 const PLACEMENT_IN_PROGRESS_NOTICE = "오브젝트 배치를 완료해주세요.";
 
@@ -88,6 +96,9 @@ function normalizeMemoryObjectLayers(memories: Memory[]) {
 }
 
 function RoomPage() {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const routeState = location.state as RoomRouteState | null;
     const { isLoading: isObjectCatalogLoading } = useRoomObjectCatalog();
 
     const [weather] = useState<WeatherKey>('sunny');
@@ -131,7 +142,11 @@ function RoomPage() {
     const bounceStartTimerRef = useRef<number | null>(null);
     const bounceEndTimerRef = useRef<number | null>(null);
     const roomNoticeTimerRef = useRef<number | null>(null);
-    const [roomNotice, setRoomNotice] = useState<RoomNotice | null>(null);
+    const [roomNotice, setRoomNotice] = useState<RoomNotice | null>(() => (
+        routeState?.signupCompleted || hasSignupCompletedNotice()
+            ? { message: SIGNUP_COMPLETE_NOTICE, tone: "success" }
+            : null
+    ));
     const roomCaptureRef = useRef<HTMLDivElement>(null);
     const isObjectPlacementInProgress = Boolean(pendingPlacement || editingPlacement || isPlacementSaving);
 
@@ -194,8 +209,32 @@ function RoomPage() {
     const roomMonthLabel = formatRoomMonthLabel(roomMonthKey);
     const unavailableMemoryDates = useMemo(() => memories.map((memory) => memory.memoryDate), [memories]);
 
-    function showRoomNotice(message: string) {
-        setRoomNotice({ message });
+    const showRoomNotice = useCallback((message: string, tone: RoomNotice["tone"] = "error") => {
+        setRoomNotice({ message, tone });
+    }, []);
+
+    const closeRoomNotice = useCallback(() => {
+        setRoomNotice(null);
+
+        if (roomNoticeTimerRef.current !== null) {
+            window.clearTimeout(roomNoticeTimerRef.current);
+            roomNoticeTimerRef.current = null;
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!routeState?.signupCompleted && !hasSignupCompletedNotice()) {
+            return;
+        }
+
+        clearSignupCompletedNotice();
+        navigate(`${location.pathname}${location.search}${location.hash}`, { replace: true, state: null });
+    }, [location.hash, location.pathname, location.search, navigate, routeState?.signupCompleted]);
+
+    useEffect(() => {
+        if (!roomNotice) {
+            return;
+        }
 
         if (roomNoticeTimerRef.current !== null) {
             window.clearTimeout(roomNoticeTimerRef.current);
@@ -205,16 +244,14 @@ function RoomPage() {
             setRoomNotice(null);
             roomNoticeTimerRef.current = null;
         }, ROOM_NOTICE_DURATION_MS);
-    }
 
-    function closeRoomNotice() {
-        setRoomNotice(null);
-
-        if (roomNoticeTimerRef.current !== null) {
-            window.clearTimeout(roomNoticeTimerRef.current);
-            roomNoticeTimerRef.current = null;
-        }
-    }
+        return () => {
+            if (roomNoticeTimerRef.current !== null) {
+                window.clearTimeout(roomNoticeTimerRef.current);
+                roomNoticeTimerRef.current = null;
+            }
+        };
+    }, [roomNotice]);
 
     const getNextObjectLayer = (dateString: string) => {
         // 새 오브젝트는 현재 달의 가장 앞 레이어 다음에 배치합니다.
@@ -545,11 +582,18 @@ function RoomPage() {
 
             {roomNotice && (
                 <div className="fixed left-1/2 top-6 z-[120] w-[min(420px,calc(100vw-32px))] -translate-x-1/2">
-                    <div className="mw-surface flex items-center gap-3 rounded-xl bg-[#fffbf6f2] px-4 py-3 text-[#5a4632] shadow-xl backdrop-blur-sm">
-                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-[#b36a5e]/30 bg-[#f4dfd9] text-[#c86f67]">
-                            <CircleAlert size={17} />
-                        </span>
-                        <p className="min-w-0 flex-1 text-sm leading-5 text-[#c86f67]">{roomNotice.message}</p>
+                    <div className="mw-surface flex items-start gap-3 rounded-xl bg-[#fffbf6f2] px-4 py-3 text-[#5a4632] shadow-xl backdrop-blur-sm">
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                            <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-md border ${roomNotice.tone === "error"
+                                ? "border-[#b36a5e]/30 bg-[#f4dfd9] text-[#c86f67]"
+                                : "border-[#7c9b78]/30 bg-[#edf5e7] text-[#5f875b]"
+                                }`}>
+                                {roomNotice.tone === "error" ? <CircleAlert size={17} /> : <CheckCircle2 size={17} />}
+                            </span>
+                            <p className={`min-w-0 flex-1 text-sm leading-6 ${roomNotice.tone === "error" ? "text-[#c86f67]" : ""}`}>
+                                {roomNotice.message}
+                            </p>
+                        </div>
                         <button
                             type="button"
                             onClick={closeRoomNotice}

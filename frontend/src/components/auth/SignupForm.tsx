@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { AuthApiError, sendEmailVerification, signup, verifyEmail } from "../../services/authService";
 import { Link, useNavigate } from "react-router-dom";
-import { normalizeProfileNickname, PROFILE_NICKNAME_MAX_LENGTH, setAuthenticated, setCurrentUserId, setCurrentUserIsAdmin, setProfileEmail, setProfileNickname } from "../../utils/authSession";
+import { markSignupCompletedNotice, normalizeProfileNickname, PROFILE_NICKNAME_MAX_LENGTH, setAuthenticated, setCurrentUserId, setCurrentUserIsAdmin, setProfileEmail, setProfileNickname } from "../../utils/authSession";
 // import { useAppStore } from "../../stores/AppStore";
 
 const VERIFICATION_CODE_TTL_SECONDS = 10 * 60;
@@ -255,7 +255,8 @@ export function SignupForm() {
             // 회원가입 직후 마이페이지에서 입력한 닉네임이 바로 보이도록 임시 프로필 저장소에 동기화합니다.
             setProfileEmail(auth.email ?? email.trim());
             setProfileNickname(auth.nickname ?? signupNickname);
-            navigate("/room", { replace: true });
+            markSignupCompletedNotice();
+            navigate("/room", { replace: true, state: { signupCompleted: true } });
         } catch (caughtError) {
             setError(caughtError instanceof Error ? caughtError.message : "회원가입에 실패했습니다. 다시 시도해주세요.");
         } finally {
