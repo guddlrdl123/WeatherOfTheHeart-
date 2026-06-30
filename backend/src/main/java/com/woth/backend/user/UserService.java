@@ -5,9 +5,12 @@ import com.woth.backend.auth.PasswordResetTokenRepository;
 import com.woth.backend.auth.RefreshTokenRepository;
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
+import com.woth.backend.inquiry.InquiryRepository;
 import com.woth.backend.like.ObjectLikeRepository;
 import com.woth.backend.mailbox.LetterRepository;
 import com.woth.backend.memory.PrivateMemoryRepository;
+import com.woth.backend.moderation.UserWarningRepository;
+import com.woth.backend.notice.NoticeRepository;
 import com.woth.backend.plaza.PlazaEntryRepository;
 import com.woth.backend.plaza.PlazaEntryReportRepository;
 import com.woth.backend.plaza.PlazaRepository;
@@ -39,6 +42,9 @@ public class UserService {
     private final PlazaRepository plazaRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final UserWarningRepository userWarningRepository;
+    private final InquiryRepository inquiryRepository;
+    private final NoticeRepository noticeRepository;
 
     public UserService(
             UserRepository userRepository,
@@ -52,7 +58,10 @@ public class UserService {
             PlazaEntryReportRepository plazaEntryReportRepository,
             PlazaRepository plazaRepository,
             RefreshTokenRepository refreshTokenRepository,
-            PasswordResetTokenRepository passwordResetTokenRepository
+            PasswordResetTokenRepository passwordResetTokenRepository,
+            UserWarningRepository userWarningRepository,
+            InquiryRepository inquiryRepository,
+            NoticeRepository noticeRepository
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -66,6 +75,9 @@ public class UserService {
         this.plazaRepository = plazaRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.userWarningRepository = userWarningRepository;
+        this.inquiryRepository = inquiryRepository;
+        this.noticeRepository = noticeRepository;
     }
 
     @Transactional(readOnly = true)
@@ -208,7 +220,8 @@ public class UserService {
         emailVerificationService.verifyCode(user.getEmail(), code);
     }
 
-    // [추가] 일반 탈퇴와 소셜 탈퇴가 함께 사용하는 실제 탈퇴 처리 공통 메서드
+    // [수정] 일반 탈퇴와 소셜 탈퇴가 함께 사용하는 실제 탈퇴 처리 공통 메서드
+    // 회원과 연관된 모든 데이터를 정리한 뒤 회원 행 자체를 DB에서 완전히 삭제(하드 삭제)한다.
     private void withdrawUser(User user) {
         Long userId = user.getId();
         String originalEmail = user.getEmail();
@@ -220,6 +233,8 @@ public class UserService {
 
         plazaEntryReportRepository.deleteByPlazaOwnerId(userId);
         plazaEntryReportRepository.deleteOpenByPlazaEntryOwnerId(userId);
+        // [추가] 신고자/피신고자가 본인인 신고는 FK(NOT NULL)라 하드 삭제를 막으므로 함께 제거
+        plazaEntryReportRepository.deleteByReporterOrReportedUserId(userId);
         plazaEntryRepository.deleteByPlazaOwnerId(userId);
         plazaEntryRepository.deleteOpenByOwnerId(userId);
         plazaEntryRepository.anonymizeCompletedOwnerByOwnerId(userId, withdrawnOwner);
@@ -230,15 +245,19 @@ public class UserService {
 
         letterRepository.deleteByReceiverId(userId);
         letterRepository.clearSenderByUserId(userId);
+
+        // [추가] 받은 경고 제거(NOT NULL FK)
+        userWarningRepository.deleteByUserId(userId);
+        // [추가] 문의/공지는 작성 시점 스냅샷으로 보존하고 작성자 참조만 NULL 처리
+        inquiryRepository.clearAuthorByUserId(userId);
+        noticeRepository.clearAuthorByUserId(userId);
+
         refreshTokenRepository.deleteByUserId(userId);
         passwordResetTokenRepository.deleteByEmail(originalEmail);
         emailVerificationService.clear(originalEmail);
 
-        user.updateNickname(WITHDRAWN_NICKNAME);
-        user.updatePassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-        user.updateEmail(createWithdrawnEmail(userId));
-        user.clearOAuthProviderId();
-        user.withdraw();
+        // [수정] 익명화(soft delete) 대신 회원 행을 실제로 삭제
+        userRepository.delete(user);
     }
 
     private User getWithdrawnOwner() {
@@ -263,10 +282,6 @@ public class UserService {
         if (authProvider != null && !LOCAL_AUTH_PROVIDER.equalsIgnoreCase(authProvider)) {
             throw new CustomException(ErrorCode.SOCIAL_EMAIL_CHANGE_FORBIDDEN);
         }
-    }
-
-    private String createWithdrawnEmail(Long userId) {
-        return "withdrawn-" + userId + "-" + UUID.randomUUID() + "@deleted.local";
     }
 
     private void validatePasswordChange(User user, String currentPassword, String newPassword) {

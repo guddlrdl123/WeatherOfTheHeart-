@@ -40,4 +40,14 @@ public interface PlazaEntryReportRepository extends JpaRepository<PlazaEntryRepo
             )
             """)
     void deleteOpenByPlazaEntryOwnerId(@Param("ownerId") Long ownerId);
+
+    // [추가] 회원 탈퇴(하드 삭제) 시 신고자/피신고자가 해당 회원인 신고를 함께 제거
+    // (reporter_id, reported_user_id 모두 NOT NULL FK라 회원을 지우려면 반드시 정리 필요)
+    @Modifying
+    @Query("""
+            delete from PlazaEntryReport report
+            where report.reporter.id = :userId
+               or report.reportedUser.id = :userId
+            """)
+    void deleteByReporterOrReportedUserId(@Param("userId") Long userId);
 }
