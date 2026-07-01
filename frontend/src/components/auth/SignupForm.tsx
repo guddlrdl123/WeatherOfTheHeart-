@@ -302,10 +302,6 @@ export function SignupForm() {
                 )}
             </div>
 
-            {/* <button type="button" className="border border-[#9b6b54]/60 bg-[#9b6b54]/10 hover:bg-[#9b6b54]/20 rounded-md px-5 py-3 text-sm text-[#9b6b54]/80">
-                인증번호 받기
-            </button> */}
-
             {isVerificationSent && (
                 <label className="flex flex-col gap-2 text-sm text-white/54">
                     <span>인증번호</span>
@@ -337,10 +333,14 @@ export function SignupForm() {
             )}
 
             <label className="flex flex-col gap-2 text-sm text-white/54">
-                닉네임
+                <div className="flex items-center gap-1">
+                    <span>닉네임</span>
+                    <span className="text-xs text-[#9b6b54]/80">(선택)</span>
+                </div>
                 <input
                     className="mw-input h-10 px-3 text-sm"
                     value={nickname}
+                    placeholder="나그네"
                     maxLength={PROFILE_NICKNAME_MAX_LENGTH}
                     onChange={(event) => handleNicknameChange(event.target.value)}
                 />
