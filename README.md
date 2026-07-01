@@ -160,8 +160,8 @@ VITE_S3_ASSET_BASE_URL=https://your_bucket_name.s3.ap-northeast-2.amazonaws.com
 | Auth | POST | `/api/auth/login` | 로그인 |
 | Auth | GET | `/api/auth/oauth/{provider}/authorize` | 소셜 로그인 인가 URL 생성 |
 | Auth | POST | `/api/auth/oauth/{provider}/login` | 소셜 로그인 code 교환 및 회원가입/로그인 |
-| Auth | POST | `/api/auth/email/send` | 이메일 인증 코드 발송 |
-| Auth | POST | `/api/auth/email/verify` | 이메일 인증 코드 확인 |
+| Auth | POST | `/api/auth/email/send` | 이메일 인증번호 발송 |
+| Auth | POST | `/api/auth/email/verify` | 이메일 인증번호 확인 |
 | AI | POST | `/api/ai/analyze` | 감정 분석 |
 | Memory | GET | `/api/memories` | 개인 기억 목록 조회 |
 | Memory | POST | `/api/memories` | 개인 기억 생성 |

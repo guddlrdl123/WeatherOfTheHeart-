@@ -6,9 +6,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+
 /**
  * [email_verifications 테이블 매핑 엔티티]
- * 이메일 인증 요청 시 생성되는 고유한 인증 코드와 만료 시간 정보를 관리하는 클래스
+ * 이메일 인증 요청 시 생성되는 고유한 인증번호와 만료 시간 정보를 관리하는 클래스
  * 이메일 인증번호를 DB에 저장하는 엔티티입니다. 이메일, 6자리 코드, 인증 완료 여부, 만료 시간, 생성 시간을 가진다.
  */
 @Entity

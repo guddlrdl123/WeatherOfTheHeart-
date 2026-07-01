@@ -32,7 +32,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailVerificationService emailVerificationService; // [수정] 이메일 변경 시 인증코드 발송/검증 재사용
+    private final EmailVerificationService emailVerificationService; // [수정] 이메일 변경 시 인증번호 발송/검증 재사용
     private final ObjectLikeRepository objectLikeRepository;
     private final LetterRepository letterRepository;
     private final PrivateMemoryRepository privateMemoryRepository;
@@ -61,8 +61,7 @@ public class UserService {
             PasswordResetTokenRepository passwordResetTokenRepository,
             UserWarningRepository userWarningRepository,
             InquiryRepository inquiryRepository,
-            NoticeRepository noticeRepository
-    ) {
+            NoticeRepository noticeRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailVerificationService = emailVerificationService;
@@ -104,7 +103,7 @@ public class UserService {
         return user;
     }
 
-    // [수정] 현재 비밀번호를 다시 확인한 뒤 새 이메일로 인증코드를 발송
+    // [수정] 현재 비밀번호를 다시 확인한 뒤 새 이메일로 인증번호를 발송
     @Transactional
     public void sendEmailChangeCode(Long userId, String currentPassword, String newEmail) {
         User user = getUser(userId);
@@ -128,11 +127,11 @@ public class UserService {
         // [수정] 이미 사용 중인 이메일이면 변경 불가
         ensureEmailIsNotUsed(normalizedEmail);
 
-        // [수정] 이메일 변경 전용 인증 코드 발송
+        // [수정] 이메일 변경 전용 인증번호 발송
         emailVerificationService.sendCodeForEmailChange(normalizedEmail);
     }
 
-    // [수정] 새 이메일과 인증코드를 검증한 뒤 실제 이메일 반영
+    // [수정] 새 이메일과 인증번호를 검증한 뒤 실제 이메일 반영
     @Transactional
     public User updateEmail(Long userId, String newEmail, String code) {
         User user = getUser(userId);
@@ -170,7 +169,7 @@ public class UserService {
         }
     }
 
-    // [추가] 소셜 로그인 회원 탈퇴 전 이메일 인증코드를 발송
+    // [추가] 소셜 로그인 회원 탈퇴 전 이메일 인증번호를 발송
     @Transactional
     public void sendSocialWithdrawEmailCode(Long userId) {
         User user = getUser(userId);
@@ -179,7 +178,7 @@ public class UserService {
         emailVerificationService.sendCodeForWithdraw(user.getEmail());
     }
 
-    // [수정] 소셜 회원 탈퇴는 이메일 인증코드 검증 후 공통 탈퇴 처리 메서드를 호출
+    // [수정] 소셜 회원 탈퇴는 이메일 인증번호 검증 후 공통 탈퇴 처리 메서드를 호출
     @Transactional
     public void withdrawSocial(Long userId, String code) {
         User user = getUser(userId);
@@ -211,7 +210,7 @@ public class UserService {
         }
     }
 
-    // [추가] 소셜 회원 탈퇴 시 이메일 인증코드 검증 로직 분리
+    // [추가] 소셜 회원 탈퇴 시 이메일 인증번호 검증 로직 분리
     private void validateWithdrawEmailCode(User user, String code) {
         if (!hasText(code)) {
             throw new CustomException(ErrorCode.INVALID_INPUT);

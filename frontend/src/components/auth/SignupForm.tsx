@@ -172,7 +172,7 @@ export function SignupForm() {
             setRemainingVerificationSeconds(VERIFICATION_CODE_TTL_SECONDS);
             setIsVerificationExpired(false);
             setVerificationMessage("");
-            setEmailMessage("인증코드가 발송되었습니다.");
+            setEmailMessage("인증번호가 발송되었습니다.");
         } catch (caughtError) {
             setError(caughtError instanceof Error ? caughtError.message : "인증번호 전송에 실패했습니다. 다시 시도해주세요.");
         } finally {

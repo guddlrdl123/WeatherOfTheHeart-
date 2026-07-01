@@ -68,8 +68,8 @@ const AUTH_ERROR_MESSAGE_BY_CODE: Record<string, string> = {
   EMAIL_002: "인증번호가 만료되었습니다.",
   EMAIL_003: "이메일 인증을 완료해 주세요.",
   EMAIL_004: "인증번호 전송에 실패했습니다. 다시 시도해 주세요.",
-  EMAIL_005: "인증코드가 올바르지 않습니다.",
-  EMAIL_006: "인증코드가 만료되었습니다.",
+  EMAIL_005: "인증번호가 올바르지 않습니다.",
+  EMAIL_006: "인증번호가 만료되었습니다.",
   OAUTH_001: "소셜 로그인 설정이 누락되었습니다. 관리자에게 문의해 주세요.",
   OAUTH_002: "소셜 로그인 인증 정보를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.",
   OAUTH_003: "소셜 계정의 이메일 제공 동의가 필요합니다.",
@@ -164,7 +164,7 @@ export async function requestPasswordReset(email: string) {
 }
 
 export async function verifyPasswordResetCode(value: PasswordResetCodeRequest) {
-  await postAuth("/api/auth/password/reset/verify", value, "인증코드 확인에 실패했습니다.");
+  await postAuth("/api/auth/password/reset/verify", value, "인증번호 확인에 실패했습니다.");
 }
 
 export async function confirmPasswordReset(value: PasswordResetConfirmRequest) {

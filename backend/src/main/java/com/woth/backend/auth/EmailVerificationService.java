@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 
 /**
  * [이메일 인증 서비스]
- * 이메일 인증 코드를 생성, 전송, 검증하는 서비스 클래스
+ * 이메일 인증번호를 생성, 전송, 검증하는 서비스 클래스
  * 인증번호 생성, 메일 발송, 인증번호 확인, 회원가입 전 인증 완료 여부 검사를 담당
  * 인증번호는 6자리 숫자로 생성되며, 발송된 인증번호는 10분 동안 유효
  */
@@ -109,7 +109,7 @@ public class EmailVerificationService {
   public void sendPasswordResetCode(String email, String code) {
     sendMail(
         email,
-        "[마음의 날씨] 비밀번호 재설정 인증코드",
+        "[마음의 날씨] 비밀번호 재설정 인증번호",
         "비밀번호 재설정 인증번호는 " + code + " 입니다. 10분 안에 입력해주세요.",
         buildPasswordResetEmailHtml(code));
   }
@@ -150,7 +150,7 @@ public class EmailVerificationService {
   private void sendMail(String email, String code) {
     sendMail(
         email,
-        "[마음의 날씨] 회원가입 인증코드",
+        "[마음의 날씨] 회원가입 인증번호",
         "회원가입 인증번호는 " + code + " 입니다. 10분 안에 입력해주세요.",
         buildVerificationEmailHtml(code));
   }
@@ -170,36 +170,32 @@ public class EmailVerificationService {
         "아래 인증번호를 입력해 새 비밀번호를 설정해주세요.",
         "이 인증번호는 10분 동안 유효합니다.<br>비밀번호 재설정을 요청하지 않았다면 이 메일을 무시해주세요.");
   }
+
   @Transactional
   public void sendCodeForWithdraw(String email) {
     String code = generateCode();
 
     EmailVerification verification = new EmailVerification(
-            email,
-            code,
-            LocalDateTime.now().plusMinutes(CODE_EXPIRES_MINUTES)
-    );
+        email,
+        code,
+        LocalDateTime.now().plusMinutes(CODE_EXPIRES_MINUTES));
 
     emailVerificationRepository.save(verification);
 
     sendMail(
-            email,
-            "[마음의 날씨] 회원탈퇴 인증코드",
-            "회원탈퇴 인증번호는 " + code + " 입니다. 10분 안에 입력해주세요.",
-            buildWithdrawEmailHtml(code)
-    );
+        email,
+        "[마음의 날씨] 회원탈퇴 인증번호",
+        "회원탈퇴 인증번호는 " + code + " 입니다. 10분 안에 입력해주세요.",
+        buildWithdrawEmailHtml(code));
   }
 
   private String buildWithdrawEmailHtml(String code) {
     return buildCodeEmailHtml(
-            code,
-            "마음의 날씨 회원탈퇴를 위한 인증번호입니다.",
-            "아래 인증번호를 입력하면 회원탈퇴를 진행할 수 있습니다.",
-            "이 인증번호는 10분 동안 유효합니다.<br>회원탈퇴를 요청하지 않았다면 비밀번호를 변경하고 고객센터에 문의해주세요."
-    );
+        code,
+        "마음의 날씨 회원탈퇴를 위한 인증번호입니다.",
+        "아래 인증번호를 입력하면 회원탈퇴를 진행할 수 있습니다.",
+        "이 인증번호는 10분 동안 유효합니다.<br>회원탈퇴를 요청하지 않았다면 비밀번호를 변경하고 고객센터에 문의해주세요.");
   }
-
-
 
   private String buildCodeEmailHtml(String code, String description, String guide, String footer) {
     return """

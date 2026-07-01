@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 
 /**
  * [비밀번호 재설정 서비스]
- * 비밀번호 찾기 요청 시 6자리 인증코드를 발급하고, 코드 검증 후 비밀번호를 변경하는 서비스입니다.
+ * 비밀번호 찾기 요청 시 6자리 인증번호를 발급하고, 코드 검증 후 비밀번호를 변경하는 서비스입니다.
  */
 @Service
 public class PasswordResetService {
@@ -31,8 +31,7 @@ public class PasswordResetService {
             PasswordResetTokenRepository passwordResetTokenRepository,
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            EmailVerificationService emailVerificationService
-    ) {
+            EmailVerificationService emailVerificationService) {
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -41,7 +40,8 @@ public class PasswordResetService {
 
     @Transactional
     public void requestReset(String email) {
-        User user = userRepository.findByEmailAndAuthProviderIgnoreCaseAndIsDeletedFalse(email, LOCAL_AUTH_PROVIDER).orElse(null);
+        User user = userRepository.findByEmailAndAuthProviderIgnoreCaseAndIsDeletedFalse(email, LOCAL_AUTH_PROVIDER)
+                .orElse(null);
 
         if (user == null) {
             return;
@@ -53,8 +53,7 @@ public class PasswordResetService {
         passwordResetTokenRepository.save(new PasswordResetToken(
                 resetEmail,
                 token,
-                LocalDateTime.now().plusMinutes(RESET_TOKEN_EXPIRES_MINUTES)
-        ));
+                LocalDateTime.now().plusMinutes(RESET_TOKEN_EXPIRES_MINUTES)));
 
         emailVerificationService.sendPasswordResetCode(resetEmail, token);
     }
